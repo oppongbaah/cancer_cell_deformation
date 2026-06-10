@@ -1,13 +1,15 @@
-# Default configuration for celldform library.
-# Override individual keys via CLI flags or by passing a modified YAML.
+# Default configuration for celldform.
+# All paths support environment variable expansion: $HOME, $WORK, $SCRATCH, etc.
+# Override individual values via CLI flags or by passing a modified YAML.
 
 # ─── Data paths ──────────────────────────────────────────────────────────────
 data:
-  video_dir: "data/videos"
   frames_dir: "data/frames"
   masks_dir: "data/masks"
   features_csv: "data/features.csv"
   labels_csv: "data/labels.csv"
+  val_split: 0.15    # fraction held out for validation during training
+  test_split: 0.10   # fraction held out for final evaluation (never seen during training)
 
 # ─── Preprocessing ───────────────────────────────────────────────────────────
 preprocessing:
@@ -34,10 +36,18 @@ training:
   batch_size: 16
   lr: 0.0001
   weight_decay: 0.0001
-  lr_scheduler_patience: 5
-  lr_scheduler_factor: 0.5
-  val_split: 0.2
-  num_workers: 4        # Set to 0 on Windows; increase on HPC (Anvil)
+  optimizer: "adamw"              # "adamw" | "adam" | "sgd"
+  scheduler: "reduce_on_plateau"  # "reduce_on_plateau" | "cosine" | "none"
+  scheduler_patience: 5
+  scheduler_factor: 0.5
+  num_workers: 4                  # set to 0 on Windows; increase on HPC (Anvil)
+  seed: 42
+
+# ─── Resume ──────────────────────────────────────────────────────────────────
+resume:
+  checkpoint: null       # path to .pt checkpoint to resume from; null = start fresh
+  load_optimizer: true
+  load_scheduler: true
 
 # ─── Checkpointing ───────────────────────────────────────────────────────────
 checkpoint_dir: "checkpoints"
@@ -45,7 +55,7 @@ keep_n_checkpoints: 3
 
 # ─── Feature extraction ──────────────────────────────────────────────────────
 features:
-  pixel_size_um: null   # Set to float if microscope is calibrated (e.g. 0.65)
+  pixel_size_um: null    # set to float if microscope is calibrated (e.g. 0.65 μm/px)
   min_area_px: 50
 
 # ─── Classification ──────────────────────────────────────────────────────────
@@ -55,8 +65,8 @@ classification:
 
 # ─── Biomechanics ────────────────────────────────────────────────────────────
 biomechanics:
-  metric: "aspect_ratio"        # primary deformation signal
-  window_s: null                # sliding-window width in seconds; null = disabled
+  metric: "aspect_ratio"   # primary deformation signal (any MorphologyExtractor column)
+  window_s: null           # sliding-window width in seconds; null = disabled
   laser_power_mW: 0.0
   trap_current_mA: 0.0
 
@@ -65,7 +75,7 @@ device: null    # null → auto-detect (cuda if available, else cpu)
 
 # ─── Frame extraction ────────────────────────────────────────────────────────
 acquisition:
-  target_fps: null    # null = extract all frames; float = downsample
+  target_fps: null    # null = extract all frames; float = downsample to this rate
   every_n: 1
   max_frames: null
   image_format: "png"

@@ -11,21 +11,26 @@ Evaluation metrics (all computed on the validation set after each epoch):
   - Pixel-level Precision, Recall, Accuracy
 
 Checkpointing: the best-validation-DSC model is saved automatically.
+A snapshot of the active config is written to the checkpoint directory at
+the start of training for full experiment reproducibility.
 
-HPC note: pass ``device="cuda"`` and use a DataLoader with num_workers > 0
+HPC note: pass ``device="cuda"`` in the config and set num_workers > 0
 to fully utilise GPU + multi-core prefetching on Anvil / HPC clusters.
 """
 
 from __future__ import annotations
 
+import dataclasses
 import time
 from pathlib import Path
 from typing import Dict, Optional, Tuple
 
 import torch
 import torch.nn as nn
+import yaml
 from torch.utils.data import DataLoader
 
+from celldform.config import CelldformConfig, TrainingCfg
 from celldform.segmentation.unet import UNet
 from celldform.utils.metrics import SegmentationMetrics
 
@@ -48,35 +53,33 @@ class _DiceBCELoss(nn.Module):
         bce_loss = self.bce(logits, targets)
 
         probs = torch.sigmoid(logits)
-        # Flatten spatial dims for dice computation.
         p = probs.view(probs.size(0), -1)
         t = targets.view(targets.size(0), -1)
         intersection = (p * t).sum(dim=1)
         dice_loss = 1.0 - (2.0 * intersection + self.smooth) / (
             p.sum(dim=1) + t.sum(dim=1) + self.smooth
         )
-        dice_loss = dice_loss.mean()
 
-        return self.alpha * bce_loss + (1.0 - self.alpha) * dice_loss
+        return self.alpha * bce_loss + (1.0 - self.alpha) * dice_loss.mean()
 
 
 class SegmentationTrainer:
     """Orchestrates the U-Net training loop.
 
+    Accepts a :class:`~celldform.config.CelldformConfig` object so that
+    all training hyper-parameters, optimizer choice, scheduler, checkpoint
+    behaviour, and resume logic are driven entirely from the config file.
+
     Parameters
     ----------
     model:
-        A :class:`UNet` instance (or any compatible segmentation model).
+        A :class:`UNet` instance.
     train_loader:
         DataLoader yielding ``(image, mask)`` batches for training.
     val_loader:
         DataLoader yielding ``(image, mask)`` batches for validation.
-    lr:
-        Initial Adam learning rate.
-    checkpoint_dir:
-        Directory for saving model checkpoints.
-    device:
-        ``"cuda"`` or ``"cpu"``.  Auto-detected if *None*.
+    conf:
+        Fully populated :class:`CelldformConfig` (from :func:`celldform.config.load`).
     """
 
     def __init__(
@@ -84,44 +87,55 @@ class SegmentationTrainer:
         model: UNet,
         train_loader: DataLoader,
         val_loader: DataLoader,
-        lr: float = 1e-4,
-        checkpoint_dir: str | Path = "checkpoints",
-        device: Optional[str] = None,
+        conf: CelldformConfig,
     ) -> None:
-        self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
+        self.conf = conf
+        self.device = conf.device or ("cuda" if torch.cuda.is_available() else "cpu")
         self.model = model.to(self.device)
         self.train_loader = train_loader
         self.val_loader = val_loader
-        self.checkpoint_dir = Path(checkpoint_dir)
+        self.checkpoint_dir = Path(conf.checkpoint_dir)
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
         self.criterion = _DiceBCELoss()
-        self.optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
-        # Halve LR when validation DSC plateaus for 5 consecutive epochs.
-        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-            self.optimizer, mode="max", patience=5, factor=0.5
-        )
+        self.optimizer = _build_optimizer(model, conf.training)
+        self.scheduler = _build_scheduler(self.optimizer, conf.training)
         self.metrics = SegmentationMetrics()
+
+        # Resume from checkpoint if configured.
+        self.start_epoch = 1
+        if conf.resume.checkpoint:
+            self.start_epoch = self._load_resume()
 
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
 
-    def fit(self, epochs: int = 50) -> Dict[str, list]:
-        """Run the full training loop for *epochs* epochs.
+    def fit(self, epochs: Optional[int] = None) -> Dict[str, list]:
+        """Run the full training loop.
+
+        Parameters
+        ----------
+        epochs:
+            Number of epochs.  Defaults to ``conf.training.epochs`` when
+            *None*, so callers only need to pass this to override the config.
 
         Returns
         -------
         History dict with keys ``train_loss``, ``val_loss``, ``val_dsc``.
         """
+        n_epochs = epochs if epochs is not None else self.conf.training.epochs
         history: Dict[str, list] = {"train_loss": [], "val_loss": [], "val_dsc": []}
         best_dsc = 0.0
 
-        for epoch in range(1, epochs + 1):
+        # Snapshot the config so the checkpoint folder is self-contained.
+        _save_config_snapshot(self.conf, self.checkpoint_dir)
+
+        for epoch in range(self.start_epoch, n_epochs + 1):
             t0 = time.time()
             train_loss = self._train_one_epoch()
             val_loss, val_dsc = self._validate()
-            self.scheduler.step(val_dsc)
+            self._step_scheduler(val_dsc)
 
             history["train_loss"].append(train_loss)
             history["val_loss"].append(val_loss)
@@ -129,7 +143,7 @@ class SegmentationTrainer:
 
             elapsed = time.time() - t0
             print(
-                f"Epoch {epoch:03d}/{epochs}  "
+                f"Epoch {epoch:03d}/{n_epochs}  "
                 f"train_loss={train_loss:.4f}  val_loss={val_loss:.4f}  "
                 f"val_DSC={val_dsc:.4f}  ({elapsed:.1f}s)"
             )
@@ -153,9 +167,9 @@ class SegmentationTrainer:
                 all_preds.append(preds)
                 all_targets.append(masks.cpu())
 
-        preds_cat = torch.cat(all_preds)
-        targets_cat = torch.cat(all_targets)
-        return self.metrics.compute_all(preds_cat, targets_cat)
+        return self.metrics.compute_all(
+            torch.cat(all_preds), torch.cat(all_targets)
+        )
 
     # ------------------------------------------------------------------
     # Private helpers
@@ -168,13 +182,10 @@ class SegmentationTrainer:
         for images, masks in self.train_loader:
             images = images.to(self.device)
             masks = masks.to(self.device).float()
-
             self.optimizer.zero_grad()
-            logits = self.model(images)
-            loss = self.criterion(logits, masks)
+            loss = self.criterion(self.model(images), masks)
             loss.backward()
             self.optimizer.step()
-
             total_loss += loss.item() * images.size(0)
 
         return total_loss / len(self.train_loader.dataset)
@@ -188,27 +199,103 @@ class SegmentationTrainer:
             for images, masks in self.val_loader:
                 images = images.to(self.device)
                 masks = masks.to(self.device).float()
-
                 logits = self.model(images)
-                loss = self.criterion(logits, masks)
-                total_loss += loss.item() * images.size(0)
-
+                total_loss += self.criterion(logits, masks).item() * images.size(0)
                 preds = (torch.sigmoid(logits) >= 0.5).float()
-                dsc = self.metrics.dice(preds.cpu(), masks.cpu())
-                total_dsc += dsc * images.size(0)
+                total_dsc += self.metrics.dice(preds.cpu(), masks.cpu()) * images.size(0)
 
         n = len(self.val_loader.dataset)
         return total_loss / n, total_dsc / n
 
+    def _step_scheduler(self, val_dsc: float) -> None:
+        if self.scheduler is None:
+            return
+        if isinstance(self.scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+            self.scheduler.step(val_dsc)
+        else:
+            self.scheduler.step()
+
     def _save_checkpoint(self, filename: str, epoch: int, val_dsc: float) -> None:
         path = self.checkpoint_dir / filename
-        torch.save(
-            {
-                "epoch": epoch,
-                "val_dsc": val_dsc,
-                "model_state_dict": self.model.state_dict(),
-                "optimizer_state_dict": self.optimizer.state_dict(),
-            },
-            path,
-        )
+        ckpt: Dict = {
+            "epoch": epoch,
+            "val_dsc": val_dsc,
+            "model_state_dict": self.model.state_dict(),
+            "optimizer_state_dict": self.optimizer.state_dict(),
+        }
+        if self.scheduler is not None:
+            ckpt["scheduler_state_dict"] = self.scheduler.state_dict()
+        torch.save(ckpt, path)
         print(f"  → Checkpoint saved: {path}  (DSC={val_dsc:.4f})")
+
+    def _load_resume(self) -> int:
+        """Load weights/state from resume checkpoint, return next epoch number."""
+        path = Path(self.conf.resume.checkpoint)
+        ckpt = torch.load(path, map_location=self.device)
+        self.model.load_state_dict(ckpt["model_state_dict"])
+
+        if self.conf.resume.load_optimizer and "optimizer_state_dict" in ckpt:
+            self.optimizer.load_state_dict(ckpt["optimizer_state_dict"])
+
+        if (
+            self.conf.resume.load_scheduler
+            and self.scheduler is not None
+            and "scheduler_state_dict" in ckpt
+        ):
+            self.scheduler.load_state_dict(ckpt["scheduler_state_dict"])
+
+        next_epoch = int(ckpt.get("epoch", 0)) + 1
+        print(f"[celldform] Resumed from {path}  (next epoch: {next_epoch})")
+        return next_epoch
+
+
+# ---------------------------------------------------------------------------
+# Optimizer / scheduler factories
+# ---------------------------------------------------------------------------
+
+def _build_optimizer(
+    model: nn.Module, cfg: TrainingCfg
+) -> torch.optim.Optimizer:
+    name = cfg.optimizer
+    params = model.parameters()
+    if name == "adamw":
+        return torch.optim.AdamW(params, lr=cfg.lr, weight_decay=cfg.weight_decay)
+    if name == "adam":
+        return torch.optim.Adam(params, lr=cfg.lr, weight_decay=cfg.weight_decay)
+    if name == "sgd":
+        return torch.optim.SGD(params, lr=cfg.lr, weight_decay=cfg.weight_decay, momentum=0.9)
+    raise ValueError(f"Unknown optimizer '{name}'. Choose from: adamw, adam, sgd.")
+
+
+def _build_scheduler(
+    optimizer: torch.optim.Optimizer, cfg: TrainingCfg
+) -> Optional[torch.optim.lr_scheduler.LRScheduler]:
+    name = cfg.scheduler
+    if name == "reduce_on_plateau":
+        return torch.optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer, mode="max",
+            patience=cfg.scheduler_patience,
+            factor=cfg.scheduler_factor,
+        )
+    if name == "cosine":
+        return torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer, T_max=cfg.epochs, eta_min=cfg.lr * 0.01,
+        )
+    if name == "none":
+        return None
+    raise ValueError(
+        f"Unknown scheduler '{name}'. Choose from: reduce_on_plateau, cosine, none."
+    )
+
+
+# ---------------------------------------------------------------------------
+# Config snapshot
+# ---------------------------------------------------------------------------
+
+def _save_config_snapshot(conf: CelldformConfig, checkpoint_dir: Path) -> None:
+    """Write the active config to the checkpoint directory for reproducibility."""
+    snapshot = dataclasses.asdict(conf)
+    path = checkpoint_dir / "config.yaml"
+    with open(path, "w") as fh:
+        yaml.dump(snapshot, fh, default_flow_style=False, sort_keys=False)
+    print(f"[celldform] Config snapshot → {path}")

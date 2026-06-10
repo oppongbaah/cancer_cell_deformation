@@ -11,6 +11,7 @@ __version__ = "0.1.0"
 __author__ = "Isaac Oppong-Baah"
 
 # Convenience re-exports of the most commonly used entry-points.
+from celldform.config import CelldformConfig, load as load_config
 from celldform.acquisition.extractor import FrameExtractor
 from celldform.preprocessing.pipeline import PreprocessingPipeline
 from celldform.segmentation.unet import UNet
@@ -20,6 +21,8 @@ from celldform.biomechanics.analysis import DeformationAnalyzer
 from celldform.models.checkpoint import CheckpointManager
 
 __all__ = [
+    "CelldformConfig",
+    "load_config",
     "FrameExtractor",
     "PreprocessingPipeline",
     "UNet",

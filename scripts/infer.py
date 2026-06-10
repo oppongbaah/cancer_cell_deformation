@@ -20,15 +20,14 @@ Outputs (per run):
 from __future__ import annotations
 
 import argparse
-import json
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import yaml
 
 from celldform.biomechanics.analysis import DeformationAnalyzer
 from celldform.classification.classifiers import CellClassifier
+from celldform.config import load as load_config
 from celldform.features.extractor import MorphologyExtractor
 from celldform.integration.realtime import RealTimePipeline
 from celldform.preprocessing.pipeline import PreprocessingConfig, PreprocessingPipeline
@@ -40,25 +39,32 @@ def main():
     parser = argparse.ArgumentParser(description="Run celldform inference on a video.")
     parser.add_argument("--video", required=True, help="Path to input video.")
     parser.add_argument("--unet-ckpt", required=True, help="U-Net checkpoint (.pt).")
-    parser.add_argument("--classifier-ckpt", default=None, help="Classifier checkpoint (.pkl).")
-    parser.add_argument("--config", default="configs/default.yaml")
+    parser.add_argument("--classifier-ckpt", default=None,
+                        help="Classifier checkpoint (.pkl).")
+    parser.add_argument("--config", default="configs/default.yaml",
+                        help="Path to YAML config file.")
     parser.add_argument("--output-dir", default="results/inference")
     parser.add_argument("--save-masks", action="store_true",
                         help="Write binary masks to disk (warning: large).")
-    parser.add_argument("--every-n", type=int, default=1)
-    parser.add_argument("--max-frames", type=int, default=None)
-    parser.add_argument("--device", default=None)
+    parser.add_argument("--every-n", type=int, default=None,
+                        help="Process every N-th frame (overrides config).")
+    parser.add_argument("--max-frames", type=int, default=None,
+                        help="Stop after this many frames (overrides config).")
+    parser.add_argument("--device", default=None,
+                        help="Compute device (overrides config).")
     args = parser.parse_args()
 
-    with open(args.config) as fh:
-        cfg = yaml.safe_load(fh)
+    conf = load_config(args.config)
+
+    # CLI overrides for inference-specific params.
+    device = args.device or conf.device
+    every_n = args.every_n if args.every_n is not None else conf.acquisition.every_n
+    max_frames = args.max_frames if args.max_frames is not None else conf.acquisition.max_frames
 
     out_dir = Path(args.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     if args.save_masks:
         (out_dir / "masks").mkdir(exist_ok=True)
-
-    device = args.device or cfg.get("device")
 
     # ── Load models ───────────────────────────────────────────────────────────
     print(f"Loading U-Net from {args.unet_ckpt} ...")
@@ -68,22 +74,22 @@ def main():
         print(f"Loading classifier from {args.classifier_ckpt} ...")
         classifier = CellClassifier.load(args.classifier_ckpt)
     else:
-        # Dummy un-fitted classifier — labels will be 0 (placeholder).
         print("No classifier checkpoint provided — skipping HER2 classification.")
         classifier = None
 
     # ── Pipeline components ───────────────────────────────────────────────────
-    pre_cfg = PreprocessingConfig(output_size=tuple(cfg["preprocessing"]["target_size"]))
+    pre_cfg = PreprocessingConfig(output_size=conf.preprocessing.target_size)
     preprocessor = PreprocessingPipeline(pre_cfg)
+
     extractor = MorphologyExtractor(
-        pixel_size_um=cfg["features"].get("pixel_size_um"),
-        min_area_px=cfg["features"]["min_area_px"],
+        pixel_size_um=conf.features.pixel_size_um,
+        min_area_px=conf.features.min_area_px,
     )
     analyzer = DeformationAnalyzer(
-        laser_power_mW=cfg["biomechanics"]["laser_power_mW"],
-        trap_current_mA=cfg["biomechanics"]["trap_current_mA"],
-        metric=cfg["biomechanics"]["metric"],
-        window_s=cfg["biomechanics"]["window_s"],
+        laser_power_mW=conf.biomechanics.laser_power_mW,
+        trap_current_mA=conf.biomechanics.trap_current_mA,
+        metric=conf.biomechanics.metric,
+        window_s=conf.biomechanics.window_s,
     )
 
     if classifier is not None:
@@ -99,15 +105,14 @@ def main():
         pipeline = None
 
     # ── Run inference ─────────────────────────────────────────────────────────
-    feature_rows, label_rows = [], []
-
-    from celldform.acquisition.extractor import FrameExtractor
     import cv2
+    from celldform.acquisition.extractor import FrameExtractor
 
+    feature_rows, label_rows = [], []
     fe = FrameExtractor(args.video, output_dir=None)
 
-    for frame_idx, timestamp, frame in fe.stream(every_n=args.every_n):
-        if args.max_frames and frame_idx // args.every_n >= args.max_frames:
+    for frame_idx, timestamp, frame in fe.stream(every_n=every_n):
+        if max_frames and frame_idx // every_n >= max_frames:
             break
 
         processed = preprocessor(frame)
@@ -118,8 +123,10 @@ def main():
         feature_rows.append(features)
 
         if args.save_masks:
-            mask_path = out_dir / "masks" / f"frame_{frame_idx:06d}.png"
-            cv2.imwrite(str(mask_path), mask * 255)
+            cv2.imwrite(
+                str(out_dir / "masks" / f"frame_{frame_idx:06d}.png"),
+                mask * 255,
+            )
 
         if classifier is not None:
             feat_vec = np.array(
@@ -132,8 +139,12 @@ def main():
                 proba = float(classifier.predict_proba(feat_vec)[0, 1])
             except Exception:
                 proba = float("nan")
-            label_rows.append({"frame_index": frame_idx, "timestamp": timestamp,
-                                "label": label, "proba_high_HER2": proba})
+            label_rows.append({
+                "frame_index": frame_idx,
+                "timestamp": timestamp,
+                "label": label,
+                "proba_high_HER2": proba,
+            })
 
         if frame_idx % 50 == 0:
             print(f"  Processed frame {frame_idx}  t={timestamp:.2f}s")
@@ -144,21 +155,22 @@ def main():
     print(f"Features saved → {out_dir / 'features.csv'}")
 
     if label_rows:
-        label_df = pd.DataFrame(label_rows)
-        label_df.to_csv(out_dir / "labels.csv", index=False)
+        pd.DataFrame(label_rows).to_csv(out_dir / "labels.csv", index=False)
         print(f"Labels saved   → {out_dir / 'labels.csv'}")
 
     # ── Deformation time-series plot ──────────────────────────────────────────
-    metric_col = cfg["biomechanics"]["metric"]
+    metric_col = conf.biomechanics.metric
     if metric_col in feat_df.columns:
         t = feat_df["timestamp"].values
         v = feat_df[metric_col].values
-        rod = analyzer.deformation_rate(v[~np.isnan(v)], t[~np.isnan(v)])
+        valid = ~np.isnan(v)
+        rod = analyzer.deformation_rate(v[valid], t[valid])
 
-        viz = Visualizer()
-        viz.plot_deformation_timeseries(
-            t, v, metric_name=metric_col, rod=rod,
-            laser_power_mW=cfg["biomechanics"]["laser_power_mW"],
+        Visualizer().plot_deformation_timeseries(
+            t, v,
+            metric_name=metric_col,
+            rod=rod,
+            laser_power_mW=conf.biomechanics.laser_power_mW,
             save_path=out_dir / "deformation_timeseries.png",
         )
         print(f"Time-series plot → {out_dir / 'deformation_timeseries.png'}")

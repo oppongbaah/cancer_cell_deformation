@@ -43,7 +43,7 @@ class FrameExtractor:
     def __init__(
         self,
         video_path: str | os.PathLike,
-        output_dir: str | os.PathLike = "frames",
+        output_dir: str | os.PathLike = "data/frames",
         target_size: Tuple[int, int] = (256, 256),
         image_format: str = "png",
     ) -> None:
