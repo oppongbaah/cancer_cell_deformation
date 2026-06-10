@@ -1,0 +1,78 @@
+# Default configuration for celldform library.
+# Override individual keys via CLI flags or by passing a modified YAML.
+
+# ─── Data paths ──────────────────────────────────────────────────────────────
+data:
+  video_dir: "data/videos"
+  frames_dir: "data/frames"
+  masks_dir: "data/masks"
+  features_csv: "data/features.csv"
+  labels_csv: "data/labels.csv"
+
+# ─── Preprocessing ───────────────────────────────────────────────────────────
+preprocessing:
+  target_size: [256, 256]
+  median_kernel: 3
+  clahe_clip_limit: 2.0
+  clahe_tile_grid: [8, 8]
+  morph_kernel_size: 3
+  enabled:
+    denoise: true
+    enhance: true
+    morphology: true
+    resize: true
+    normalize: true
+
+# ─── U-Net ───────────────────────────────────────────────────────────────────
+unet:
+  in_channels: 1
+  base_features: 64
+
+# ─── MegaNet ─────────────────────────────────────────────────────────────────
+meganet:
+  in_channels: 1
+  n_outputs: 1          # 1 = deformation index only; 4 = [AR, D, area, perimeter]
+  dropout_p: 0.3
+
+# ─── Training (shared defaults) ──────────────────────────────────────────────
+training:
+  epochs: 50
+  batch_size: 16
+  lr: 0.0001
+  weight_decay: 0.0001
+  lr_scheduler_patience: 5
+  lr_scheduler_factor: 0.5
+  val_split: 0.2
+  num_workers: 4        # Set to 0 on Windows; increase on HPC (Anvil)
+
+# ─── Checkpointing ───────────────────────────────────────────────────────────
+checkpoint_dir: "checkpoints"
+keep_n_checkpoints: 3
+
+# ─── Feature extraction ──────────────────────────────────────────────────────
+features:
+  pixel_size_um: null   # Set to float if microscope is calibrated (e.g. 0.65)
+  min_area_px: 50
+
+# ─── Classification ──────────────────────────────────────────────────────────
+classification:
+  classifier: "svm"     # "svm" | "rf" | "dt"
+  scale_features: true
+  random_state: 42
+
+# ─── Biomechanics ────────────────────────────────────────────────────────────
+biomechanics:
+  metric: "deformation_index"   # primary deformation signal
+  window_s: null                # sliding-window width in seconds; null = disabled
+  laser_power_mW: 0.0
+  trap_current_mA: 0.0
+
+# ─── Compute ─────────────────────────────────────────────────────────────────
+device: null    # null → auto-detect (cuda if available, else cpu)
+
+# ─── Frame extraction ────────────────────────────────────────────────────────
+acquisition:
+  target_fps: null    # null = extract all frames; float = downsample
+  every_n: 1
+  max_frames: null
+  image_format: "png"

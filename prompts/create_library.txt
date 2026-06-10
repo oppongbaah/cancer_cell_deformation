@@ -1,0 +1,59 @@
+==========================================================
+ROLE
+==========================================================
+I am a graduate student at Norfolk State University pursuing my Master of Science in Electronics Engineering.
+I am working on my thesis project titled {{title}} in the Machine Learning domain.
+Lets have fun building this project (library) from scratch!!
+
+==========================================================
+TASKS
+==========================================================
+Create a PiPy library template for this project. I want just the skeletal template.
+We will dive into the actual work one after another. It must have the following functionalities:
+1. Image acquisition pipeline. The data is currently videos. I want to extract frames from these videos.
+2. Data processing pipeline that includes denoising, enhancement, morphology, and normalization
+3. U-NET model that can be trained, tested and evaluated
+4. Feature extraction from the U-NET segmented masks
+5. Make classification decisions (low and high expression cells) using classifiers such as SVM, RF, DT, etc.
+    I will do comparative analysis and choose the best.
+6. I will finally calculate the rate of deformation and compare to the laser power and current.
+7. Realtime integration pipeline for integrating into a C++ application.
+7. Add a readme file and add the necessary documentation in the meantime.
+
+NB: Make this package deployable. I want the ability to train the U-NET, save the checkpoint data to a secured location
+and use the metadata to infer it later.
+
+==========================================================
+INPUT CONTENT
+==========================================================
+Proposal of the project, facts, figures, equations, and model development can be found in:
+
+{{raw_content}}
+
+==========================================================
+CONTEXT
+==========================================================
+Supporting system architecture can be found at {{architecture}}
+
+==========================================================
+CONSTRAINTS & STYLE GUIDELINES
+==========================================================
+- Arrange the project folders using the guideline bullet points.
+- Why writing code, make use of design principles for optimized algorithms.
+- Most of the code will be replicated on  an HPC environment so make sure it is suitable to run there too.
+- The library must be easy to install.
+- Add inline and multi-line comments to codes you write.
+- Use userquestion to ask me questions for clarification.
+- Be technical, smart and creative in your code design.
+==========================================================
+OUTPUT FORMAT
+==========================================================
+A library package than can be installed via PiPy
+
+==========================================================
+SAMPLE INPUT
+==========================================================
+
+title: REAL-TIME DEEP LEARNING FRAMEWORK FOR QUANTITATIVE CANCER CELL DEFORMATION ANALYSIS IN DUAL-BEAM OPTICAL TWEEZER
+raw_content: supporting_docs/Isaac Oppong-Baah - Proposal Draft 1.pdf
+architecture: supporting_docs/system_architecture.png
