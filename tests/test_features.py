@@ -7,7 +7,6 @@ from celldform.features.extractor import MorphologyExtractor
 
 
 def _circle_mask(radius=20, size=64) -> np.ndarray:
-    """Synthetic binary mask with a filled circle."""
     mask = np.zeros((size, size), dtype=np.uint8)
     cy, cx = size // 2, size // 2
     y, x = np.ogrid[:size, :size]
@@ -16,7 +15,6 @@ def _circle_mask(radius=20, size=64) -> np.ndarray:
 
 
 def _ellipse_mask(a=25, b=10, size=64) -> np.ndarray:
-    """Synthetic binary mask with a horizontal ellipse."""
     mask = np.zeros((size, size), dtype=np.uint8)
     cy, cx = size // 2, size // 2
     y, x = np.ogrid[:size, :size]
@@ -32,20 +30,20 @@ class TestMorphologyExtractor:
         for k, v in feats.items():
             assert np.isfinite(v), f"{k} = {v} is not finite"
 
-    def test_deformation_index_near_zero_for_circle(self):
-        ext = MorphologyExtractor()
-        feats = ext.extract(_circle_mask())
-        assert abs(feats["deformation_index"]) < 0.1
-
     def test_aspect_ratio_gt_one_for_ellipse(self):
         ext = MorphologyExtractor()
         feats = ext.extract(_ellipse_mask())
         assert feats["aspect_ratio"] > 1.0
 
+    def test_hu_moments_present(self):
+        ext = MorphologyExtractor()
+        feats = ext.extract(_circle_mask())
+        for i in range(7):
+            assert f"hu_{i}" in feats
+
     def test_empty_mask_returns_nans(self):
         ext = MorphologyExtractor()
-        empty = np.zeros((64, 64), dtype=np.uint8)
-        feats = ext.extract(empty)
+        feats = ext.extract(np.zeros((64, 64), dtype=np.uint8))
         assert all(np.isnan(v) for v in feats.values())
 
     def test_batch_returns_dataframe_with_correct_shape(self):

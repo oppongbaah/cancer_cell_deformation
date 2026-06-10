@@ -27,14 +27,27 @@ Supporting components: `celldform.models` (MegaNet CNN + checkpoint manager) and
 
 ## Installation
 
-```bash
-pip install celldform          # from PyPI (once published)
+**From PyPI** (once published):
 
-# or from source
+```bash
+pip install celldform
+```
+
+**From source (recommended for development):**
+
+```bash
 git clone https://github.com/oppongbaah/celldform.git
 cd celldform
+
+# create and activate a virtual environment
+python3 -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+
+# install the package with all dev dependencies
 pip install -e ".[dev]"
 ```
+
+The editable install (`-e`) means changes to the source are reflected immediately without reinstalling. A `celldform.egg-info/` directory will be created — this is auto-generated metadata used by the import machinery and can be ignored.
 
 For HPC environments (Anvil / SLURM):
 

@@ -7,17 +7,19 @@ Features computed per mask (all derived from the binary cell region):
   ---------
   area          — pixel count of the segmented cell region  (A)
   perimeter     — boundary length of the region             (P)
-  centroid_x/y  — geometric centre of the region
   major_axis    — length of the major ellipse axis          (L_maj)
   minor_axis    — length of the minor ellipse axis          (L_min)
 
   Shape descriptors
   -----------------
-  aspect_ratio  — L_maj / L_min  (AR, Eq. 6 in proposal)
+  aspect_ratio  — L_maj / L_min  (AR)
   eccentricity  — elongation of the fitted ellipse          (0 = circle)
   circularity   — 4π·area / perimeter²                     (1 = perfect circle)
   solidity      — area / convex-hull area
-nm 
+
+  Moment invariants
+  -----------------
+  hu_0 … hu_6   — 7 Hu moment invariants (rotation/scale/translation-invariant)
 
 Reference
 ---------
@@ -30,6 +32,7 @@ from typing import Dict, List, Optional
 
 import numpy as np
 import pandas as pd
+import cv2
 from skimage import measure
 
 
@@ -48,11 +51,10 @@ class MorphologyExtractor:
 
     _FEATURE_NAMES = [
         "area", "perimeter",
-        "centroid_x", "centroid_y",
         "major_axis", "minor_axis",
         "aspect_ratio", "eccentricity",
         "circularity", "solidity",
-        "deformation_index",
+        "hu_0", "hu_1", "hu_2", "hu_3", "hu_4", "hu_5", "hu_6",
     ]
 
     def __init__(
@@ -132,22 +134,20 @@ class MorphologyExtractor:
         area = float(region.area)
         perimeter = float(region.perimeter)
 
-        cy, cx = region.centroid           # skimage returns (row, col) = (y, x)
-
         # Axis lengths from the fitted ellipse.
-        major = float(region.major_axis_length)
-        minor = float(region.minor_axis_length) + 1e-8  # avoid division by zero
+        major = float(region.axis_major_length)
+        minor = float(region.axis_minor_length) + 1e-8  # avoid division by zero
 
-        aspect_ratio = major / minor       # AR = L_maj / L_min  (Eq. 6)
+        aspect_ratio = major / minor
         eccentricity = float(region.eccentricity)
-
-        # Circularity: how close the shape is to a perfect circle.
-        circularity = (4 * np.pi * area / (perimeter ** 2 + 1e-8))
-
+        circularity = 4 * np.pi * area / (perimeter ** 2 + 1e-8)
         solidity = float(region.solidity)
 
-        # Deformation index D = (a − b) / (a + b)  (Eq. 4)
-        deformation_index = (major - minor) / (major + minor)
+        # Hu moment invariants (7 values, log-scaled for numerical stability).
+        mask_uint8 = (region.image.astype(np.uint8)) * 255
+        moments = cv2.moments(mask_uint8)
+        hu_raw = cv2.HuMoments(moments).flatten()
+        hu = np.sign(hu_raw) * np.log10(np.abs(hu_raw) + 1e-30)
 
         # Optionally convert pixel units to physical units.
         if self.pixel_size_um is not None:
@@ -155,19 +155,15 @@ class MorphologyExtractor:
             perimeter *= self.pixel_size_um
             major *= self.pixel_size_um
             minor *= self.pixel_size_um
-            cx *= self.pixel_size_um
-            cy *= self.pixel_size_um
 
         return {
             "area": area,
             "perimeter": perimeter,
-            "centroid_x": cx,
-            "centroid_y": cy,
             "major_axis": major,
             "minor_axis": minor,
             "aspect_ratio": aspect_ratio,
             "eccentricity": eccentricity,
             "circularity": circularity,
             "solidity": solidity,
-            "deformation_index": deformation_index,
+            **{f"hu_{i}": float(hu[i]) for i in range(7)},
         }

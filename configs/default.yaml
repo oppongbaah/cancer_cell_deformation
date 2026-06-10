@@ -28,13 +28,7 @@ unet:
   in_channels: 1
   base_features: 64
 
-# ─── MegaNet ─────────────────────────────────────────────────────────────────
-meganet:
-  in_channels: 1
-  n_outputs: 1          # 1 = deformation index only; 4 = [AR, D, area, perimeter]
-  dropout_p: 0.3
-
-# ─── Training (shared defaults) ──────────────────────────────────────────────
+# ─── Training ────────────────────────────────────────────────────────────────
 training:
   epochs: 50
   batch_size: 16
@@ -56,13 +50,12 @@ features:
 
 # ─── Classification ──────────────────────────────────────────────────────────
 classification:
-  classifier: "svm"     # "svm" | "rf" | "dt"
   scale_features: true
   random_state: 42
 
 # ─── Biomechanics ────────────────────────────────────────────────────────────
 biomechanics:
-  metric: "deformation_index"   # primary deformation signal
+  metric: "aspect_ratio"        # primary deformation signal
   window_s: null                # sliding-window width in seconds; null = disabled
   laser_power_mW: 0.0
   trap_current_mA: 0.0

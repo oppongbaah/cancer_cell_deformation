@@ -17,7 +17,6 @@ from celldform.segmentation.unet import UNet
 from celldform.features.extractor import MorphologyExtractor
 from celldform.classification.classifiers import CellClassifier
 from celldform.biomechanics.analysis import DeformationAnalyzer
-from celldform.models.meganet import MegaNet
 from celldform.models.checkpoint import CheckpointManager
 
 __all__ = [
@@ -27,6 +26,5 @@ __all__ = [
     "MorphologyExtractor",
     "CellClassifier",
     "DeformationAnalyzer",
-    "MegaNet",
     "CheckpointManager",
 ]

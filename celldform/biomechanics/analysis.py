@@ -56,7 +56,7 @@ class DeformationAnalyzer:
         via :meth:`set_condition`.
     metric:
         Which feature column to use as the primary deformation signal.
-        ``"deformation_index"`` (Eq. 4) or ``"aspect_ratio"`` (Eq. 6).
+        Defaults to ``"aspect_ratio"``; any column from MorphologyExtractor works.
     window_s:
         Sliding-window width in seconds for local RoD estimation.
         Pass *None* to skip sliding-window computation.
@@ -66,7 +66,7 @@ class DeformationAnalyzer:
         self,
         laser_power_mW: float = 0.0,
         trap_current_mA: float = 0.0,
-        metric: str = "deformation_index",
+        metric: str = "aspect_ratio",
         window_s: Optional[float] = None,
     ) -> None:
         self.condition = ExperimentCondition(

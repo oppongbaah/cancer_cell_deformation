@@ -2,7 +2,6 @@
 Console entry points registered in pyproject.toml:
 
   celldform-train-unet  → train_unet()
-  celldform-train-cnn   → train_cnn()
   celldform-infer       → infer()
 
 Run each with --help for usage.
@@ -53,42 +52,6 @@ def train_unet() -> None:
     print(f"[celldform] Training U-Net  epochs={epochs}  device={device}  ckpt={ckpt_dir}")
     print("[celldform] Initialise your DataLoaders and call SegmentationTrainer.fit().")
     print("            See scripts/train_unet.py for a complete example.")
-
-
-# ---------------------------------------------------------------------------
-# train_cnn
-# ---------------------------------------------------------------------------
-
-def train_cnn() -> None:
-    """CLI entry point: train MegaNet for deformation regression."""
-    parser = argparse.ArgumentParser(
-        prog="celldform-train-cnn",
-        description="Train MegaNet CNN for deformation parameter regression.",
-    )
-    parser.add_argument("--config", default="configs/default.yaml")
-    parser.add_argument("--epochs", type=int, default=None)
-    parser.add_argument("--device", default=None)
-    parser.add_argument("--n-outputs", type=int, default=None,
-                        help="Number of regression targets.")
-    args = parser.parse_args()
-
-    import yaml
-
-    cfg_path = Path(args.config)
-    if not cfg_path.exists():
-        print(f"[ERROR] Config not found: {cfg_path}", file=sys.stderr)
-        sys.exit(1)
-
-    with open(cfg_path) as fh:
-        cfg = yaml.safe_load(fh)
-
-    train_cfg = cfg.get("training", {})
-    epochs = args.epochs or train_cfg.get("epochs", 100)
-    n_out = args.n_outputs or cfg.get("meganet", {}).get("n_outputs", 1)
-    device = args.device or cfg.get("device", None)
-
-    print(f"[celldform] Training MegaNet  epochs={epochs}  n_outputs={n_out}  device={device}")
-    print("            See scripts/train_cnn.py for a complete example.")
 
 
 # ---------------------------------------------------------------------------

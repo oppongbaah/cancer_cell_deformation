@@ -1,4 +1,3 @@
-"""Models — MegaNet CNN regression head and checkpoint I/O."""
-from celldform.models.meganet import MegaNet
+"""Models — checkpoint I/O for U-Net and scikit-learn classifiers."""
 from celldform.models.checkpoint import CheckpointManager
-__all__ = ["MegaNet", "CheckpointManager"]
+__all__ = ["CheckpointManager"]
