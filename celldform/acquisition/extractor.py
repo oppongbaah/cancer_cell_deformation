@@ -7,23 +7,29 @@ Supports two temporal sampling modes:
 
 Trapped-cell-aware extraction:
   When ``change_threshold`` is set, each candidate frame is analysed to locate
-  the trapped cell — identified as the largest dark blob in the image (the
-  trapped cell appears darker than surrounding cells because it absorbs /
-  scatters more laser light).
-
-  The centroid of that dark blob is computed and compared to the centroid from
-  the last saved frame.  A new frame is saved only when the Euclidean
-  displacement of the centroid exceeds ``change_threshold`` pixels:
+  the trapped cell and track its position.  A new frame is saved only when the
+  trapped cell centroid has moved by more than ``change_threshold`` pixels:
 
       displacement = sqrt((cx - cx_prev)² + (cy - cy_prev)²)
 
-  This targets the trapped cell specifically and ignores global background
-  changes, making it sensitive to even small movements while avoiding
-  redundant near-duplicate frames.
+  Cell detection uses three cues derived from the physics of the experiment:
 
-  ``dark_percentile`` controls how dark a pixel must be to be considered part
-  of a cell.  The bottom 20 % of pixel intensities (default) reliably captures
-  the trapped cell in typical optical tweezer recordings.
+  1. **Spatial channel filter** — cells flow in a narrow vertical channel that
+     runs through the horizontal centre of the image.  ``channel_width``
+     (fraction of image width, default 0.30) defines how wide this strip is.
+     Only blobs whose centroids fall inside this strip are considered.
+
+  2. **Circularity filter** — all cells are approximately circular.  Each dark
+     blob found inside the channel is tested:
+         circularity = 4π × area / perimeter²  ∈ [0, 1]
+     Blobs below ``min_circularity`` (default 0.60) are rejected.
+
+  3. **Intensity selection** — among the remaining circular blobs, the trapped
+     cell is the darkest one (lowest mean pixel intensity inside the contour).
+     The trapped cell absorbs / scatters more laser light and therefore appears
+     darker than free-flowing cells.
+
+  When no qualifying blob is found the frame is always saved (safe fallback).
 
 Each extracted frame is saved as ``<video_stem>_<index>.<format>``.  A
 per-video CSV manifest records index, timestamp, centroid position, and
@@ -56,12 +62,18 @@ class FrameExtractor:
     image_format:
         ``"png"`` (lossless) or ``"tiff"``.
     change_threshold:
-        Minimum Euclidean displacement (in pixels) of the trapped cell centroid
-        between the current frame and the last saved frame required to save a
-        new frame.  ``None`` disables tracking and saves every candidate frame.
+        Minimum Euclidean displacement (pixels) of the trapped cell centroid
+        between the current and the last saved frame required to save a new
+        frame.  ``None`` disables tracking and saves every candidate frame.
     dark_percentile:
-        Pixels at or below this intensity percentile are treated as the trapped
-        cell region.  Default ``20`` (bottom 20 % of frame intensities).
+        Pixels at or below this intensity percentile *within the channel* are
+        treated as cell candidates.  Default ``20`` (bottom 20 %).
+    channel_width:
+        Width of the vertical flow channel as a fraction of the image width,
+        centred horizontally.  Default ``0.30`` (±15 % around the midpoint).
+    min_circularity:
+        Minimum circularity score (``4π·area/perimeter²``, 0–1) for a blob to
+        be considered a cell.  Default ``0.60``.
     """
 
     def __init__(
@@ -72,6 +84,8 @@ class FrameExtractor:
         image_format: str = "png",
         change_threshold: Optional[float] = None,
         dark_percentile: float = 20.0,
+        channel_width: float = 0.30,
+        min_circularity: float = 0.60,
     ) -> None:
         self.video_path = Path(video_path)
         self.output_dir = Path(output_dir)
@@ -79,6 +93,8 @@ class FrameExtractor:
         self.image_format = image_format.lstrip(".")
         self.change_threshold = change_threshold
         self.dark_percentile = dark_percentile
+        self.channel_width = channel_width
+        self.min_circularity = min_circularity
 
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -135,7 +151,12 @@ class FrameExtractor:
 
             if frame_idx % step == 0:
                 processed = self._process_frame(frame)
-                centroid = _find_trapped_cell_centroid(processed, self.dark_percentile)
+                centroid = _find_trapped_cell_centroid(
+                    processed,
+                    dark_percentile=self.dark_percentile,
+                    channel_width=self.channel_width,
+                    min_circularity=self.min_circularity,
+                )
                 displacement = _centroid_displacement(centroid, last_centroid)
 
                 # Save if: first frame, tracking disabled, or cell has moved enough.
@@ -242,32 +263,75 @@ class FrameExtractor:
 def _find_trapped_cell_centroid(
     frame: np.ndarray,
     dark_percentile: float = 20.0,
+    channel_width: float = 0.30,
+    min_circularity: float = 0.60,
 ) -> Optional[Tuple[float, float]]:
-    """Locate the trapped cell and return its centroid.
+    """Locate the trapped cell and return its centroid in full-frame coordinates.
 
-    The trapped cell appears darker than surrounding cells. We threshold at
-    the given intensity percentile to isolate dark pixels, apply a small
-    morphological open to remove noise, then return the centroid of the
-    largest remaining dark blob.
+    Detection uses three constraints that reflect the physics of the experiment:
 
-    Returns ``None`` if no dark region is found.
+    1. **Channel mask** — cells travel in a vertical channel centred on the
+       horizontal midpoint of the image.  Only the strip spanning
+       ``channel_width`` × image_width around the centre is searched.
+
+    2. **Circularity** — all cells are approximately circular.
+       Blobs with ``4π·area / perimeter²`` below *min_circularity* are rejected.
+
+    3. **Darkest wins** — among the remaining circular blobs the trapped cell
+       is the one with the lowest mean pixel intensity.
+
+    Returns ``None`` when no qualifying circular blob is found inside the
+    channel, which causes the frame to be saved as a safe fallback.
     """
-    threshold = float(np.percentile(frame, dark_percentile))
-    dark_mask = (frame <= threshold).astype(np.uint8)
+    h, w = frame.shape[:2]
+    x0 = int(w * (0.5 - channel_width / 2))
+    x1 = int(w * (0.5 + channel_width / 2))
+    roi = frame[:, x0:x1]
 
-    # Remove isolated noise pixels.
+    # Gaussian blur before thresholding — smooths JPEG/codec compression
+    # artefacts on cell boundaries so that circularity measurements are stable.
+    blurred = cv2.GaussianBlur(roi, (5, 5), 0)
+    threshold = float(np.percentile(blurred, dark_percentile))
+    dark_mask = (blurred <= threshold).astype(np.uint8)
+
+    # Open: remove isolated noise pixels.
+    # Close: fill small gaps caused by codec artefacts on the cell boundary.
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
     dark_mask = cv2.morphologyEx(dark_mask, cv2.MORPH_OPEN, kernel)
+    dark_mask = cv2.morphologyEx(dark_mask, cv2.MORPH_CLOSE, kernel)
 
-    num_labels, _, stats, centroids = cv2.connectedComponentsWithStats(dark_mask)
+    contours, _ = cv2.findContours(dark_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-    if num_labels < 2:   # only background label found
-        return None
+    best_centroid: Optional[Tuple[float, float]] = None
+    best_mean_intensity = float("inf")
 
-    # Skip background (label 0); find the largest dark blob.
-    largest = int(np.argmax(stats[1:, cv2.CC_STAT_AREA])) + 1
-    cx, cy = centroids[largest]
-    return float(cx), float(cy)
+    for cnt in contours:
+        area = cv2.contourArea(cnt)
+        if area < 20:
+            continue
+        perimeter = cv2.arcLength(cnt, closed=True)
+        if perimeter == 0:
+            continue
+        circularity = 4.0 * np.pi * area / (perimeter ** 2)
+        if circularity < min_circularity:
+            continue
+
+        # Mean intensity inside this contour (lower = darker = more likely trapped).
+        blob_mask = np.zeros(roi.shape[:2], dtype=np.uint8)
+        cv2.drawContours(blob_mask, [cnt], -1, 255, thickness=cv2.FILLED)
+        mean_intensity = float(cv2.mean(roi, mask=blob_mask)[0])
+
+        if mean_intensity < best_mean_intensity:
+            best_mean_intensity = mean_intensity
+            M = cv2.moments(cnt)
+            if M["m00"] == 0:
+                continue
+            # Convert from ROI-local x to full-frame x.
+            cx = M["m10"] / M["m00"] + x0
+            cy = M["m01"] / M["m00"]
+            best_centroid = (float(cx), float(cy))
+
+    return best_centroid
 
 
 def _centroid_displacement(

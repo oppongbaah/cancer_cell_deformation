@@ -108,7 +108,9 @@ class AcquisitionCfg:
     max_frames: Optional[int] = None
     image_format: str = "png"
     change_threshold: Optional[float] = 2.0  # min trapped-cell centroid displacement (px); null = disabled
-    dark_percentile: float = 20.0             # bottom X% of pixel intensities = trapped cell region
+    dark_percentile: float = 20.0             # bottom X% of channel intensities = candidate cells
+    channel_width: float = 0.30               # vertical channel width as fraction of image width (centred)
+    min_circularity: float = 0.60             # min 4π·area/perimeter² score to accept a blob as a cell
 
 
 @dataclass
@@ -302,6 +304,8 @@ def _parse_acquisition(ac: dict) -> AcquisitionCfg:
         image_format=str(ac.get("image_format", "png")),
         change_threshold=ac.get("change_threshold", 2.0),
         dark_percentile=float(ac.get("dark_percentile", 20.0)),
+        channel_width=float(ac.get("channel_width", 0.30)),
+        min_circularity=float(ac.get("min_circularity", 0.60)),
     )
 
 

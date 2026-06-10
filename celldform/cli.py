@@ -50,9 +50,19 @@ def extract_frames() -> None:
                         ))
     parser.add_argument("--dark-percentile", type=float, default=None,
                         help=(
-                            "Pixels at or below this intensity percentile (0–100) are treated as "
-                            "the trapped cell region — the trapped cell appears darker than "
-                            "surrounding cells. Default: 20. Overrides config acquisition.dark_percentile."
+                            "Bottom X% of channel pixel intensities treated as candidate cells. "
+                            "Default: 20. Overrides config acquisition.dark_percentile."
+                        ))
+    parser.add_argument("--channel-width", type=float, default=None,
+                        help=(
+                            "Width of the vertical flow channel as a fraction of image width, "
+                            "centred at the horizontal midpoint (e.g. 0.30 = ±15%% from centre). "
+                            "Overrides config acquisition.channel_width."
+                        ))
+    parser.add_argument("--min-circularity", type=float, default=None,
+                        help=(
+                            "Minimum circularity (4π·area/perimeter², 0–1) for a blob to be "
+                            "accepted as a cell. Default: 0.60. Overrides config acquisition.min_circularity."
                         ))
     args = parser.parse_args()
 
@@ -77,6 +87,8 @@ def extract_frames() -> None:
     target_size      = tuple(args.target_size) if args.target_size else conf.preprocessing.target_size
     change_threshold = args.change_threshold if args.change_threshold is not None else conf.acquisition.change_threshold
     dark_percentile  = args.dark_percentile  if args.dark_percentile  is not None else conf.acquisition.dark_percentile
+    channel_width    = args.channel_width    if args.channel_width    is not None else conf.acquisition.channel_width
+    min_circularity  = args.min_circularity  if args.min_circularity  is not None else conf.acquisition.min_circularity
 
     print(f"[celldform] Video            : {video_path}")
     print(f"[celldform] Output dir       : {output_dir}")
@@ -88,7 +100,9 @@ def extract_frames() -> None:
         print(f"[celldform] Sampling         : every {every_n} frame(s)")
     if change_threshold is not None:
         print(f"[celldform] Change threshold : {change_threshold} px  (trapped-cell centroid displacement)")
-        print(f"[celldform] Dark percentile  : {dark_percentile}%  (intensity cutoff for cell detection)")
+        print(f"[celldform] Channel width    : {channel_width:.0%} of image width (centred)")
+        print(f"[celldform] Dark percentile  : {dark_percentile}%  (candidate cell threshold)")
+        print(f"[celldform] Min circularity  : {min_circularity}")
     else:
         print(f"[celldform] Change threshold : disabled (saving all candidates)")
     if max_frames:
@@ -102,6 +116,8 @@ def extract_frames() -> None:
         image_format=image_format,
         change_threshold=change_threshold,
         dark_percentile=dark_percentile,
+        channel_width=channel_width,
+        min_circularity=min_circularity,
     )
 
     frames = extractor.extract(

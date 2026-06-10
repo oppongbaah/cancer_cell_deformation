@@ -79,7 +79,10 @@ acquisition:
   every_n: 1
   max_frames: null
   image_format: "png"
-  change_threshold: 2.0    # min trapped-cell centroid displacement in pixels to save a frame;
+  change_threshold: 2.0    # min trapped-cell centroid displacement (pixels) to save a frame;
                             # null = save every candidate frame regardless of movement
-  dark_percentile: 20.0    # pixels at or below this intensity percentile = trapped cell region
-                            # (the trapped cell is darker than surrounding cells)
+  dark_percentile: 20.0    # bottom X% of channel pixel intensities = candidate cell blobs
+  channel_width: 0.30      # width of the vertical flow channel as a fraction of image width,
+                            # centred at the horizontal midpoint (e.g. 0.30 = ±15% from centre)
+  min_circularity: 0.60    # minimum blob circularity (4π·area/perimeter²) to be treated as a cell;
+                            # 1.0 = perfect circle; reject non-circular noise with lower values
