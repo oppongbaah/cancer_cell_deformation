@@ -107,6 +107,8 @@ class AcquisitionCfg:
     every_n: int = 1
     max_frames: Optional[int] = None
     image_format: str = "png"
+    change_threshold: Optional[float] = 2.0  # min trapped-cell centroid displacement (px); null = disabled
+    dark_percentile: float = 20.0             # bottom X% of pixel intensities = trapped cell region
 
 
 @dataclass
@@ -298,6 +300,8 @@ def _parse_acquisition(ac: dict) -> AcquisitionCfg:
         every_n=int(ac.get("every_n", 1)),
         max_frames=ac.get("max_frames", None),
         image_format=str(ac.get("image_format", "png")),
+        change_threshold=ac.get("change_threshold", 2.0),
+        dark_percentile=float(ac.get("dark_percentile", 20.0)),
     )
 
 

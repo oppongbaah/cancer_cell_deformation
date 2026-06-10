@@ -75,7 +75,11 @@ device: null    # null → auto-detect (cuda if available, else cpu)
 
 # ─── Frame extraction ────────────────────────────────────────────────────────
 acquisition:
-  target_fps: null    # null = extract all frames; float = downsample to this rate
+  target_fps: null         # null = extract all frames; float = downsample to this rate
   every_n: 1
   max_frames: null
   image_format: "png"
+  change_threshold: 2.0    # min trapped-cell centroid displacement in pixels to save a frame;
+                            # null = save every candidate frame regardless of movement
+  dark_percentile: 20.0    # pixels at or below this intensity percentile = trapped cell region
+                            # (the trapped cell is darker than surrounding cells)

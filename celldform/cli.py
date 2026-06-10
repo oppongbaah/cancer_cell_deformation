@@ -41,6 +41,19 @@ def extract_frames() -> None:
                         help="Resize each frame to W H pixels (overrides config).")
     parser.add_argument("--format", default=None, choices=["png", "tiff"],
                         help="Output image format (overrides config).")
+    parser.add_argument("--change-threshold", type=float, default=None,
+                        help=(
+                            "Minimum trapped-cell centroid displacement (pixels) required to save "
+                            "a frame. A frame is skipped when the trapped cell has not moved this "
+                            "far from its position in the last saved frame. "
+                            "Overrides config acquisition.change_threshold."
+                        ))
+    parser.add_argument("--dark-percentile", type=float, default=None,
+                        help=(
+                            "Pixels at or below this intensity percentile (0–100) are treated as "
+                            "the trapped cell region — the trapped cell appears darker than "
+                            "surrounding cells. Default: 20. Overrides config acquisition.dark_percentile."
+                        ))
     args = parser.parse_args()
 
     if args.every_n is not None and args.target_fps is not None:
@@ -56,23 +69,30 @@ def extract_frames() -> None:
 
     conf = load_config(args.config)
 
-    output_dir   = args.output_dir  or conf.data.frames_dir
-    every_n      = args.every_n     if args.every_n     is not None else conf.acquisition.every_n
-    target_fps   = args.target_fps  if args.target_fps  is not None else conf.acquisition.target_fps
-    max_frames   = args.max_frames  if args.max_frames  is not None else conf.acquisition.max_frames
-    image_format = args.format      or conf.acquisition.image_format
-    target_size  = tuple(args.target_size) if args.target_size else conf.preprocessing.target_size
+    output_dir       = args.output_dir    or conf.data.frames_dir
+    every_n          = args.every_n       if args.every_n          is not None else conf.acquisition.every_n
+    target_fps       = args.target_fps    if args.target_fps        is not None else conf.acquisition.target_fps
+    max_frames       = args.max_frames    if args.max_frames        is not None else conf.acquisition.max_frames
+    image_format     = args.format        or conf.acquisition.image_format
+    target_size      = tuple(args.target_size) if args.target_size else conf.preprocessing.target_size
+    change_threshold = args.change_threshold if args.change_threshold is not None else conf.acquisition.change_threshold
+    dark_percentile  = args.dark_percentile  if args.dark_percentile  is not None else conf.acquisition.dark_percentile
 
-    print(f"[celldform] Video      : {video_path}")
-    print(f"[celldform] Output dir : {output_dir}")
-    print(f"[celldform] Target size: {target_size[0]}×{target_size[1]}")
-    print(f"[celldform] Format     : {image_format}")
+    print(f"[celldform] Video            : {video_path}")
+    print(f"[celldform] Output dir       : {output_dir}")
+    print(f"[celldform] Target size      : {target_size[0]}×{target_size[1]}")
+    print(f"[celldform] Format           : {image_format}")
     if target_fps:
-        print(f"[celldform] Sampling   : {target_fps} fps")
+        print(f"[celldform] Sampling         : {target_fps} fps")
     else:
-        print(f"[celldform] Sampling   : every {every_n} frame(s)")
+        print(f"[celldform] Sampling         : every {every_n} frame(s)")
+    if change_threshold is not None:
+        print(f"[celldform] Change threshold : {change_threshold} px  (trapped-cell centroid displacement)")
+        print(f"[celldform] Dark percentile  : {dark_percentile}%  (intensity cutoff for cell detection)")
+    else:
+        print(f"[celldform] Change threshold : disabled (saving all candidates)")
     if max_frames:
-        print(f"[celldform] Max frames : {max_frames}")
+        print(f"[celldform] Max frames       : {max_frames}")
     print()
 
     extractor = FrameExtractor(
@@ -80,6 +100,8 @@ def extract_frames() -> None:
         output_dir=output_dir,
         target_size=target_size,
         image_format=image_format,
+        change_threshold=change_threshold,
+        dark_percentile=dark_percentile,
     )
 
     frames = extractor.extract(
@@ -89,7 +111,7 @@ def extract_frames() -> None:
     )
 
     print(f"[celldform] Extracted {len(frames)} frames → {output_dir}")
-    print(f"[celldform] Manifest  → {Path(output_dir) / 'manifest.csv'}")
+    print(f"[celldform] Manifest  → {Path(output_dir) / (video_path.stem + '_manifest.csv')}")
 
 
 # ---------------------------------------------------------------------------
