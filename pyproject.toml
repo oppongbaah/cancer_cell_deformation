@@ -44,9 +44,10 @@ api = ["fastapi>=0.100", "uvicorn>=0.23"]
 dev = ["pytest>=7.4", "pytest-cov>=4.1", "black>=23.0", "ruff>=0.1"]
 
 [project.scripts]
-celldform-extract-frames = "celldform.cli:extract_frames"
-celldform-train-unet     = "celldform.cli:train_unet"
-celldform-infer          = "celldform.cli:infer"
+celldform-extract-frames    = "celldform.cli:extract_frames"
+celldform-organize-dataset  = "celldform.cli:organize_dataset"
+celldform-train-unet        = "celldform.cli:train_unet"
+celldform-infer             = "celldform.cli:infer"
 
 [project.urls]
 Repository = "https://github.com/oppongbaah/celldform"

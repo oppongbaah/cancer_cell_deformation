@@ -197,6 +197,67 @@ class FrameExtractor:
         self._write_manifest(manifest_rows)
         return frames
 
+    def seek_extract(
+        self,
+        targets: List[int],
+        file_stem: Optional[str] = None,
+    ) -> List[np.ndarray]:
+        """Extract specific frames by index via direct seek.
+
+        Unlike ``extract()``, this does not decode every intermediate frame —
+        it calls ``cap.set(CAP_PROP_POS_FRAMES)`` for each target, making it
+        efficient for sparse sampling over large videos or network-mounted paths.
+
+        Parameters
+        ----------
+        targets:
+            Ordered list of frame indices to extract.
+        file_stem:
+            Base name for output files.  Defaults to ``video_path.stem``.
+            Pass a clean string (e.g. ``"high_cell1"``) when the video filename
+            contains spaces or other characters you don't want in filenames.
+
+        Returns
+        -------
+        List of saved frames as uint8 NumPy arrays (H × W).
+        """
+        cap = cv2.VideoCapture(str(self.video_path))
+        if not cap.isOpened():
+            raise IOError(f"Cannot open video: {self.video_path}")
+
+        native_fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+        stem = file_stem or self.video_path.stem
+
+        frames: List[np.ndarray] = []
+        manifest_rows: List[dict] = []
+
+        for saved_idx, frame_index in enumerate(targets):
+            cap.set(cv2.CAP_PROP_POS_FRAMES, frame_index)
+            ret, frame = cap.read()
+            if not ret:
+                continue
+
+            processed = self._process_frame(frame)
+            timestamp_s = frame_index / native_fps
+
+            out_path = self.output_dir / f"{stem}_{frame_index:06d}.{self.image_format}"
+            cv2.imwrite(str(out_path), processed)
+
+            frames.append(processed)
+            manifest_rows.append({
+                "source":      str(self.video_path),
+                "frame_index": frame_index,
+                "saved_index": saved_idx,
+                "timestamp_s": round(timestamp_s, 6),
+                "output_path": str(out_path),
+                "width":       processed.shape[1],
+                "height":      processed.shape[0],
+            })
+
+        cap.release()
+        self._write_manifest(manifest_rows)
+        return frames
+
     def stream(
         self,
         every_n: int = 1,

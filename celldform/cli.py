@@ -203,6 +203,16 @@ def infer() -> None:
     print("            See scripts/infer.py for a complete example.")
 
 
+# ---------------------------------------------------------------------------
+# organize_dataset
+# ---------------------------------------------------------------------------
+
+def organize_dataset() -> None:
+    """CLI entry point: organise raw data into pipeline-ready frame folders."""
+    from celldform.acquisition.organiser import main
+    main()
+
+
 def _cuda_available() -> bool:
     try:
         import torch
