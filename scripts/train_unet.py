@@ -2,15 +2,24 @@
 """
 Train U-Net for cancer cell segmentation.
 
+Preprocessing is NOT applied here — run preprocess_frames.py --masks first to
+produce the 256×256 PNGs that this script expects.
+
+Pre-training workflow:
+    1. python scripts/annotate.py
+    2. python scripts/validate_masks.py
+    3. python scripts/preprocess_frames.py --masks
+    4. python scripts/train_unet.py --config configs/default.yaml
+
 Usage (local):
     python scripts/train_unet.py --config configs/default.yaml
 
 Usage (HPC / Anvil):
-    sbatch scripts/hpc_train_unet.sh   # wraps this script with SLURM directives
+    sbatch scripts/hpc_train_unet.sh
 
 The script expects two directories configured in the YAML:
-    data.frames_dir — preprocessed grayscale PNG frames (256×256)
-    data.masks_dir  — corresponding binary PNG masks (same basename)
+    data.frames_dir — preprocessed 256×256 grayscale PNG frames
+    data.masks_dir  — corresponding 256×256 binary PNG masks (same basename)
 
 File pairs are matched by filename stem.  The dataset is split into
 train / val / test according to data.val_split and data.test_split.
@@ -29,7 +38,6 @@ import torch
 from torch.utils.data import DataLoader, Dataset
 
 from celldform.config import load as load_config
-from celldform.preprocessing.pipeline import PreprocessingConfig, PreprocessingPipeline
 from celldform.segmentation.trainer import SegmentationTrainer
 from celldform.segmentation.unet import UNet
 from celldform.utils.visualization import Visualizer
@@ -40,13 +48,16 @@ from celldform.utils.visualization import Visualizer
 # ---------------------------------------------------------------------------
 
 class CellDataset(Dataset):
-    """Loads (image, mask) pairs from paired frame/mask directories."""
+    """Loads pre-processed (image, mask) pairs from paired directories.
 
-    def __init__(self, frame_paths, mask_paths, preprocessor: PreprocessingPipeline) -> None:
+    Expects frames that have already been processed by preprocess_frames.py:
+    256×256 uint8 PNGs.  No preprocessing is applied here.
+    """
+
+    def __init__(self, frame_paths, mask_paths) -> None:
         assert len(frame_paths) == len(mask_paths)
         self.frame_paths = frame_paths
         self.mask_paths = mask_paths
-        self.preprocessor = preprocessor
 
     def __len__(self):
         return len(self.frame_paths)
@@ -57,10 +68,10 @@ class CellDataset(Dataset):
         frame = cv2.imread(str(self.frame_paths[idx]), cv2.IMREAD_GRAYSCALE)
         mask = cv2.imread(str(self.mask_paths[idx]), cv2.IMREAD_GRAYSCALE)
 
-        frame_proc = self.preprocessor(frame)           # float32 (H, W)
-        mask_bin = (mask > 127).astype(np.float32)
+        frame_f = frame.astype(np.float32) / 255.0     # normalise to [0, 1]
+        mask_bin = (mask > 127).astype(np.float32)     # binarise to 0.0 / 1.0
 
-        frame_t = torch.from_numpy(frame_proc[np.newaxis])   # (1, H, W)
+        frame_t = torch.from_numpy(frame_f[np.newaxis])    # (1, H, W)
         mask_t = torch.from_numpy(mask_bin[np.newaxis])
         return frame_t, mask_t
 
@@ -88,7 +99,18 @@ def main():
     frames_dir = Path(conf.data.frames_dir)
     masks_dir = Path(conf.data.masks_dir)
 
-    frame_paths = sorted(frames_dir.glob(f"*.{conf.acquisition.image_format}"))
+    if not frames_dir.exists():
+        raise FileNotFoundError(
+            f"Frames directory not found: {frames_dir}\n"
+            "Run: python scripts/preprocess_frames.py --masks"
+        )
+    if not masks_dir.exists():
+        raise FileNotFoundError(
+            f"Masks directory not found: {masks_dir}\n"
+            "Run: python scripts/preprocess_frames.py --masks"
+        )
+
+    frame_paths = sorted(frames_dir.glob("*.png"))
     mask_paths = [masks_dir / p.name for p in frame_paths]
 
     pairs = [(f, m) for f, m in zip(frame_paths, mask_paths) if m.exists()]
@@ -111,16 +133,9 @@ def main():
         f"train: {len(train_pairs)}  val: {len(val_pairs)}  test: {len(test_pairs)}"
     )
 
-    pre_cfg = PreprocessingConfig(
-        output_size=conf.preprocessing.target_size,
-        median_kernel=conf.preprocessing.median_kernel,
-        clahe_clip_limit=conf.preprocessing.clahe_clip_limit,
-    )
-    preprocessor = PreprocessingPipeline(pre_cfg)
-
     def make_loader(pairs, shuffle):
         fs, ms = zip(*pairs)
-        ds = CellDataset(list(fs), list(ms), preprocessor)
+        ds = CellDataset(list(fs), list(ms))
         return DataLoader(
             ds,
             batch_size=conf.training.batch_size,
