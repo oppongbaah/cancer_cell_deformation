@@ -4,8 +4,8 @@
 
 # ─── Data paths ──────────────────────────────────────────────────────────────
 data:
-  frames_dir: "data/frames"
-  masks_dir: "data/masks"
+  frames_dir: "data/preprocessed/train/01_annotate_pool/inputs"
+  masks_dir:  "data/preprocessed/train/01_annotate_pool/labels"
   features_csv: "data/features.csv"
   labels_csv: "data/labels.csv"
   val_split: 0.15    # fraction held out for validation during training

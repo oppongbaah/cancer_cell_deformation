@@ -154,13 +154,21 @@ class SegmentationTrainer:
 
         return history
 
-    def evaluate(self) -> Dict[str, float]:
-        """Compute all segmentation metrics on the validation set."""
+    def evaluate(self, loader=None) -> Dict[str, float]:
+        """Compute all segmentation metrics on a DataLoader.
+
+        Parameters
+        ----------
+        loader:
+            Any DataLoader of (image, mask) pairs.  Defaults to the
+            validation loader used during training when *None*.
+        """
+        loader = loader or self.val_loader
         self.model.eval()
         all_preds, all_targets = [], []
 
         with torch.no_grad():
-            for images, masks in self.val_loader:
+            for images, masks in loader:
                 images = images.to(self.device)
                 logits = self.model(images)
                 preds = (torch.sigmoid(logits) >= 0.5).float().cpu()
