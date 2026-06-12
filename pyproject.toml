@@ -39,9 +39,11 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-hpc = ["mpi4py>=3.1"]
-api = ["fastapi>=0.100", "uvicorn>=0.23"]
-dev = ["pytest>=7.4", "pytest-cov>=4.1", "black>=23.0", "ruff>=0.1"]
+hpc        = ["mpi4py>=3.1"]
+api        = ["fastapi>=0.100", "uvicorn>=0.23"]
+annotation = ["napari[pyqt6]>=0.4.19"]
+docs       = ["mkdocs>=1.5", "mkdocs-material>=9.4", "mkdocstrings[python]>=0.24"]
+dev        = ["pytest>=7.4", "pytest-cov>=4.1", "black>=23.0", "ruff>=0.1"]
 
 [project.scripts]
 celldform-extract-frames    = "celldform.cli:extract_frames"
