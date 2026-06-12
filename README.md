@@ -11,7 +11,7 @@
 
 `celldform` is a Python library for analysing the mechanical deformation of breast cancer cells in a dual-beam optical tweezer setup. It quantifies how HER2 expression affects cell deformability through a 7-stage deep learning pipeline: frame acquisition → preprocessing → U-Net segmentation → feature extraction → classification → biomechanical analysis → real-time integration.
 
-**Full documentation:** `docs/` — build with `mkdocs serve` or read the source directly.
+**Full documentation:** [oppongbaah.github.io/celldform](https://oppongbaah.github.io/celldform) — auto-deployed on every push to `main`.
 
 ---
 
@@ -24,7 +24,6 @@ python3 -m venv .venv && source .venv/bin/activate
 
 pip install -e ".[dev]"          # core + dev tools
 pip install -e ".[annotation]"   # adds napari for mask annotation
-pip install -e ".[docs]"         # adds MkDocs for building documentation
 pip install -e ".[hpc]"          # adds mpi4py for Anvil / SLURM
 ```
 
@@ -61,16 +60,6 @@ celldform-infer <input> --unet-ckpt ... --classifier-ckpt ...  # Stages 1–6 in
 ```
 
 See [docs/workflow.md](docs/workflow.md) for the full step-by-step guide.
-
----
-
-## Building the documentation
-
-```bash
-pip install -e ".[docs]"
-mkdocs serve        # live preview at http://127.0.0.1:8000
-mkdocs build        # build static HTML to site/
-```
 
 ---
 
