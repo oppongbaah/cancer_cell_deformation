@@ -47,6 +47,7 @@ nav:
   - Home: index.md
   - Pipeline Overview: pipeline.md
   - Workflow Guide: workflow.md
+  - Training Results: training.md
   - Data Layout: data.md
   - Scripts Reference: scripts.md
   - CLI Reference: cli.md
