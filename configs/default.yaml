@@ -42,6 +42,8 @@ training:
   scheduler_factor: 0.5
   num_workers: 4                  # set to 0 on Windows; increase on HPC (Anvil)
   seed: 42
+  loss_alpha: 0.3                 # BCE weight in Dice+BCE loss (Dice weight = 1 - alpha)
+  loss_pos_weight: 100.0          # BCEWithLogitsLoss pos_weight; compensates ~550:1 cell/background imbalance
 
 # ─── Resume ──────────────────────────────────────────────────────────────────
 resume:

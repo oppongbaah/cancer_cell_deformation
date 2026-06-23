@@ -80,7 +80,21 @@ Each step can be toggled individually via the `enabled` dict for ablation experi
 !!! note
     `forward()` returns raw logits — sigmoid is **not** applied internally. Use `model.predict()` for thresholded binary masks. Use `BCEWithLogitsLoss` in the trainer.
 
-**Training** uses combined BCE + Dice loss (`α = 0.5`). The best checkpoint is saved by validation DSC. Supports `ReduceLROnPlateau`, cosine, or no scheduler.
+**Training** uses combined BCE + Dice loss:
+
+```
+Loss = α × BCE(pos_weight) + (1 − α) × Dice
+```
+
+| Parameter | Default | Purpose |
+|-----------|---------|---------|
+| `loss_alpha` | `0.3` | BCE weight — Dice carries 70% of the signal |
+| `loss_pos_weight` | `100.0` | Upweights cell pixels in BCE to counter ~550:1 background/cell imbalance |
+
+Both are set in `configs/default.yaml` under `training`. The best checkpoint is saved by validation DSC. Supports `ReduceLROnPlateau`, cosine, or no scheduler.
+
+!!! note "Class imbalance"
+    Cancer cells occupy roughly 0.18% of a 256×256 frame (~118 pixels out of 65,536). Without `pos_weight`, the BCE loss is dominated by background pixels and the model learns to ignore the cell entirely. `pos_weight=100` tells BCE to treat each cell pixel as if it were 100 background pixels. Increase it if recall is low; decrease it if precision is low and recall is near 1.0.
 
 **GPU:** The U-Net is the only stage that runs on the GPU. See [GPU & Hardware](gpu.md).
 

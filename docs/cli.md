@@ -55,21 +55,19 @@ celldform-extract-frames --video experiment.mp4 --change-threshold 5.0
 
 ## `celldform-train-unet`
 
-Train the U-Net segmentation model.
+Train the U-Net segmentation model. Delegates directly to `scripts/train_unet.py`.
 
 ```bash
 celldform-train-unet --config configs/default.yaml
-celldform-train-unet --config configs/default.yaml --epochs 100 --device cuda
+celldform-train-unet --config configs/default.yaml --seed 123
 ```
 
 | Option | Default | Description |
 |--------|---------|-------------|
 | `--config` | `configs/default.yaml` | YAML config file |
-| `--epochs` | config `training.epochs` | Number of training epochs |
-| `--device` | auto-detect | `cuda` or `cpu` |
-| `--checkpoint-dir` | config value | Where to save checkpoints |
+| `--seed` | config `training.seed` | Random seed override |
 
-Checkpoints written: `unet_best.pt`, `unet_last.pt`, and a `config.yaml` snapshot.
+All other training parameters (`epochs`, `device`, `loss_alpha`, `loss_pos_weight`, etc.) are set in the YAML config. Checkpoints written: `unet_best.pt`, `unet_last.pt`, and a `config.yaml` snapshot.
 
 ---
 

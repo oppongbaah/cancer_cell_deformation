@@ -136,38 +136,17 @@ def extract_frames() -> None:
 
 def train_unet() -> None:
     """CLI entry point: train the U-Net segmentation model."""
-    parser = argparse.ArgumentParser(
-        prog="celldform-train-unet",
-        description="Train U-Net for cancer cell segmentation.",
-    )
-    parser.add_argument("--config", default="configs/default.yaml",
-                        help="Path to YAML config file.")
-    parser.add_argument("--epochs", type=int, default=None,
-                        help="Override training epochs from config.")
-    parser.add_argument("--device", default=None,
-                        help="Compute device: 'cuda' or 'cpu'.")
-    parser.add_argument("--checkpoint-dir", default=None,
-                        help="Override checkpoint output directory.")
-    args = parser.parse_args()
+    import importlib.util
 
-    import yaml
-
-    cfg_path = Path(args.config)
-    if not cfg_path.exists():
-        print(f"[ERROR] Config not found: {cfg_path}", file=sys.stderr)
+    script = Path(__file__).parent.parent / "scripts" / "train_unet.py"
+    if not script.exists():
+        print(f"[ERROR] Training script not found: {script}", file=sys.stderr)
         sys.exit(1)
 
-    with open(cfg_path) as fh:
-        cfg = yaml.safe_load(fh)
-
-    train_cfg = cfg.get("training", {})
-    epochs = args.epochs or train_cfg.get("epochs", 50)
-    device = args.device or cfg.get("device", None)
-    ckpt_dir = args.checkpoint_dir or cfg.get("checkpoint_dir", "checkpoints")
-
-    print(f"[celldform] Training U-Net  epochs={epochs}  device={device}  ckpt={ckpt_dir}")
-    print("[celldform] Initialise your DataLoaders and call SegmentationTrainer.fit().")
-    print("            See scripts/train_unet.py for a complete example.")
+    spec = importlib.util.spec_from_file_location("_train_unet_script", script)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    mod.main()
 
 
 # ---------------------------------------------------------------------------

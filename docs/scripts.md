@@ -39,7 +39,7 @@ Masks are saved as uint8 PNGs with values 0 (background) / 255 (cell). Already-a
 
 ## `validate_masks.py` — mask validation gate
 
-Checks every image in a pool has a corresponding valid binary mask. Use as a pre-training gate.
+Validates the masks that are present in a pool. Iterates over masks in `data/masks/<pool>/` directly — does not require every frame to have a mask. Use as a pre-training gate.
 
 ```bash
 python scripts/validate_masks.py                          # 01_annotate_pool
@@ -49,25 +49,26 @@ python scripts/validate_masks.py --pool 02_unet_holdout
 | Option | Default | Description |
 |--------|---------|-------------|
 | `--pool` | `01_annotate_pool` | Pool folder name |
-| `--image-dir` | `data/frames/<pool>` | Override image directory |
 | `--mask-dir` | `data/masks/<pool>` | Override mask directory |
 
-**Checks performed:**
+**Checks performed on each mask that exists:**
 
 | Check | Fail condition |
 |-------|---------------|
-| Exists | No PNG file found |
 | Readable | File cannot be decoded by OpenCV |
 | Binary | Pixel values other than 0 or 255 |
 | Non-empty | No cell pixels (all zeros) |
 
-Exits with code `0` if all masks pass, `1` if any issues are found.
+Exits with code `0` if all present masks pass, `1` if any issues are found. Reports `Valid: N/N (100%)` against the masks found, not against the full frame pool.
 
 ---
 
 ## `preprocess_frames.py` — manual preprocessing
 
 Applies `PreprocessingPipeline` to frames and saves 256×256 PNGs. **Required before training.** Optionally resizes masks to match.
+
+!!! note "Mask-gated processing"
+    When `--masks` is passed, only frames that have a corresponding mask in `data/masks/<pool>/` are processed. Frames without a mask are skipped. The summary line reports how many were skipped.
 
 ```bash
 python scripts/preprocess_frames.py --masks                        # train pool

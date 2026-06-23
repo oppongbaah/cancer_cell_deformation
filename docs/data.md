@@ -62,7 +62,7 @@ data/
 
 ## Pool descriptions
 
-### `01_annotate_pool` — 248 images (U-Net training)
+### `01_annotate_pool` — 243 images (U-Net training)
 
 Source for U-Net training masks. Annotate every image before running preprocessing.
 

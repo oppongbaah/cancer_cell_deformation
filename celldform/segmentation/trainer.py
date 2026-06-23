@@ -41,11 +41,13 @@ class _DiceBCELoss(nn.Module):
     alpha controls the trade-off: loss = alpha * BCE + (1 - alpha) * Dice.
     """
 
-    def __init__(self, alpha: float = 0.5, smooth: float = 1.0) -> None:
+    def __init__(self, alpha: float = 0.3, smooth: float = 1.0, pos_weight: float = 100.0) -> None:
         super().__init__()
         self.alpha = alpha
         self.smooth = smooth
-        self.bce = nn.BCEWithLogitsLoss()
+        self.bce = nn.BCEWithLogitsLoss(
+            pos_weight=torch.tensor([pos_weight])
+        )
 
     def forward(
         self, logits: torch.Tensor, targets: torch.Tensor
@@ -97,7 +99,10 @@ class SegmentationTrainer:
         self.checkpoint_dir = Path(conf.checkpoint_dir)
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
-        self.criterion = _DiceBCELoss()
+        self.criterion = _DiceBCELoss(
+            alpha=conf.training.loss_alpha,
+            pos_weight=conf.training.loss_pos_weight,
+        ).to(self.device)
         self.optimizer = _build_optimizer(model, conf.training)
         self.scheduler = _build_scheduler(self.optimizer, conf.training)
         self.metrics = SegmentationMetrics()

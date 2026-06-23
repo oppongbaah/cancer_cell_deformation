@@ -72,6 +72,8 @@ class TrainingCfg:
     scheduler_factor: float = 0.5
     num_workers: int = 4
     seed: int = 42
+    loss_alpha: float = 0.3        # BCE weight in combined Dice+BCE loss (Dice = 1 - alpha)
+    loss_pos_weight: float = 100.0 # pos_weight for BCEWithLogitsLoss; compensates cell/background imbalance
 
 
 @dataclass
@@ -259,6 +261,8 @@ def _parse_training(t: dict) -> TrainingCfg:
         scheduler_factor=factor,
         num_workers=int(t.get("num_workers", 4)),
         seed=int(t.get("seed", 42)),
+        loss_alpha=float(t.get("loss_alpha", 0.3)),
+        loss_pos_weight=float(t.get("loss_pos_weight", 100.0)),
     )
 
 

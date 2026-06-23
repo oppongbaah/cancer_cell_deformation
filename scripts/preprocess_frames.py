@@ -161,16 +161,26 @@ def main() -> None:
     if not image_dir.exists():
         sys.exit(f"Image directory not found: {image_dir}")
 
-    images = sorted(p for p in image_dir.iterdir() if p.suffix.lower() in _EXTS)
-    if not images:
+    all_images = sorted(p for p in image_dir.iterdir() if p.suffix.lower() in _EXTS)
+    if not all_images:
         sys.exit(f"No images found in {image_dir}")
+
+    if args.masks:
+        images = [p for p in all_images if (mask_src_dir / p.with_suffix(".png").name).exists()]
+        n_skipped = len(all_images) - len(images)
+    else:
+        images = all_images
+        n_skipped = 0
+
+    if not images:
+        sys.exit(f"No images with matching masks found in {mask_src_dir}")
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
     cfg = PreprocessingConfig()
     n_compare = min(args.n_compare, len(images)) if args.compare else 0
 
-    print(f"Source frames: {image_dir}  ({len(images)} images)")
+    print(f"Source frames: {image_dir}  ({len(all_images)} total, {n_skipped} skipped — no mask)")
     print(f"Output frames: {output_dir}")
     if args.masks:
         print(f"Source masks:  {mask_src_dir}")
@@ -210,7 +220,7 @@ def main() -> None:
             suffix = " + mask" if args.masks and (mask_src_dir / path.with_suffix(".png").name).exists() else ""
             print(f"  [{i + 1}/{len(images)}] {path.name}  → frame{suffix}")
 
-    print(f"\nDone.  {len(images)} frames saved to {output_dir}")
+    print(f"\nDone.  {len(images)} frames saved to {output_dir}" + (f"  ({n_skipped} skipped)" if n_skipped else ""))
     if args.masks:
         print(f"       {n_masks_saved} masks saved to {mask_out_dir}")
     if args.compare:

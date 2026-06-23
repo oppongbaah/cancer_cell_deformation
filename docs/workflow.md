@@ -68,14 +68,13 @@ Confirm every image has a clean binary mask before preprocessing.
 python scripts/validate_masks.py
 ```
 
-Checks performed per mask:
+Validates the masks that are present — does not require every frame to have a mask. Checks performed per mask found:
 
-- **Exists** — a PNG file is present
 - **Readable** — valid image file
 - **Binary** — pixel values are strictly 0 or 255
 - **Non-empty** — at least one cell pixel (255) present
 
-Exits with code `0` if all pass, `1` if any issues found.
+Exits with code `0` if all present masks pass, `1` if any issues found. Safe to run incrementally while annotation is still in progress.
 
 ---
 
@@ -86,6 +85,8 @@ Resize frames to 256×256 and resize masks to match. **This must be run before t
 ```bash
 python scripts/preprocess_frames.py --masks
 ```
+
+Only frames that have a corresponding mask are processed — frames without a mask are skipped automatically. This means you can run this step incrementally as you annotate more images; re-run it after each annotation session to keep the preprocessed data in sync.
 
 Outputs:
 

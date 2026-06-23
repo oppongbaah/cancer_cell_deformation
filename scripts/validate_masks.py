@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 """
-Validate that every image in an annotation pool has a corresponding binary mask.
+Validate the masks that are present in the annotation pool.
 
 Checks performed per mask
 --------------------------
-1. Exists     — a PNG file is present alongside the source image
-2. Readable   — the file is a valid image OpenCV can decode
-3. Binary     — pixel values are strictly 0 or 255
-4. Non-empty  — at least one cell pixel (255) is present
+1. Readable   — the file is a valid image OpenCV can decode
+2. Binary     — pixel values are strictly 0 or 255
+3. Non-empty  — at least one cell pixel (255) is present
 
-Exit code 0 if all masks pass; non-zero otherwise (suitable for CI / pre-train
-gate scripts).
+Exit code 0 if all present masks pass; non-zero otherwise (suitable for CI /
+pre-train gate scripts).
 
 Usage
 -----
@@ -32,36 +31,29 @@ import numpy as np
 _EXTS = {".jpg", ".jpeg", ".png", ".tif", ".tiff"}
 
 
-def validate(image_dir: Path, mask_dir: Path) -> dict:
-    images = sorted(p for p in image_dir.iterdir() if p.suffix.lower() in _EXTS)
+def validate(mask_dir: Path) -> dict:
+    masks = sorted(p for p in mask_dir.iterdir() if p.suffix.lower() == ".png")
 
     results: dict = {
-        "total": len(images),
+        "total": len(masks),
         "ok": 0,
-        "missing": [],
         "unreadable": [],
         "not_binary": [],
         "empty": [],
     }
 
-    for img_path in images:
-        mask_path = mask_dir / img_path.with_suffix(".png").name
-
-        if not mask_path.exists():
-            results["missing"].append(img_path.name)
-            continue
-
+    for mask_path in masks:
         mask = cv2.imread(str(mask_path), cv2.IMREAD_GRAYSCALE)
         if mask is None:
-            results["unreadable"].append(img_path.name)
+            results["unreadable"].append(mask_path.name)
             continue
 
         if not set(np.unique(mask)).issubset({0, 255}):
-            results["not_binary"].append(img_path.name)
+            results["not_binary"].append(mask_path.name)
             continue
 
         if not np.any(mask == 255):
-            results["empty"].append(img_path.name)
+            results["empty"].append(mask_path.name)
             continue
 
         results["ok"] += 1
@@ -80,35 +72,28 @@ def _print_list(label: str, names: list[str]) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Validate annotation masks")
     parser.add_argument("--pool", default="01_annotate_pool",
-                        help="Pool folder name under data/frames/ and data/masks/")
-    parser.add_argument("--image-dir", type=Path)
-    parser.add_argument("--mask-dir", type=Path)
+                        help="Pool folder name under data/masks/")
+    parser.add_argument("--mask-dir", type=Path,
+                        help="Override mask directory")
     args = parser.parse_args()
 
-    if args.image_dir and args.mask_dir:
-        image_dir: Path = args.image_dir
-        mask_dir: Path = args.mask_dir
-    else:
-        image_dir = Path("data/frames") / args.pool
-        mask_dir = Path("data/masks") / args.pool
+    mask_dir: Path = args.mask_dir or (Path("data/masks") / args.pool)
 
-    if not image_dir.exists():
-        sys.exit(f"Image directory not found: {image_dir}")
+    if not mask_dir.exists():
+        sys.exit(f"Mask directory not found: {mask_dir}")
 
-    print(f"Images: {image_dir}")
-    print(f"Masks:  {mask_dir}\n")
+    print(f"Masks: {mask_dir}\n")
 
-    r = validate(image_dir, mask_dir)
+    r = validate(mask_dir)
 
     pct = r["ok"] / r["total"] * 100 if r["total"] else 0.0
-    print(f"Progress: {r['ok']}/{r['total']} valid  ({pct:.1f}%)")
+    print(f"Valid: {r['ok']}/{r['total']}  ({pct:.1f}%)")
 
-    _print_list("Missing", r["missing"])
     _print_list("Unreadable", r["unreadable"])
     _print_list("Not binary (values other than 0/255)", r["not_binary"])
     _print_list("Empty (no cell pixels)", r["empty"])
 
-    n_issues = sum(len(r[k]) for k in ("missing", "unreadable", "not_binary", "empty"))
+    n_issues = sum(len(r[k]) for k in ("unreadable", "not_binary", "empty"))
     if n_issues == 0:
         print("\nAll masks valid.")
         sys.exit(0)
