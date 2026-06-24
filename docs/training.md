@@ -16,7 +16,7 @@ Preliminary training results from the first annotation sessions. The model is no
 | Recall | 0.3880 |
 | Accuracy | 0.9857 |
 
-**Diagnosis:** The model learned to predict mostly background. Cancer cells occupy roughly 0.18% of each 256×256 frame (~118 pixels out of 65,536), giving a ~550:1 background-to-cell pixel ratio. Without compensation, the BCE loss is dominated by background pixels — achieving near-zero loss simply by ignoring the cell. High accuracy (0.985) is misleading here: it reflects correct background prediction, not cell segmentation. Low precision (0.05) combined with moderate recall (0.39) indicates the model was guessing large regions that partially overlapped the cell.
+**Diagnosis:** The model learned to predict mostly background. SKBR3 cells occupy roughly 0.18% of each 256×256 frame (~118 pixels out of 65,536), giving a ~550:1 background-to-cell pixel ratio. Without compensation, the BCE loss is dominated by background pixels — achieving near-zero loss simply by ignoring the cell. High accuracy (0.985) is misleading here: it reflects correct background prediction, not cell segmentation. Low precision (0.05) combined with moderate recall (0.39) indicates the model was guessing large regions that partially overlapped the cell.
 
 ---
 
@@ -84,3 +84,15 @@ These are preliminary runs on a fraction of the full annotation pool. As more ma
 | 150+ | 0.85+ | 25–50 |
 
 The thesis-reportable DSC comes from `scripts/evaluate_unet.py` on the `02_unet_holdout` pool — annotated only after training is frozen. See [Workflow Guide](workflow.md#step-5-evaluate-on-holdout-set).
+
+---
+
+## Next: Data Augmentation
+
+To improve generalisation from the small annotated set, data augmentation will be integrated into the training loop. The planned strategy applies paired spatial transforms to each frame and its mask so they remain aligned:
+
+- Horizontal flip (50% chance)
+- Vertical flip (50% chance)
+- Random 90° rotation (0°, 90°, 180°, or 270°)
+
+`CellDataset` in `scripts/train_unet.py` already supports this via `augment=True`; it will be enabled for the training split in the next run. Intensity augmentation is intentionally excluded — CLAHE in Stage 2 already normalises contrast.
