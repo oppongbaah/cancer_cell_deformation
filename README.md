@@ -1,6 +1,6 @@
 # celldform
 
-**Real-Time Machine Learning Framework for Quantitative Cancer Cell Deformation Analysis in Dual-Beam Optical Tweezer Systems**
+**Real-Time Machine Learning Framework for Quantitative SKBR3 Cell Deformation Analysis in Dual-Beam Optical Tweezer Systems**
 
 *Isaac Oppong-Baah — M.S. Electronics Engineering, Norfolk State University, 2026*
 *Advisor: Dr. Patricia Mead*
@@ -9,7 +9,7 @@
 
 ## Overview
 
-`celldform` is a Python library for analysing the mechanical deformation of breast cancer cells in a dual-beam optical tweezer setup. It quantifies how HER2 expression affects cell deformability through a 7-stage machine learning pipeline: frame acquisition → preprocessing → U-Net segmentation → feature extraction → classification → biomechanical analysis → real-time integration.
+`celldform` is a Python library for analysing the mechanical deformation of SKBR3 cells in a dual-beam optical tweezer setup. It quantifies how HER2 expression affects cell deformability through a 7-stage machine learning pipeline: frame acquisition → preprocessing → U-Net segmentation → feature extraction → classification → biomechanical analysis → real-time integration.
 
 **Full documentation:** [oppongbaah.github.io/cancer_cell_deformation](https://oppongbaah.github.io/cancer_cell_deformation/) — auto-deployed on every push to `main`.
 

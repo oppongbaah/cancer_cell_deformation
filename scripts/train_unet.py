@@ -52,12 +52,21 @@ class CellDataset(Dataset):
 
     Expects frames that have already been processed by preprocess_frames.py:
     256×256 uint8 PNGs.  No preprocessing is applied here.
+
+    When augment=True the same random spatial transform is applied to both
+    the frame and the mask so they remain aligned:
+      - horizontal flip (p=0.5)
+      - vertical flip   (p=0.5)
+      - 90-degree rotation: 0 / 90 / 180 / 270 (uniform)
+    Intensity augmentation is intentionally omitted — CLAHE in Stage 2 already
+    normalises contrast, so brightness jitter would undo that work.
     """
 
-    def __init__(self, frame_paths, mask_paths) -> None:
+    def __init__(self, frame_paths, mask_paths, augment: bool = False) -> None:
         assert len(frame_paths) == len(mask_paths)
         self.frame_paths = frame_paths
         self.mask_paths = mask_paths
+        self.augment = augment
 
     def __len__(self):
         return len(self.frame_paths)
@@ -70,6 +79,18 @@ class CellDataset(Dataset):
 
         frame_f = frame.astype(np.float32) / 255.0     # normalise to [0, 1]
         mask_bin = (mask > 127).astype(np.float32)     # binarise to 0.0 / 1.0
+
+        if self.augment:
+            if random.random() < 0.5:
+                frame_f = np.fliplr(frame_f).copy()
+                mask_bin = np.fliplr(mask_bin).copy()
+            if random.random() < 0.5:
+                frame_f = np.flipud(frame_f).copy()
+                mask_bin = np.flipud(mask_bin).copy()
+            k = random.randint(0, 3)
+            if k:
+                frame_f = np.rot90(frame_f, k).copy()
+                mask_bin = np.rot90(mask_bin, k).copy()
 
         frame_t = torch.from_numpy(frame_f[np.newaxis])    # (1, H, W)
         mask_t = torch.from_numpy(mask_bin[np.newaxis])
@@ -133,9 +154,9 @@ def main():
         f"train: {len(train_pairs)}  val: {len(val_pairs)}  test: {len(test_pairs)}"
     )
 
-    def make_loader(pairs, shuffle):
+    def make_loader(pairs, shuffle, augment=False):
         fs, ms = zip(*pairs)
-        ds = CellDataset(list(fs), list(ms))
+        ds = CellDataset(list(fs), list(ms), augment=augment)
         return DataLoader(
             ds,
             batch_size=conf.training.batch_size,
@@ -143,8 +164,8 @@ def main():
             num_workers=conf.training.num_workers,
         )
 
-    train_loader = make_loader(train_pairs, shuffle=True)
-    val_loader = make_loader(val_pairs, shuffle=False)
+    train_loader = make_loader(train_pairs, shuffle=True, augment=True)
+    val_loader = make_loader(val_pairs, shuffle=False, augment=False)
 
     # ── Model ────────────────────────────────────────────────────────────────
     unet = UNet(
