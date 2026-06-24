@@ -18,7 +18,7 @@
 ## Installation
 
 ```bash
-git clone https://github.com/oppongbaah/celldform.git
+git clone https://github.com/oppongbaah/cancer_cell_deformation.git
 cd celldform
 python3 -m venv .venv && source .venv/bin/activate
 
