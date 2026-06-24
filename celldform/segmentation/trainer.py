@@ -21,6 +21,8 @@ to fully utilise GPU + multi-core prefetching on Anvil / HPC clusters.
 from __future__ import annotations
 
 import dataclasses
+import platform
+import sys
 import time
 from pathlib import Path
 from typing import Dict, Optional, Tuple
@@ -33,6 +35,26 @@ from torch.utils.data import DataLoader
 from celldform.config import CelldformConfig, TrainingCfg
 from celldform.segmentation.unet import UNet
 from celldform.utils.metrics import SegmentationMetrics
+
+
+def _print_platform_info(device: str, label: str) -> None:
+    """Print OS, Python, PyTorch, and compute-device info."""
+    print(f"\n{'='*60}")
+    print(f"  Platform info [{label}]")
+    print(f"{'='*60}")
+    print(f"  OS          : {platform.system()} {platform.release()} ({platform.machine()})")
+    print(f"  Python      : {sys.version.split()[0]}")
+    print(f"  PyTorch     : {torch.__version__}")
+    if device.startswith("cuda") and torch.cuda.is_available():
+        idx = torch.cuda.current_device()
+        props = torch.cuda.get_device_properties(idx)
+        mem_gb = props.total_memory / 1024**3
+        print(f"  Device      : {props.name} (GPU {idx})")
+        print(f"  CUDA        : {torch.version.cuda}")
+        print(f"  VRAM        : {mem_gb:.1f} GB")
+    else:
+        print(f"  Device      : CPU ({platform.processor() or 'unknown'})")
+    print(f"{'='*60}\n")
 
 
 class _DiceBCELoss(nn.Module):
@@ -136,6 +158,8 @@ class SegmentationTrainer:
         # Snapshot the config so the checkpoint folder is self-contained.
         _save_config_snapshot(self.conf, self.checkpoint_dir)
 
+        _print_platform_info(self.device, "before training")
+
         for epoch in range(self.start_epoch, n_epochs + 1):
             t0 = time.time()
             train_loss = self._train_one_epoch()
@@ -156,6 +180,8 @@ class SegmentationTrainer:
             if val_dsc > best_dsc:
                 best_dsc = val_dsc
                 self._save_checkpoint("unet_best.pt", epoch, val_dsc)
+
+        _print_platform_info(self.device, "after training")
 
         return history
 

@@ -169,9 +169,16 @@ def main():
         print(f"  {k}: {v:.4f}")
 
     # ── Plot training curves ──────────────────────────────────────────────────
+    results_dir = Path("results")
+    results_dir.mkdir(exist_ok=True)
+
+    existing = sorted(results_dir.glob("unet_training_curves_v*.png"))
+    next_version = len(existing) + 1
+    curve_path = results_dir / f"unet_training_curves_v{next_version}.png"
+
     viz = Visualizer()
-    viz.plot_training_curves(history, save_path="unet_training_curves.png")
-    print("Training curves saved to unet_training_curves.png")
+    viz.plot_training_curves(history, save_path=str(curve_path))
+    print(f"Training curves saved to {curve_path}")
 
 
 if __name__ == "__main__":

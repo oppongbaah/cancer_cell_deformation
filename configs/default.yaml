@@ -45,6 +45,9 @@ training:
   loss_alpha: 0.3                 # BCE weight in Dice+BCE loss (Dice weight = 1 - alpha)
   loss_pos_weight: 100.0          # BCEWithLogitsLoss pos_weight; compensates ~550:1 cell/background imbalance
 
+# ─── Compute ─────────────────────────────────────────────────────────────────
+device: null    # null → auto-detect (cuda if available, else cpu)
+
 # ─── Resume ──────────────────────────────────────────────────────────────────
 resume:
   checkpoint: null       # path to .pt checkpoint to resume from; null = start fresh
@@ -71,9 +74,6 @@ biomechanics:
   window_s: null           # sliding-window width in seconds; null = disabled
   laser_power_mW: 0.0
   trap_current_mA: 0.0
-
-# ─── Compute ─────────────────────────────────────────────────────────────────
-device: null    # null → auto-detect (cuda if available, else cpu)
 
 # ─── Frame extraction ────────────────────────────────────────────────────────
 acquisition:
