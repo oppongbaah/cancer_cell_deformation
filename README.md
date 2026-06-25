@@ -63,6 +63,28 @@ See [docs/workflow.md](docs/workflow.md) for the full step-by-step guide.
 
 ---
 
+## HPC Training (Anvil)
+
+U-Net training runs **12× faster** on Anvil's A100 GPUs (~0.3 s/epoch) than on a local GPU.
+
+```bash
+# On Anvil — request a GPU session via OnDemand, then in the VSCode terminal:
+cd $SCRATCH/thesis
+git clone https://github.com/oppongbaah/cancer_cell_deformation.git
+cd cancer_cell_deformation
+module load anaconda
+conda create -n celldform python=3.10 -y && conda activate celldform
+pip install -e ".[hpc]"
+celldform-train-unet --config configs/default.yaml
+```
+
+Upload `data/preprocessed/` via the OnDemand file browser before training.
+Download `checkpoints/unet_best.pt` via the same browser after training.
+
+See the full guide: [docs/hpc.md](docs/hpc.md)
+
+---
+
 ## Citation
 
 ```bibtex
