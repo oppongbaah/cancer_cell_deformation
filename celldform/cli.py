@@ -195,18 +195,21 @@ def organize_dataset() -> None:
 
 def hpc_submit() -> None:
     """CLI entry point: generate and submit a SLURM training job on Anvil."""
+    import subprocess
+    import textwrap
+
     parser = argparse.ArgumentParser(
         prog="celldform-hpc-submit",
-        description="Generate a SLURM batch script for U-Net training and submit it via sbatch.",
+        description="Submit a SLURM U-Net training job on Anvil.",
     )
     parser.add_argument("--account", required=True,
                         help="ACCESS/Anvil allocation account ID (required).")
     parser.add_argument("--config", default="configs/default.yaml",
-                        help="Config YAML path passed to celldform-train-unet (default: configs/default.yaml).")
+                        help="Config YAML passed to celldform-train-unet (default: configs/default.yaml).")
     parser.add_argument("--partition", default="gpu",
                         help="SLURM partition (default: gpu).")
     parser.add_argument("--qos", default=None,
-                        help="SLURM QOS (default: same as --partition, required on Anvil).")
+                        help="SLURM QOS (default: same as --partition).")
     parser.add_argument("--time", default="04:00:00",
                         help="Wall-clock time limit HH:MM:SS (default: 04:00:00).")
     parser.add_argument("--cpus", type=int, default=8,
@@ -215,21 +218,15 @@ def hpc_submit() -> None:
                         help="GPUs per node (default: 1).")
     parser.add_argument("--mem", default="32G",
                         help="Memory per node (default: 32G).")
-    parser.add_argument("--script-out", default="scripts/hpc_train_unet.sh",
-                        help="Where to write the generated SLURM script (default: scripts/hpc_train_unet.sh).")
     parser.add_argument("--dry-run", action="store_true",
-                        help="Write the script but do not call sbatch.")
+                        help="Print the script without submitting.")
     args = parser.parse_args()
 
-    qos = args.qos or args.partition  # Anvil requires QOS matching the partition
+    qos = args.qos or args.partition
 
-    script_path = Path(args.script_out)
-    script_path.parent.mkdir(parents=True, exist_ok=True)
+    Path("logs").mkdir(exist_ok=True)
 
-    log_dir = Path("logs")
-    log_dir.mkdir(exist_ok=True)
-
-    script_content = f"""\
+    script = textwrap.dedent(f"""\
         #!/bin/bash
         #SBATCH --job-name=celldform-unet
         #SBATCH --partition={args.partition}
@@ -249,32 +246,22 @@ def hpc_submit() -> None:
         echo "[celldform] Job started: $(date)"
         echo "[celldform] Node: $SLURMD_NODENAME"
         echo "[celldform] Job ID: $SLURM_JOB_ID"
-        echo ""
 
         module load anaconda
         conda activate celldform
 
-        # Verify GPU
         python -c "import torch; print('[celldform] CUDA:', torch.cuda.is_available(), '|', torch.cuda.get_device_name(0))"
 
-        # Train
         celldform-train-unet --config {args.config}
 
-        echo ""
         echo "[celldform] Job finished: $(date)"
-    """
-
-    script_path.write_text(script_content, newline='\n')
-    script_path.chmod(0o755)
-    print(f"[celldform] Script written → {script_path}")
+    """)
 
     if args.dry_run:
-        print("[celldform] --dry-run: skipping sbatch submission.")
-        print(f"[celldform] To submit manually: sbatch {script_path}")
+        print(script)
         return
 
-    import subprocess
-    result = subprocess.run(["sbatch", str(script_path)], capture_output=True, text=True)
+    result = subprocess.run(["sbatch"], input=script, capture_output=True, text=True)
     if result.returncode != 0:
         print(f"[ERROR] sbatch failed:\n{result.stderr}", file=sys.stderr)
         sys.exit(1)
