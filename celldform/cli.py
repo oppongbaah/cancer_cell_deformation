@@ -204,6 +204,8 @@ def hpc_submit() -> None:
                         help="Config YAML path passed to celldform-train-unet (default: configs/default.yaml).")
     parser.add_argument("--partition", default="gpu",
                         help="SLURM partition (default: gpu).")
+    parser.add_argument("--qos", default=None,
+                        help="SLURM QOS (default: same as --partition, required on Anvil).")
     parser.add_argument("--time", default="04:00:00",
                         help="Wall-clock time limit HH:MM:SS (default: 04:00:00).")
     parser.add_argument("--cpus", type=int, default=8,
@@ -218,6 +220,8 @@ def hpc_submit() -> None:
                         help="Write the script but do not call sbatch.")
     args = parser.parse_args()
 
+    qos = args.qos or args.partition  # Anvil requires QOS matching the partition
+
     script_path = Path(args.script_out)
     script_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -228,6 +232,7 @@ def hpc_submit() -> None:
 #!/bin/bash
 #SBATCH --job-name=celldform-unet
 #SBATCH --partition={args.partition}
+#SBATCH --qos={qos}
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task={args.cpus}
