@@ -208,7 +208,7 @@ def hpc_submit() -> None:
                         help="Config YAML passed to celldform-train-unet (default: configs/default.yaml).")
     parser.add_argument("--partition", default="gpu",
                         help="SLURM partition (default: gpu).")
-    parser.add_argument("--qos", default=None,
+    parser.add_argument("--qos", default="normal",
                         help="SLURM QOS (default: same as --partition).")
     parser.add_argument("--time", default="04:00:00",
                         help="Wall-clock time limit HH:MM:SS (default: 04:00:00).")
@@ -230,6 +230,7 @@ def hpc_submit() -> None:
         #!/bin/bash
         #SBATCH --job-name=celldform-unet
         #SBATCH --partition={args.partition}
+        #SBATCH --qos={qos}
         #SBATCH --nodes=1
         #SBATCH --ntasks=1
         #SBATCH --cpus-per-task={args.cpus}
