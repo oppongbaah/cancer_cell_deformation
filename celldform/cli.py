@@ -206,9 +206,9 @@ def hpc_submit() -> None:
                         help="ACCESS/Anvil allocation account ID (required).")
     parser.add_argument("--config", default="configs/default.yaml",
                         help="Config YAML passed to celldform-train-unet (default: configs/default.yaml).")
-    parser.add_argument("--partition", default="gpu",
+    parser.add_argument("--partition", default="ai",
                         help="SLURM partition (default: gpu).")
-    parser.add_argument("--qos", default="normal",
+    parser.add_argument("--qos", default="ai",
                         help="SLURM QOS (default: same as --partition).")
     parser.add_argument("--time", default="04:00:00",
                         help="Wall-clock time limit HH:MM:SS (default: 04:00:00).")
