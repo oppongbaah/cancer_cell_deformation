@@ -192,6 +192,94 @@ def organize_dataset() -> None:
     main()
 
 
+def hpc_submit() -> None:
+    """CLI entry point: generate and submit a SLURM training job on Anvil."""
+    parser = argparse.ArgumentParser(
+        prog="celldform-hpc-submit",
+        description="Generate a SLURM batch script for U-Net training and submit it via sbatch.",
+    )
+    parser.add_argument("--account", required=True,
+                        help="ACCESS/Anvil allocation account ID (required).")
+    parser.add_argument("--config", default="configs/default.yaml",
+                        help="Config YAML path passed to celldform-train-unet (default: configs/default.yaml).")
+    parser.add_argument("--partition", default="gpu",
+                        help="SLURM partition (default: gpu).")
+    parser.add_argument("--time", default="04:00:00",
+                        help="Wall-clock time limit HH:MM:SS (default: 04:00:00).")
+    parser.add_argument("--cpus", type=int, default=8,
+                        help="CPUs per task (default: 8).")
+    parser.add_argument("--gpus", type=int, default=1,
+                        help="GPUs per node (default: 1).")
+    parser.add_argument("--mem", default="32G",
+                        help="Memory per node (default: 32G).")
+    parser.add_argument("--script-out", default="scripts/hpc_train_unet.sh",
+                        help="Where to write the generated SLURM script (default: scripts/hpc_train_unet.sh).")
+    parser.add_argument("--dry-run", action="store_true",
+                        help="Write the script but do not call sbatch.")
+    args = parser.parse_args()
+
+    script_path = Path(args.script_out)
+    script_path.parent.mkdir(parents=True, exist_ok=True)
+
+    log_dir = Path("logs")
+    log_dir.mkdir(exist_ok=True)
+
+    script_content = f"""\
+#!/bin/bash
+#SBATCH --job-name=celldform-unet
+#SBATCH --partition={args.partition}
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task={args.cpus}
+#SBATCH --gpus-per-node={args.gpus}
+#SBATCH --mem={args.mem}
+#SBATCH --time={args.time}
+#SBATCH --account={args.account}
+#SBATCH --output=logs/unet_%j.out
+#SBATCH --error=logs/unet_%j.err
+
+set -euo pipefail
+
+echo "[celldform] Job started: $(date)"
+echo "[celldform] Node: $SLURMD_NODENAME"
+echo "[celldform] Job ID: $SLURM_JOB_ID"
+echo ""
+
+module load anaconda
+conda activate celldform
+
+# Verify GPU
+python -c "import torch; print('[celldform] CUDA:', torch.cuda.is_available(), '|', torch.cuda.get_device_name(0))"
+
+# Train
+celldform-train-unet --config {args.config}
+
+echo ""
+echo "[celldform] Job finished: $(date)"
+"""
+
+    script_path.write_text(script_content)
+    script_path.chmod(0o755)
+    print(f"[celldform] Script written → {script_path}")
+
+    if args.dry_run:
+        print("[celldform] --dry-run: skipping sbatch submission.")
+        print(f"[celldform] To submit manually: sbatch {script_path}")
+        return
+
+    import subprocess
+    result = subprocess.run(["sbatch", str(script_path)], capture_output=True, text=True)
+    if result.returncode != 0:
+        print(f"[ERROR] sbatch failed:\n{result.stderr}", file=sys.stderr)
+        sys.exit(1)
+
+    job_id = result.stdout.strip().split()[-1]
+    print(f"[celldform] Submitted job {job_id}")
+    print(f"[celldform] Monitor : squeue -u $USER")
+    print(f"[celldform] Log     : tail -f logs/unet_{job_id}.out")
+    print(f"[celldform] Cancel  : scancel {job_id}")
+
+
 def _cuda_available() -> bool:
     try:
         import torch
