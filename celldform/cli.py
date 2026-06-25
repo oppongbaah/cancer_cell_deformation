@@ -4,6 +4,7 @@ Console entry points registered in pyproject.toml:
   celldform-extract-frames  → extract_frames()
   celldform-train-unet      → train_unet()
   celldform-infer           → infer()
+  celldform-hpc-submit      → hpc_submit()
 
 Run each with --help for usage.
 """
@@ -229,38 +230,39 @@ def hpc_submit() -> None:
     log_dir.mkdir(exist_ok=True)
 
     script_content = f"""\
-#!/bin/bash
-#SBATCH --job-name=celldform-unet
-#SBATCH --partition={args.partition}
-#SBATCH --nodes=1
-#SBATCH --ntasks=1
-#SBATCH --cpus-per-task={args.cpus}
-#SBATCH --gpus-per-node={args.gpus}
-#SBATCH --mem={args.mem}
-#SBATCH --time={args.time}
-#SBATCH --account={args.account}
-#SBATCH --output=logs/unet_%j.out
-#SBATCH --error=logs/unet_%j.err
+        #!/bin/bash
+        #SBATCH --job-name=celldform-unet
+        #SBATCH --partition={args.partition}
+        #SBATCH --qos={qos}
+        #SBATCH --nodes=1
+        #SBATCH --ntasks=1
+        #SBATCH --cpus-per-task={args.cpus}
+        #SBATCH --gpus-per-node={args.gpus}
+        #SBATCH --mem={args.mem}
+        #SBATCH --time={args.time}
+        #SBATCH --account={args.account}
+        #SBATCH --output=logs/unet_%j.out
+        #SBATCH --error=logs/unet_%j.err
 
-set -euo pipefail
+        set -euo pipefail
 
-echo "[celldform] Job started: $(date)"
-echo "[celldform] Node: $SLURMD_NODENAME"
-echo "[celldform] Job ID: $SLURM_JOB_ID"
-echo ""
+        echo "[celldform] Job started: $(date)"
+        echo "[celldform] Node: $SLURMD_NODENAME"
+        echo "[celldform] Job ID: $SLURM_JOB_ID"
+        echo ""
 
-module load anaconda
-conda activate celldform
+        module load anaconda
+        conda activate celldform
 
-# Verify GPU
-python -c "import torch; print('[celldform] CUDA:', torch.cuda.is_available(), '|', torch.cuda.get_device_name(0))"
+        # Verify GPU
+        python -c "import torch; print('[celldform] CUDA:', torch.cuda.is_available(), '|', torch.cuda.get_device_name(0))"
 
-# Train
-celldform-train-unet --config {args.config}
+        # Train
+        celldform-train-unet --config {args.config}
 
-echo ""
-echo "[celldform] Job finished: $(date)"
-"""
+        echo ""
+        echo "[celldform] Job finished: $(date)"
+    """
 
     script_path.write_text(script_content)
     script_path.chmod(0o755)
