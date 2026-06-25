@@ -32,7 +32,7 @@ unet:
 
 # ─── Training ────────────────────────────────────────────────────────────────
 training:
-  epochs: 50
+  epochs: 100
   batch_size: 16
   lr: 0.0001
   weight_decay: 0.0001
@@ -40,7 +40,7 @@ training:
   scheduler: "reduce_on_plateau"  # "reduce_on_plateau" | "cosine" | "none"
   scheduler_patience: 5
   scheduler_factor: 0.5
-  num_workers: 4                  # set to 0 on Windows; increase on HPC (Anvil)
+  num_workers: 6                  # set to 0 on Windows; increase on HPC (Anvil)
   seed: 42
   loss_alpha: 0.3                 # BCE weight in Dice+BCE loss (Dice weight = 1 - alpha)
   loss_pos_weight: 100.0          # BCEWithLogitsLoss pos_weight; compensates ~550:1 cell/background imbalance
