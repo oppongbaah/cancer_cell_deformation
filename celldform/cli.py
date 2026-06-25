@@ -230,7 +230,6 @@ def hpc_submit() -> None:
         #!/bin/bash
         #SBATCH --job-name=celldform-unet
         #SBATCH --partition={args.partition}
-        #SBATCH --qos={qos}
         #SBATCH --nodes=1
         #SBATCH --ntasks=1
         #SBATCH --cpus-per-task={args.cpus}
