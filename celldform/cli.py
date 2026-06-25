@@ -264,7 +264,7 @@ def hpc_submit() -> None:
         echo "[celldform] Job finished: $(date)"
     """
 
-    script_path.write_text(script_content)
+    script_path.write_text(script_content, newline='\n')
     script_path.chmod(0o755)
     print(f"[celldform] Script written → {script_path}")
 
