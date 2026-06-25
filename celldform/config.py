@@ -74,6 +74,7 @@ class TrainingCfg:
     seed: int = 42
     loss_alpha: float = 0.3        # BCE weight in combined Dice+BCE loss (Dice = 1 - alpha)
     loss_pos_weight: float = 100.0 # pos_weight for BCEWithLogitsLoss; compensates cell/background imbalance
+    use_amp: bool = True           # Automatic Mixed Precision — uses A100 BF16/TF32 units; auto-disabled on CPU
 
 
 @dataclass
@@ -263,6 +264,7 @@ def _parse_training(t: dict) -> TrainingCfg:
         seed=int(t.get("seed", 42)),
         loss_alpha=float(t.get("loss_alpha", 0.3)),
         loss_pos_weight=float(t.get("loss_pos_weight", 100.0)),
+        use_amp=bool(t.get("use_amp", True)),
     )
 
 

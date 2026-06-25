@@ -34,7 +34,7 @@ The split below keeps large raw data local and only sends what the training loop
 2. Go to **Interactive Apps → Code Server (VS Code)**
 3. Request resources — recommended for U-Net training:
     - Partition: `gpu`
-    - CPUs: `4`
+    - CPUs: `8`  (more than 16 gives no benefit — workers idle waiting for the GPU)
     - GPUs: `1`
     - Memory: `32 GB`
     - Time: `2–4 hours`
@@ -102,8 +102,9 @@ data:
 checkpoint_dir: "$SCRATCH/thesis/cancer_cell_deformation/checkpoints"
 
 training:
-  num_workers: 4
-  batch_size: 16
+  num_workers: 8   # 8–16 is sufficient; beyond 16 adds no throughput
+  batch_size: 32   # increase to 64–128 once you have ≥ 100 annotated masks
+  use_amp: true    # enables A100 BF16/TF32 — ~2–4× throughput gain
 ```
 
 ---
@@ -141,7 +142,7 @@ For unattended overnight runs instead of an interactive session:
 #SBATCH --partition=gpu
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=4
+#SBATCH --cpus-per-task=8
 #SBATCH --gpus-per-node=1
 #SBATCH --mem=32G
 #SBATCH --time=04:00:00

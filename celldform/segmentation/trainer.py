@@ -121,6 +121,12 @@ class SegmentationTrainer:
         self.checkpoint_dir = Path(conf.checkpoint_dir)
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
+        on_cuda = self.device.startswith("cuda")
+        self.use_amp = conf.training.use_amp and on_cuda
+        self.scaler = torch.cuda.amp.GradScaler(enabled=self.use_amp)
+        if on_cuda:
+            torch.backends.cudnn.benchmark = True  # fixed 256×256 input → cuDNN picks optimal kernel once
+
         self.criterion = _DiceBCELoss(
             alpha=conf.training.loss_alpha,
             pos_weight=conf.training.loss_pos_weight,
@@ -198,9 +204,9 @@ class SegmentationTrainer:
         self.model.eval()
         all_preds, all_targets = [], []
 
-        with torch.no_grad():
+        with torch.no_grad(), torch.cuda.amp.autocast(enabled=self.use_amp):
             for images, masks in loader:
-                images = images.to(self.device)
+                images = images.to(self.device, non_blocking=True)
                 logits = self.model(images)
                 preds = (torch.sigmoid(logits) >= 0.5).float().cpu()
                 all_preds.append(preds)
@@ -219,12 +225,14 @@ class SegmentationTrainer:
         total_loss = 0.0
 
         for images, masks in self.train_loader:
-            images = images.to(self.device)
-            masks = masks.to(self.device).float()
+            images = images.to(self.device, non_blocking=True)
+            masks = masks.to(self.device, non_blocking=True).float()
             self.optimizer.zero_grad()
-            loss = self.criterion(self.model(images), masks)
-            loss.backward()
-            self.optimizer.step()
+            with torch.cuda.amp.autocast(enabled=self.use_amp):
+                loss = self.criterion(self.model(images), masks)
+            self.scaler.scale(loss).backward()
+            self.scaler.step(self.optimizer)
+            self.scaler.update()
             total_loss += loss.item() * images.size(0)
 
         return total_loss / len(self.train_loader.dataset)
@@ -234,10 +242,10 @@ class SegmentationTrainer:
         total_loss = 0.0
         total_dsc = 0.0
 
-        with torch.no_grad():
+        with torch.no_grad(), torch.cuda.amp.autocast(enabled=self.use_amp):
             for images, masks in self.val_loader:
-                images = images.to(self.device)
-                masks = masks.to(self.device).float()
+                images = images.to(self.device, non_blocking=True)
+                masks = masks.to(self.device, non_blocking=True).float()
                 logits = self.model(images)
                 total_loss += self.criterion(logits, masks).item() * images.size(0)
                 preds = (torch.sigmoid(logits) >= 0.5).float()

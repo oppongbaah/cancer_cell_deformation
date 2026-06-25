@@ -154,6 +154,9 @@ def main():
         f"train: {len(train_pairs)}  val: {len(val_pairs)}  test: {len(test_pairs)}"
     )
 
+    on_cuda = torch.cuda.is_available()
+    n_workers = conf.training.num_workers
+
     def make_loader(pairs, shuffle, augment=False):
         fs, ms = zip(*pairs)
         ds = CellDataset(list(fs), list(ms), augment=augment)
@@ -161,7 +164,10 @@ def main():
             ds,
             batch_size=conf.training.batch_size,
             shuffle=shuffle,
-            num_workers=conf.training.num_workers,
+            num_workers=n_workers,
+            pin_memory=on_cuda,
+            persistent_workers=(n_workers > 0),
+            prefetch_factor=(4 if n_workers > 0 else None),
         )
 
     train_loader = make_loader(train_pairs, shuffle=True, augment=True)
