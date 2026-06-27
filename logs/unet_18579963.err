@@ -1,0 +1,8 @@
+/anvil/scratch/x-ioppongbaah/work/cancer_cell_deformation/celldform/segmentation/trainer.py:126: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  self.scaler = torch.cuda.amp.GradScaler(enabled=self.use_amp)
+/anvil/scratch/x-ioppongbaah/work/cancer_cell_deformation/celldform/segmentation/trainer.py:231: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=self.use_amp):
+/anvil/scratch/x-ioppongbaah/work/cancer_cell_deformation/celldform/segmentation/trainer.py:245: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.no_grad(), torch.cuda.amp.autocast(enabled=self.use_amp):
+/anvil/scratch/x-ioppongbaah/work/cancer_cell_deformation/celldform/segmentation/trainer.py:207: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.no_grad(), torch.cuda.amp.autocast(enabled=self.use_amp):
