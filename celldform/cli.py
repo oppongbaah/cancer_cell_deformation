@@ -207,7 +207,7 @@ def hpc_submit() -> None:
     parser.add_argument("--config", default="configs/default.yaml",
                         help="Config YAML passed to celldform-train-unet (default: configs/default.yaml).")
     parser.add_argument("--partition", default="ai",
-                        help="SLURM partition (default: gpu).")
+                        help="SLURM partition (default: ai).")
     parser.add_argument("--qos", default="ai",
                         help="SLURM QOS (default: same as --partition).")
     parser.add_argument("--time", default="04:00:00",

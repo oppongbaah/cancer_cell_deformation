@@ -187,7 +187,7 @@ class SegmentationTrainer:
                 best_dsc = val_dsc
                 self._save_checkpoint("unet_best.pt", epoch, val_dsc)
 
-        _print_platform_info(self.device, "after training")
+        # _print_platform_info(self.device, "after training")
 
         return history
 
