@@ -21,7 +21,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 
 import yaml
 
@@ -58,6 +58,7 @@ class PreprocessingCfg:
 class UNetCfg:
     in_channels: int = 1
     base_features: int = 64
+    out_channels: int = 1  # 1 = binary (sigmoid); >1 = multiclass (softmax), e.g. 3 for background/trapped/other
 
 
 @dataclass
@@ -75,6 +76,7 @@ class TrainingCfg:
     loss_alpha: float = 0.3        # BCE weight in combined Dice+BCE loss (Dice = 1 - alpha)
     loss_pos_weight: float = 100.0 # pos_weight for BCEWithLogitsLoss; compensates cell/background imbalance
     use_amp: bool = True           # Automatic Mixed Precision — uses A100 BF16/TF32 units; auto-disabled on CPU
+    class_weights: Optional[List[float]] = None  # per-class weight for CrossEntropyLoss (multiclass only); null = uniform
 
 
 @dataclass
@@ -236,6 +238,7 @@ def _parse_unet(u: dict) -> UNetCfg:
     return UNetCfg(
         in_channels=int(u.get("in_channels", 1)),
         base_features=int(u.get("base_features", 64)),
+        out_channels=int(u.get("out_channels", 1)),
     )
 
 
@@ -251,6 +254,9 @@ def _parse_training(t: dict) -> TrainingCfg:
     # Accept legacy key names for scheduler params.
     patience = int(t.get("scheduler_patience", t.get("lr_scheduler_patience", 5)))
     factor = float(t.get("scheduler_factor", t.get("lr_scheduler_factor", 0.5)))
+    class_weights = t.get("class_weights", None)
+    if class_weights is not None:
+        class_weights = [float(w) for w in class_weights]
     return TrainingCfg(
         epochs=int(t.get("epochs", 50)),
         batch_size=int(t.get("batch_size", 16)),
@@ -265,6 +271,7 @@ def _parse_training(t: dict) -> TrainingCfg:
         loss_alpha=float(t.get("loss_alpha", 0.3)),
         loss_pos_weight=float(t.get("loss_pos_weight", 100.0)),
         use_amp=bool(t.get("use_amp", True)),
+        class_weights=class_weights,
     )
 
 

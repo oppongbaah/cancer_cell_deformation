@@ -124,6 +124,50 @@ class SegmentationMetrics:
             "accuracy": self.accuracy(pred, target),
         }
 
+    # ------------------------------------------------------------------
+    # Multiclass convenience
+    # ------------------------------------------------------------------
+
+    def per_class(
+        self,
+        pred: Union[torch.Tensor, np.ndarray],
+        target: Union[torch.Tensor, np.ndarray],
+        num_classes: int,
+    ) -> Dict[Union[int, str], Dict[str, float]]:
+        """Compute all metrics per class for integer-labeled masks.
+
+        Parameters
+        ----------
+        pred, target:
+            Integer class-id arrays/tensors of any shape (e.g. (B, H, W)),
+            values in ``[0, num_classes)``.
+        num_classes:
+            Total number of classes, including background (class 0).
+
+        Returns
+        -------
+        Dict keyed by class id (each a binary-metrics dict from
+        :meth:`compute_all`), plus a ``"mean"`` entry averaging across
+        classes. One-hots each class and reuses the existing binary metric
+        implementations, so results for class ``c`` match what a binary
+        model trained on class ``c`` alone would report.
+        """
+        pred_np = _to_flat_numpy(pred).astype(np.int64)
+        target_np = _to_flat_numpy(target).astype(np.int64)
+
+        per_class_results: Dict[Union[int, str], Dict[str, float]] = {}
+        for c in range(num_classes):
+            pred_c = (pred_np == c).astype(np.float32)
+            target_c = (target_np == c).astype(np.float32)
+            per_class_results[c] = self.compute_all(pred_c, target_c)
+
+        mean_result = {
+            key: float(np.mean([per_class_results[c][key] for c in range(num_classes)]))
+            for key in ("dsc", "iou", "precision", "recall", "accuracy")
+        }
+        per_class_results["mean"] = mean_result
+        return per_class_results
+
 
 class RegressionMetrics:
     """Standard scalar regression evaluation metrics."""

@@ -4,14 +4,20 @@ Apply PreprocessingPipeline to annotated frames and save the outputs to disk.
 
 This script is a **required step before U-Net training**.  Run it once after
 annotation is complete.  The training script (train_unet.py) expects already-
-preprocessed 256×256 PNGs and will not apply any preprocessing internally.
+preprocessed PNGs (256×256 by default) and will not apply any preprocessing
+internally.
 
 Produces up to three artefacts:
-  1. Preprocessed frames  → data/preprocessed/frames/<pool>/  (256×256 uint8 PNG)
-  2. (--masks) Resized masks → data/preprocessed/masks/<pool>/  (256×256 binary PNG,
-     nearest-neighbour to preserve 0/255 values)
+  1. Preprocessed frames  → data/preprocessed/frames/<pool>/  (uint8 PNG, target size)
+  2. (--masks) Resized masks → data/preprocessed/masks/<pool>/  (binary/label PNG at
+     target size, nearest-neighbour to preserve pixel values)
   3. (--compare) Pipeline stage figures → data/preprocessed/comparisons/<pool>/
      showing Raw → Denoise → CLAHE → Morphology → Final side-by-side
+
+--target-size overrides the default 256×256 output resolution (e.g. --target-size
+128 128). Whatever size you pick here is what CellDataset (train_unet.py) will
+load — U-Net is fully convolutional, so no model code changes are needed as long
+as both dimensions are divisible by 16 (4 encoder downsampling steps).
 
 Recommended pre-training workflow
 -----------------------------------
@@ -25,6 +31,7 @@ Usage
 python scripts/preprocess_frames.py --masks
 python scripts/preprocess_frames.py --masks --compare --n-compare 5
 python scripts/preprocess_frames.py --pool 02_unet_holdout --masks
+python scripts/preprocess_frames.py --masks --target-size 128 128
 python scripts/preprocess_frames.py --image-dir data/frames/01_annotate_pool \\
                                      --output-dir data/preprocessed/frames/01_annotate_pool \\
                                      --mask-dir   data/masks/01_annotate_pool
@@ -79,7 +86,8 @@ def _stage_outputs(img: np.ndarray, cfg: PreprocessingConfig) -> dict[str, np.nd
 
     after_resize = pipe._resize(after_morph) if cfg.enabled.get("resize") else after_morph.copy()
     after_norm = pipe._normalize(after_resize) if cfg.enabled.get("normalize") else after_resize.astype(np.float32) / 255.0
-    stages["Final\n(256×256)"] = after_norm
+    h, w = cfg.output_size
+    stages[f"Final\n({w}×{h})"] = after_norm
 
     return stages
 
@@ -141,6 +149,9 @@ def main() -> None:
                         help="Source mask directory (default: data/masks/<pool>)")
     parser.add_argument("--mask-output-dir", type=Path,
                         help="Override destination for resized masks")
+    parser.add_argument("--target-size", type=int, nargs=2, metavar=("H", "W"), default=None,
+                        help="Output spatial size (default: 256 256). Both dims should be "
+                             "divisible by 16 for U-Net's 4 downsampling steps.")
     args = parser.parse_args()
 
     stage = args.stage or _POOL_STAGE.get(args.pool)
@@ -177,7 +188,7 @@ def main() -> None:
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    cfg = PreprocessingConfig()
+    cfg = PreprocessingConfig(output_size=tuple(args.target_size)) if args.target_size else PreprocessingConfig()
     n_compare = min(args.n_compare, len(images)) if args.compare else 0
 
     print(f"Source frames: {image_dir}  ({len(all_images)} total, {n_skipped} skipped — no mask)")

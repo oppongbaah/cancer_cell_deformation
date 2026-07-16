@@ -29,6 +29,7 @@ from typing import Dict, Optional, Tuple
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import yaml
 from torch.utils.data import DataLoader
 
@@ -87,6 +88,46 @@ class _DiceBCELoss(nn.Module):
         return self.alpha * bce_loss + (1.0 - self.alpha) * dice_loss.mean()
 
 
+class _DiceCELoss(nn.Module):
+    """Weighted sum of multiclass Dice loss and Cross-Entropy loss.
+
+    Multiclass counterpart to :class:`_DiceBCELoss`: loss = alpha * CE +
+    (1 - alpha) * Dice, averaged over classes (including background).
+    """
+
+    def __init__(
+        self,
+        num_classes: int,
+        alpha: float = 0.3,
+        smooth: float = 1.0,
+        class_weights: Optional[list] = None,
+    ) -> None:
+        super().__init__()
+        self.alpha = alpha
+        self.smooth = smooth
+        self.num_classes = num_classes
+        weight = torch.tensor(class_weights) if class_weights is not None else None
+        self.ce = nn.CrossEntropyLoss(weight=weight)
+
+    def forward(
+        self, logits: torch.Tensor, targets: torch.Tensor
+    ) -> torch.Tensor:
+        # logits: (B, C, H, W) raw class logits; targets: (B, H, W) integer class ids
+        ce_loss = self.ce(logits, targets)
+
+        probs = torch.softmax(logits, dim=1)
+        target_onehot = F.one_hot(targets, num_classes=self.num_classes).permute(0, 3, 1, 2).float()
+        p = probs.reshape(probs.size(0), self.num_classes, -1)
+        t = target_onehot.reshape(target_onehot.size(0), self.num_classes, -1)
+        intersection = (p * t).sum(dim=2)
+        dice_per_class = (2.0 * intersection + self.smooth) / (
+            p.sum(dim=2) + t.sum(dim=2) + self.smooth
+        )
+        dice_loss = 1.0 - dice_per_class.mean()
+
+        return self.alpha * ce_loss + (1.0 - self.alpha) * dice_loss
+
+
 class SegmentationTrainer:
     """Orchestrates the U-Net training loop.
 
@@ -127,10 +168,18 @@ class SegmentationTrainer:
         if on_cuda:
             torch.backends.cudnn.benchmark = True  # fixed 256×256 input → cuDNN picks optimal kernel once
 
-        self.criterion = _DiceBCELoss(
-            alpha=conf.training.loss_alpha,
-            pos_weight=conf.training.loss_pos_weight,
-        ).to(self.device)
+        self.out_channels = conf.unet.out_channels
+        if self.out_channels == 1:
+            self.criterion = _DiceBCELoss(
+                alpha=conf.training.loss_alpha,
+                pos_weight=conf.training.loss_pos_weight,
+            ).to(self.device)
+        else:
+            self.criterion = _DiceCELoss(
+                num_classes=self.out_channels,
+                alpha=conf.training.loss_alpha,
+                class_weights=conf.training.class_weights,
+            ).to(self.device)
         self.optimizer = _build_optimizer(model, conf.training)
         self.scheduler = _build_scheduler(self.optimizer, conf.training)
         self.metrics = SegmentationMetrics()
@@ -192,13 +241,21 @@ class SegmentationTrainer:
         return history
 
     def evaluate(self, loader=None) -> Dict[str, float]:
-        """Compute all segmentation metrics on a DataLoader.
+        """Compute segmentation metrics on a DataLoader.
 
         Parameters
         ----------
         loader:
             Any DataLoader of (image, mask) pairs.  Defaults to the
             validation loader used during training when *None*.
+
+        Returns
+        -------
+        Binary mode (``out_channels == 1``): flat dict (dsc, iou, ...).
+        Multiclass mode (``out_channels > 1``): dict keyed by class id (plus
+        ``"mean"``), each a flat metrics dict — see
+        :meth:`SegmentationMetrics.per_class`. Class 1 is the trapped cell,
+        directly comparable to the binary mode's dsc.
         """
         loader = loader or self.val_loader
         self.model.eval()
@@ -208,13 +265,18 @@ class SegmentationTrainer:
             for images, masks in loader:
                 images = images.to(self.device, non_blocking=True)
                 logits = self.model(images)
-                preds = (torch.sigmoid(logits) >= 0.5).float().cpu()
+                if self.out_channels == 1:
+                    preds = (torch.sigmoid(logits) >= 0.5).float().cpu()
+                else:
+                    preds = torch.softmax(logits, dim=1).argmax(dim=1).cpu()
                 all_preds.append(preds)
                 all_targets.append(masks.cpu())
 
-        return self.metrics.compute_all(
-            torch.cat(all_preds), torch.cat(all_targets)
-        )
+        preds_cat = torch.cat(all_preds)
+        targets_cat = torch.cat(all_targets)
+        if self.out_channels == 1:
+            return self.metrics.compute_all(preds_cat, targets_cat)
+        return self.metrics.per_class(preds_cat, targets_cat, self.out_channels)
 
     # ------------------------------------------------------------------
     # Private helpers
@@ -224,9 +286,10 @@ class SegmentationTrainer:
         self.model.train()
         total_loss = 0.0
 
+        target_dtype = torch.long if self.out_channels > 1 else torch.float32
         for images, masks in self.train_loader:
             images = images.to(self.device, non_blocking=True)
-            masks = masks.to(self.device, non_blocking=True).float()
+            masks = masks.to(self.device, non_blocking=True).to(target_dtype)
             self.optimizer.zero_grad()
             with torch.cuda.amp.autocast(enabled=self.use_amp):
                 loss = self.criterion(self.model(images), masks)
@@ -238,18 +301,27 @@ class SegmentationTrainer:
         return total_loss / len(self.train_loader.dataset)
 
     def _validate(self) -> Tuple[float, float]:
+        """Returns (val_loss, val_dsc). For multiclass, val_dsc is the
+        trapped-cell (class 1) DSC — comparable to the binary baseline."""
         self.model.eval()
         total_loss = 0.0
         total_dsc = 0.0
+        target_dtype = torch.long if self.out_channels > 1 else torch.float32
 
         with torch.no_grad(), torch.cuda.amp.autocast(enabled=self.use_amp):
             for images, masks in self.val_loader:
                 images = images.to(self.device, non_blocking=True)
-                masks = masks.to(self.device, non_blocking=True).float()
+                masks = masks.to(self.device, non_blocking=True).to(target_dtype)
                 logits = self.model(images)
                 total_loss += self.criterion(logits, masks).item() * images.size(0)
-                preds = (torch.sigmoid(logits) >= 0.5).float()
-                total_dsc += self.metrics.dice(preds.cpu(), masks.cpu()) * images.size(0)
+                if self.out_channels == 1:
+                    preds = (torch.sigmoid(logits) >= 0.5).float()
+                    total_dsc += self.metrics.dice(preds.cpu(), masks.cpu()) * images.size(0)
+                else:
+                    preds = torch.softmax(logits, dim=1).argmax(dim=1)
+                    total_dsc += self.metrics.dice(
+                        (preds.cpu() == 1), (masks.cpu() == 1)
+                    ) * images.size(0)
 
         n = len(self.val_loader.dataset)
         return total_loss / n, total_dsc / n

@@ -3,7 +3,12 @@ U-Net architecture for pixel-level cancer cell segmentation.
 
 Architecture follows Ronneberger et al. (2015) with minor adaptations:
   - Input  : (B, 1, H, W) grayscale image (H = W = 256 by default)
-  - Output : (B, 1, H, W) binary segmentation mask logit map
+  - Output : (B, out_channels, H, W) segmentation logit map.
+             out_channels=1 (default) = binary mask logit — the pipeline's
+             documented, frozen contract. out_channels>1 is an opt-in
+             multiclass mode used only by the experimental multiclass
+             annotation path (configs/multiclass_experiment.yaml); the
+             default binary pipeline is unaffected.
   - Encoder: 4 downsampling blocks doubling channels (64 → 128 → 256 → 512)
   - Bottleneck: 1024 channels
   - Decoder: 4 upsampling blocks with skip connections from encoder
@@ -96,9 +101,14 @@ class UNet(nn.Module):
         Number of input image channels (1 = grayscale, 3 = RGB).
     base_features:
         Channel count in the first encoder block; doubles at each depth level.
+    out_channels:
+        Number of output classes. ``1`` (default) = binary segmentation —
+        ``forward()`` returns a single sigmoid logit channel. ``>1`` = multiclass
+        segmentation — logits are interpreted with softmax/argmax; ``predict()``
+        branches accordingly.
     """
 
-    def __init__(self, in_channels: int = 1, base_features: int = 64) -> None:
+    def __init__(self, in_channels: int = 1, base_features: int = 64, out_channels: int = 1) -> None:
         super().__init__()
         f = base_features
 
@@ -117,8 +127,8 @@ class UNet(nn.Module):
         self.dec2 = _Up(f * 4, f * 2)
         self.dec1 = _Up(f * 2, f)
 
-        # 1×1 conv to project to a single-channel binary mask logit
-        self.out_conv = nn.Conv2d(f, 1, kernel_size=1)
+        # 1×1 conv to project to the output logit map (1 channel = binary, >1 = multiclass)
+        self.out_conv = nn.Conv2d(f, out_channels, kernel_size=1)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Return raw logit mask — apply sigmoid externally for probabilities."""
@@ -150,7 +160,7 @@ class UNet(nn.Module):
         threshold: float = 0.5,
         device: Optional[str] = None,
     ) -> "np.ndarray":
-        """Segment a single preprocessed NumPy image, return binary mask.
+        """Segment a single preprocessed NumPy image, return a class mask.
 
         Parameters
         ----------
@@ -158,8 +168,15 @@ class UNet(nn.Module):
             Float32 array of shape (H, W) or (1, H, W) in [0, 1].
         threshold:
             Sigmoid probability above which a pixel is classified as cell.
+            Ignored in multiclass mode (softmax + argmax is used instead).
         device:
             ``"cuda"`` or ``"cpu"``.  Auto-detected if *None*.
+
+        Returns
+        -------
+        Binary mode (``out_channels == 1``): uint8 array, 0/1.
+        Multiclass mode (``out_channels > 1``): uint8 array of class ids
+        (0 = background, 1 = trapped cell, 2 = other/decoy, ...).
         """
         import numpy as np
 
@@ -172,9 +189,14 @@ class UNet(nn.Module):
             image = image[np.newaxis, ...]               # (1, C, H, W)
 
         tensor = torch.from_numpy(image).float().to(dev)
-        logit = self(tensor)                             # (1, 1, H, W)
-        prob = torch.sigmoid(logit).squeeze().cpu().numpy()
-        return (prob >= threshold).astype(np.uint8)
+        logit = self(tensor)                             # (1, out_channels, H, W)
+
+        if self.out_conv.out_channels == 1:
+            prob = torch.sigmoid(logit).squeeze().cpu().numpy()
+            return (prob >= threshold).astype(np.uint8)
+
+        class_map = torch.softmax(logit, dim=1).argmax(dim=1).squeeze().cpu().numpy()
+        return class_map.astype(np.uint8)
 
     # ------------------------------------------------------------------
     # Serialisation
@@ -190,10 +212,11 @@ class UNet(nn.Module):
         path: str | Path,
         in_channels: int = 1,
         base_features: int = 64,
+        out_channels: int = 1,
         device: Optional[str] = None,
     ) -> "UNet":
         """Load a previously saved U-Net from a checkpoint file."""
         dev = device or ("cuda" if torch.cuda.is_available() else "cpu")
-        model = cls(in_channels=in_channels, base_features=base_features)
+        model = cls(in_channels=in_channels, base_features=base_features, out_channels=out_channels)
         model.load_state_dict(torch.load(Path(path), map_location=dev))
         return model.to(dev).eval()

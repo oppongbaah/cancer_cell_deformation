@@ -81,14 +81,19 @@ def main() -> None:
         conf.device if conf.device else ("cuda" if torch.cuda.is_available() else "cpu")
     )
 
-    unet = UNet(in_channels=conf.unet.in_channels, base_features=conf.unet.base_features)
+    multiclass = conf.unet.out_channels > 1
+    unet = UNet(
+        in_channels=conf.unet.in_channels,
+        base_features=conf.unet.base_features,
+        out_channels=conf.unet.out_channels,
+    )
     state = torch.load(str(args.checkpoint), map_location=device)
     unet.load_state_dict(state["model_state_dict"] if "model_state_dict" in state else state)
     unet.to(device)
 
     fs, ms = zip(*pairs)
     holdout_loader = DataLoader(
-        CellDataset(list(fs), list(ms)),
+        CellDataset(list(fs), list(ms), multiclass=multiclass),
         batch_size=args.batch_size,
         shuffle=False,
         num_workers=conf.training.num_workers,
@@ -105,8 +110,16 @@ def main() -> None:
 
     print("Holdout evaluation results")
     print("-" * 30)
-    for name, value in metrics.items():
-        print(f"  {name:<12} {value:.4f}")
+    if multiclass:
+        class_names = {0: "background", 1: "trapped_cell"}
+        for class_id, class_metrics in metrics.items():
+            label = class_names.get(class_id, f"class_{class_id}" if isinstance(class_id, int) else class_id)
+            print(f"  [{label}]")
+            for name, value in class_metrics.items():
+                print(f"    {name:<12} {value:.4f}")
+    else:
+        for name, value in metrics.items():
+            print(f"  {name:<12} {value:.4f}")
 
 
 if __name__ == "__main__":
