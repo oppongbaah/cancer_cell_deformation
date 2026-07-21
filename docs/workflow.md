@@ -40,6 +40,7 @@ Open each image in napari, paint the cell body on the mask layer, and press `S` 
 
 ```bash
 python scripts/annotate.py
+python scripts/annotate.py --multiclass   # experimental 3-class labels (see docs/scripts.md)
 ```
 
 **Keybindings:**
@@ -52,9 +53,10 @@ python scripts/annotate.py
 | `Ctrl+Z` | Undo |
 | `S` | Save mask and advance |
 | `N` | Skip (no save) |
-| `P` | Previous image |
+| `B` | Previous image |
+| `P` | Toggle paint mode (napari default) |
 
-The script skips images that already have a saved mask — safe to stop and resume at any time.
+The viewer loads every image in the pool, in order — including already-annotated ones, so you can browse back with `B` to review or fix earlier masks — but opens on the first not-yet-annotated image, so it's still safe to stop and resume at any time.
 
 Toggle the `enhanced` layer in the napari layer list to see the CLAHE-boosted view for easier boundary identification.
 
@@ -66,13 +68,14 @@ Confirm every image has a clean binary mask before preprocessing.
 
 ```bash
 python scripts/validate_masks.py
+python scripts/validate_masks.py --multiclass   # validates 0/1/2 label masks instead
 ```
 
 Validates the masks that are present — does not require every frame to have a mask. Checks performed per mask found:
 
 - **Readable** — valid image file
-- **Binary** — pixel values are strictly 0 or 255
-- **Non-empty** — at least one cell pixel (255) present
+- **Binary** — pixel values are strictly 0 or 255 (`--multiclass`: 0, 1, or 2)
+- **Non-empty** — at least one cell pixel (255) present (`--multiclass`: at least one trapped-cell pixel, label 1)
 
 Exits with code `0` if all present masks pass, `1` if any issues found. Safe to run incrementally while annotation is still in progress.
 
@@ -121,6 +124,9 @@ Checkpoints are saved to `checkpoints/`:
 | `unet_best.pt` | Best checkpoint by validation DSC |
 | `unet_last.pt` | Final epoch checkpoint |
 | `config.yaml` | Config snapshot for reproducibility |
+
+!!! note "Experiment configs"
+    `configs/binary_experiment_{128,256}.yaml` and `configs/multiclass_experiment{,_256}.yaml` run the same training loop at alternate resolutions and/or the experimental multiclass label scheme — each config's header comment lists its own preprocessing pre-requisites. See [Training Results](training.md) for a head-to-head comparison.
 
 ---
 

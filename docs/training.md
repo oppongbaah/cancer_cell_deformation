@@ -51,9 +51,41 @@ The `loss_alpha=0.3` change (from 0.5) gives Dice loss 70% of the total signal, 
 
 ---
 
+## Run 3 — Binary vs. multiclass label scheme × resolution ablation
+
+Same 40 annotated frames as Run 2 (up from 30), used to isolate two variables against the binary 256×256 baseline: the annotation label scheme (binary vs. 3-class) and the preprocessed input resolution (128×128 vs. 256×256). Four configs, each holding the other three variables fixed (seed 42, 100 epochs, `loss_alpha=0.3`):
+
+| Config | Labels | Resolution | Loss weighting | Trapped-cell DSC | Best epoch |
+|--------|--------|-----------|-----------------|-------------------|-----------|
+| `configs/binary_experiment_128.yaml` | binary | 128×128 | `pos_weight=50` | 0.590 | 92 |
+| `configs/multiclass_experiment.yaml` | 3-class | 128×128 | `class_weights=[1,3,3]` | 0.736 | 99 |
+| `configs/binary_experiment_256.yaml` | binary | 256×256 | `pos_weight=50` | 0.763 | 99 |
+| `configs/multiclass_experiment_256.yaml` | 3-class | 256×256 | `class_weights=[1,3,3]` | **0.784** | 73 |
+
+Training curves and per-class metric tables: `results/unet_training_curves_v13_binary_128.png` through `v16_multi_256.png`.
+
+**Multiclass detail (256×256, `configs/multiclass_experiment_256.yaml`):**
+
+| Class | DSC | IoU | Precision | Recall | Accuracy |
+|-------|-----|-----|-----------|--------|----------|
+| background | 0.996 | 0.993 | 1.000 | 0.993 | 0.993 |
+| trapped_cell | **0.784** | 0.645 | 0.757 | 0.813 | 0.999 |
+| other/decoy | 0.682 | 0.518 | 0.518 | 0.999 | 0.994 |
+| mean | 0.821 | 0.719 | 0.758 | 0.935 | 0.995 |
+
+**Interpretation:**
+
+- **Labeling scheme matters more than resolution alone.** At 128×128, adding the decoy-object class raised trapped-cell DSC from 0.590 to 0.736 (+0.146) — a larger jump than switching binary from 128×128 to 256×256 (0.590 → 0.763, +0.173, comparable magnitude) or multiclass from 128×128 to 256×256 (0.736 → 0.784, +0.048, smaller). The best result combines both: multiclass at 256×256.
+- **Why multiclass helps:** giving decoy objects (untrapped cells, debris, lookalike blobs) their own class instead of leaving them as unlabeled background stops the loss from penalizing the model for segmenting them — under the binary scheme, a decoy that visually resembles the trapped cell is background the model is punished for finding, which pushes precision down indiscriminately. Explicitly modeling it as its own class lets the network learn to distinguish "cell-like blob, but not the trapped one" from "the trapped cell," rather than lumping both into one binary decision.
+- **The decoy class itself is harder** (DSC 0.682 vs. 0.784 for trapped_cell) — expected, since decoy objects are a heterogeneous category (any non-trapped cell-like blob) rather than the single consistent target the trapped-cell class represents.
+- **Multiclass converges faster and can overfit sooner:** the 256×256 multiclass run peaked at epoch 73 (val DSC 0.784) then declined to ~0.69 by epoch 100, while the binary run kept improving to epoch 99. `scripts/train_unet.py` reloads `unet_best.pt` before final evaluation specifically to guard against this — final metrics reflect the peak, not wherever the fixed 100-epoch budget happened to end.
+- **Caveat:** these are 40-mask, single-seed runs — not yet a controlled statistical comparison. Before freezing the label scheme, re-run at ≥80 masks (see `CLAUDE.md` "Next Steps") to confirm the multiclass advantage holds as the training set grows, since multiclass requires painting decoy objects on every future mask, not just the trapped cell.
+
+---
+
 ## Loss function
 
-The combined Dice + BCE loss used in all runs:
+The combined Dice + BCE loss used in binary-mode runs (Run 1–2, and `binary_experiment_*.yaml`):
 
 ```
 Loss = α × BCE(pos_weight) + (1 − α) × Dice
@@ -71,15 +103,24 @@ training:
   loss_pos_weight: 100.0 # increase if recall is low; decrease if precision is low
 ```
 
+**Multiclass mode** (`unet.out_channels > 1`, e.g. `multiclass_experiment_256.yaml`) replaces BCE with Cross-Entropy and Dice is computed per-class then averaged:
+
+```
+Loss = α × CrossEntropy(class_weights) + (1 − α) × mean(Dice per class)
+```
+
+`class_weights` (e.g. `[1.0, 3.0, 3.0]` for background/trapped_cell/other-decoy) plays the same role as `pos_weight` but is **not** directly comparable in magnitude — `CrossEntropyLoss`'s weighted-mean reduction renormalises by weight mass, so porting `pos_weight=100` in directly collapsed precision to ~0.13 by pushing recall to 1.0 everywhere. `[1, 3, 3]` was the winner of a small sweep (`1,1,1` / `3,3,3` / `5,5,5` / `10,10,10` / `20,20,20`, each trained the full 100 epochs) — trapped_cell precision=0.757/recall=0.813, a balanced result rather than recall-saturated.
+
 ---
 
 ## Expected trajectory
 
 These are preliminary runs on a fraction of the full annotation pool. As more masks are added:
 
-| Masks | Expected DSC | Suggested `pos_weight` |
+| Masks | Expected DSC (binary) | Suggested `pos_weight` |
 |-------|-------------|----------------------|
-| 30 (now) | ~0.72 | 100 |
+| 30 | ~0.72 | 100 |
+| 40 (now) | 0.76 (binary) / **0.78 (multiclass)** — see Run 3 above | 50 |
 | ~80 | ~0.80 | 50–75 |
 | 150+ | 0.85+ | 25–50 |
 

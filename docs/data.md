@@ -20,8 +20,9 @@ data/
 │   ├── 03_mask_factory/            Inference → classifier training
 │   └── 04_clf_arena/               Final classifier evaluation
 │
-├── masks/                          Hand-drawn binary masks (1228×922 PNG)
-│   ├── 01_annotate_pool/           U-Net training labels
+├── masks/                          Hand-drawn masks (1228×922 PNG)
+│   ├── 01_annotate_pool/           U-Net training labels (binary, 0/255)
+│   ├── 01_annotate_pool_multiclass/  Experimental 3-class labels (0/1/2), same 40 frames
 │   └── 02_unet_holdout/            U-Net test ground truth
 │
 └── preprocessed/                   256×256 pipeline-ready data
@@ -72,6 +73,9 @@ Source for U-Net training masks. Annotate every image before running preprocessi
 | Domain-adapt samples | 20 | Prefix: `domain_<her2>_<cell_id>_<frame>.jpg` |
 
 Domain-adapt frames come from cells also in `03_mask_factory`. The U-Net trains on them, then runs inference on the full set from those cells.
+
+!!! note "Multiclass labels"
+    The same 40 currently-annotated frames also have an experimental 3-class labeling (`data/masks/01_annotate_pool_multiclass/`: 0=background, 1=trapped cell, 2=other/decoy object) used for the binary-vs-multiclass ablation in [Training Results](training.md). `scripts/annotate.py --multiclass` seeds label 1 from the existing binary mask, so only decoy objects need to be painted.
 
 ### `02_unet_holdout` — 101 images (U-Net test)
 

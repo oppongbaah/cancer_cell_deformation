@@ -61,6 +61,8 @@ celldform-infer <input> --unet-ckpt ... --classifier-ckpt ...  # Stages 1–6 in
 
 See [docs/workflow.md](docs/workflow.md) for the full step-by-step guide.
 
+`configs/default.yaml` is the binary, 256×256 baseline. `configs/binary_experiment_*.yaml` and `configs/multiclass_experiment*.yaml` hold a resolution × label-scheme ablation — see [docs/training.md](docs/training.md) for results.
+
 ---
 
 ## HPC Training (Anvil)

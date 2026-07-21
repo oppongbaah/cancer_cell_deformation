@@ -71,16 +71,16 @@ Each step can be toggled individually via the `enabled` dict for ablation experi
 
 | Component | Detail |
 |-----------|--------|
-| Input | `(B, 1, 256, 256)` float32 preprocessed frame |
+| Input | `(B, 1, H, W)` float32 preprocessed frame (`256×256` by default) |
 | Encoder | 4 blocks — 64 → 128 → 256 → 512 channels |
 | Bottleneck | 1024 channels |
 | Decoder | 4 blocks with skip connections |
-| Output | `(B, 1, 256, 256)` raw logit map |
+| Output | `(B, out_channels, H, W)` raw logit map |
 
 !!! note
-    `forward()` returns raw logits — sigmoid is **not** applied internally. Use `model.predict()` for thresholded binary masks. Use `BCEWithLogitsLoss` in the trainer.
+    `forward()` returns raw logits — sigmoid/softmax is **not** applied internally. Use `model.predict()` for thresholded/argmax masks. `out_channels=1` (default, `BCEWithLogitsLoss` in the trainer) is the frozen binary pipeline contract; `out_channels>1` is an opt-in multiclass mode (`CrossEntropyLoss` + softmax/argmax), set via `unet.out_channels` in the config.
 
-**Training** uses combined BCE + Dice loss:
+**Training** uses combined BCE + Dice loss in binary mode (`out_channels=1`):
 
 ```
 Loss = α × BCE(pos_weight) + (1 − α) × Dice
@@ -91,10 +91,13 @@ Loss = α × BCE(pos_weight) + (1 − α) × Dice
 | `loss_alpha` | `0.3` | BCE weight — Dice carries 70% of the signal |
 | `loss_pos_weight` | `100.0` | Upweights cell pixels in BCE to counter ~550:1 background/cell imbalance |
 
-Both are set in `configs/default.yaml` under `training`. The best checkpoint is saved by validation DSC. Supports `ReduceLROnPlateau`, cosine, or no scheduler.
+Both are set in `configs/default.yaml` under `training`. In multiclass mode (`out_channels>1`), a Dice + Cross-Entropy loss (`_DiceCELoss`) is used instead, with an optional per-class `training.class_weights` list (e.g. `[1.0, 3.0, 3.0]`) in place of `loss_pos_weight` — CrossEntropyLoss's weighted-mean reduction renormalises by weight mass, so these weights are not directly comparable in magnitude to `loss_pos_weight`. The best checkpoint is saved by validation DSC — always the primary/trapped-cell class, so it's comparable between binary and multiclass runs. Supports `ReduceLROnPlateau`, cosine, or no scheduler.
 
 !!! note "Class imbalance"
     Cancer cells occupy roughly 0.18% of a 256×256 frame (~118 pixels out of 65,536). Without `pos_weight`, the BCE loss is dominated by background pixels and the model learns to ignore the cell entirely. `pos_weight=100` tells BCE to treat each cell pixel as if it were 100 background pixels. Increase it if recall is low; decrease it if precision is low and recall is near 1.0.
+
+!!! note "Multiclass evaluation"
+    `SegmentationTrainer.evaluate()` returns a flat metrics dict in binary mode, or a dict keyed by class id (plus `"mean"`) in multiclass mode — see `SegmentationMetrics.per_class()`. `scripts/evaluate_unet.py` and `Visualizer.plot_training_curves()` both handle either shape.
 
 **GPU:** The U-Net is the only stage that runs on the GPU. See [GPU & Hardware](gpu.md).
 
