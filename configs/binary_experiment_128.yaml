@@ -1,0 +1,112 @@
+# Binary U-Net config at 128x128 — companion to configs/multiclass_experiment.yaml.
+#
+# Purpose: give the binary-vs-multiclass comparison a clean, matched baseline —
+# same resolution (128x128), same 40-frame annotation count, same seed/split
+# fractions as the multiclass run, so a DSC difference between the two can be
+# attributed to the labeling scheme rather than resolution or sample size.
+# This is a SEPARATE folder/config from configs/default.yaml on purpose — it
+# does not touch data/preprocessed/train/01_annotate_pool/ (256x256) or the
+# documented DSC 0.72 baseline checkpoint, which stay reproducible as-is.
+#
+# Pre-requisites:
+#   1. python scripts/annotate.py             (binary pool, already at 40+ frames)
+#   2. python scripts/validate_masks.py
+#   3. python scripts/preprocess_frames.py --pool 01_annotate_pool --masks \
+#        --output-dir data/preprocessed/train/01_annotate_pool_128/inputs \
+#        --mask-output-dir data/preprocessed/train/01_annotate_pool_128/labels \
+#        --target-size 128 128
+#   4. celldform-train-unet --config configs/binary_experiment_128.yaml
+
+# ─── Data paths ──────────────────────────────────────────────────────────────
+data:
+  frames_dir: "data/preprocessed/train/01_annotate_pool_128/inputs"
+  masks_dir:  "data/preprocessed/train/01_annotate_pool_128/labels"
+  features_csv: "data/features.csv"
+  labels_csv: "data/labels.csv"
+  val_split: 0.15
+  test_split: 0.10
+
+# ─── Preprocessing ───────────────────────────────────────────────────────────
+# Record-of-what-was-used only — preprocess_frames.py does not read this file;
+# pass --target-size to match when you run it (see prerequisites above).
+preprocessing:
+  target_size: [128, 128]
+  median_kernel: 3
+  clahe_clip_limit: 2.0
+  clahe_tile_grid: [8, 8]
+  morph_kernel_size: 3
+  enabled:
+    denoise: true
+    enhance: true
+    morphology: true
+    resize: true
+    normalize: true
+
+# ─── U-Net ───────────────────────────────────────────────────────────────────
+unet:
+  in_channels: 1
+  base_features: 64
+  out_channels: 1   # binary — matches configs/default.yaml's segmentation mode
+
+# ─── Training ────────────────────────────────────────────────────────────────
+training:
+  epochs: 100
+  batch_size: 16
+  lr: 0.0001
+  weight_decay: 0.0001
+  optimizer: "adamw"
+  scheduler: "reduce_on_plateau"
+  scheduler_patience: 5
+  scheduler_factor: 0.5
+  num_workers: 6
+  seed: 42                        # same as configs/multiclass_experiment.yaml
+  loss_alpha: 0.3                 # BCE weight in Dice+BCE loss (Dice weight = 1 - alpha)
+  # Swept [5, 10, 20, 50, 100] at this resolution/dataset size (41 frames);
+  # DSC ranged 0.43-0.54 across all candidates, capped well below the 256x256
+  # baseline's 0.72 regardless of weight — points to 128x128 being a harder
+  # regime for this object size (~5-6px across at this resolution) rather
+  # than a weighting bug like the multiclass [1,100,100] case. 50 was the
+  # sweep winner (DSC=0.5385).
+  loss_pos_weight: 50.0
+  use_amp: true
+
+# ─── Compute ─────────────────────────────────────────────────────────────────
+device: null
+
+# ─── Resume ──────────────────────────────────────────────────────────────────
+resume:
+  checkpoint: null
+  load_optimizer: true
+  load_scheduler: true
+
+# ─── Checkpointing ───────────────────────────────────────────────────────────
+checkpoint_dir: "checkpoints/binary_experiment_128"
+keep_n_checkpoints: 3
+
+# ─── Feature extraction ──────────────────────────────────────────────────────
+features:
+  pixel_size_um: null
+  min_area_px: 50
+
+# ─── Classification ──────────────────────────────────────────────────────────
+classification:
+  scale_features: true
+  random_state: 42
+
+# ─── Biomechanics ────────────────────────────────────────────────────────────
+biomechanics:
+  metric: "aspect_ratio"
+  window_s: null
+  laser_power_mW: 0.0
+  trap_current_mA: 0.0
+
+# ─── Frame extraction ────────────────────────────────────────────────────────
+acquisition:
+  target_fps: null
+  every_n: 1
+  max_frames: null
+  image_format: "png"
+  change_threshold: 2.0
+  dark_percentile: 20.0
+  channel_width: 0.30
+  min_circularity: 0.60

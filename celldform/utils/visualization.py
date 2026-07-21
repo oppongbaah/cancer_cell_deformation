@@ -35,6 +35,9 @@ class Visualizer:
         Matplotlib style sheet name (e.g. ``"seaborn-v0_8-whitegrid"``).
     """
 
+    _METRIC_ORDER = ["dsc", "iou", "precision", "recall", "accuracy"]
+    _CLASS_NAMES = {0: "background", 1: "trapped_cell", 2: "other/decoy"}
+
     def __init__(
         self,
         figsize: Tuple[int, int] = (10, 5),
@@ -55,29 +58,119 @@ class Visualizer:
     def plot_training_curves(
         self,
         history: Dict[str, list],
+        final_metrics: Optional[Dict] = None,
+        best_epoch: Optional[int] = None,
         save_path: Optional[Union[str, Path]] = None,
     ) -> plt.Figure:
-        """Plot train/val loss and validation DSC from :meth:`SegmentationTrainer.fit`."""
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=self.figsize, dpi=self.dpi)
+        """Plot train/val loss, validation DSC, and (optionally) a final-metrics table.
 
-        epochs = range(1, len(history["train_loss"]) + 1)
+        Parameters
+        ----------
+        history:
+            Dict from :meth:`SegmentationTrainer.fit` with ``train_loss``,
+            ``val_loss``, ``val_dsc``. ``val_dsc`` is the primary-cell-class
+            DSC — trapped_cell (class 1) in multiclass mode, the single
+            foreground class in binary mode — never a macro mean across
+            classes, so it's directly comparable between the two modes.
+        final_metrics:
+            Optional dict from :meth:`SegmentationTrainer.evaluate` — ideally
+            evaluated on the *best* checkpoint (see ``best_epoch``), not
+            whatever epoch training happened to stop at. Binary mode: flat
+            dict (dsc, iou, precision, recall, accuracy). Multiclass mode:
+            dict keyed by class id (+ ``"mean"``), each a flat metrics dict.
+            When given, a heatmap table of every metric is added below the
+            curves — the same numbers printed to the console, laid out
+            visually instead of read off a log.
+        best_epoch:
+            Epoch (1-indexed) the best checkpoint was saved at — e.g. from
+            reloading ``unet_best.pt`` before calling ``evaluate()``. Marked
+            with a star on the DSC curve so you can see, at a glance, where
+            training peaked before any overfitting decline set in.
+        """
+        has_table = final_metrics is not None
+        fig_h = self.figsize[1] * (2.0 if has_table else 1.0)
+        fig = plt.figure(figsize=(self.figsize[0], fig_h), dpi=self.dpi)
+
+        if has_table:
+            gs = fig.add_gridspec(2, 2, height_ratios=[1.0, 1.1], hspace=0.4)
+            ax1 = fig.add_subplot(gs[0, 0])
+            ax2 = fig.add_subplot(gs[0, 1])
+            ax3 = fig.add_subplot(gs[1, :])
+        else:
+            ax1 = fig.add_subplot(1, 2, 1)
+            ax2 = fig.add_subplot(1, 2, 2)
+            ax3 = None
+
+        epochs = list(range(1, len(history["train_loss"]) + 1))
         ax1.plot(epochs, history["train_loss"], label="Train loss")
         ax1.plot(epochs, history["val_loss"], label="Val loss")
         ax1.set_xlabel("Epoch")
-        ax1.set_ylabel("DiceBCE Loss")
+        ax1.set_ylabel("Loss")
         ax1.set_title("Segmentation Loss")
         ax1.legend()
 
-        ax2.plot(epochs, history["val_dsc"], color="green", label="Val DSC")
+        ax2.plot(epochs, history["val_dsc"], color="green", label="Val DSC (primary cell class)")
+        if best_epoch is not None and 1 <= best_epoch <= len(history["val_dsc"]):
+            best_val = history["val_dsc"][best_epoch - 1]
+            ax2.axvline(best_epoch, color="red", linestyle="--", linewidth=1, alpha=0.6)
+            ax2.scatter(
+                [best_epoch], [best_val], color="red", zorder=5, marker="*", s=160,
+                label=f"Best epoch {best_epoch}  (DSC={best_val:.3f})",
+            )
         ax2.set_xlabel("Epoch")
         ax2.set_ylabel("DSC")
         ax2.set_title("Validation Dice Score")
-        ax2.legend()
+        ax2.legend(loc="lower right", fontsize=8)
+
+        if has_table:
+            self._draw_metrics_table(ax3, final_metrics)
+            title = "Training curves"
+            if best_epoch is not None:
+                title += f"  —  best checkpoint at epoch {best_epoch}"
+            fig.suptitle(title, fontsize=11, y=0.995)
 
         fig.tight_layout()
         if save_path is not None:
             fig.savefig(Path(save_path))
         return fig
+
+    def _draw_metrics_table(self, ax: plt.Axes, metrics: Dict) -> None:
+        """Render every final evaluation metric as an annotated heatmap table.
+
+        Handles both binary (flat dict) and multiclass (dict keyed by class
+        id + "mean") shapes returned by ``SegmentationTrainer.evaluate``.
+        """
+        is_multiclass = any(isinstance(v, dict) for v in metrics.values())
+
+        if is_multiclass:
+            class_rows = sorted(k for k in metrics if isinstance(k, int))
+            row_keys = class_rows + ["mean"]
+            row_labels = [self._CLASS_NAMES.get(k, f"class_{k}") for k in class_rows] + ["MEAN"]
+            data = np.array([[metrics[k][m] for m in self._METRIC_ORDER] for k in row_keys])
+        else:
+            row_labels = ["cell"]
+            data = np.array([[metrics[m] for m in self._METRIC_ORDER]])
+
+        im = ax.imshow(data, vmin=0, vmax=1, cmap="RdYlGn", aspect="auto")
+
+        ax.set_xticks(range(len(self._METRIC_ORDER)))
+        ax.set_xticklabels([m.upper() for m in self._METRIC_ORDER], fontsize=9)
+        ax.set_yticks(range(len(row_labels)))
+        ax.set_yticklabels(row_labels, fontsize=9)
+        ax.set_title("Final Evaluation Metrics", fontsize=10)
+
+        for i in range(data.shape[0]):
+            for j in range(data.shape[1]):
+                ax.text(
+                    j, i, f"{data[i, j]:.3f}", ha="center", va="center",
+                    fontsize=10, fontweight="bold" if row_labels[i] == "MEAN" else "normal",
+                    bbox=dict(facecolor="white", alpha=0.55, edgecolor="none", pad=1.5),
+                )
+
+        if is_multiclass:
+            ax.axhline(len(row_labels) - 1.5, color="black", linewidth=1.2)
+
+        ax.figure.colorbar(im, ax=ax, shrink=0.75, label="Score", pad=0.02)
 
     def plot_regression_curves(
         self,

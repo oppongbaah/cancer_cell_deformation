@@ -1,0 +1,106 @@
+# Multiclass U-Net config at 256x256 — controlled resolution ablation
+# companion to configs/multiclass_experiment.yaml (128x128).
+#
+# Purpose: same 40 masks, same seed (42), same class_weights ([1,3,3]) as
+# multiclass_experiment.yaml — only the preprocessing target size differs
+# (256 here vs 128 there). Pairs with configs/binary_experiment_256.yaml
+# (also 256x256, same seed, pos_weight=50) for the fairest binary-vs-
+# multiclass comparison: both models get their best-performing resolution,
+# so any remaining DSC gap is attributable to the labeling scheme alone.
+#
+# Pre-requisites:
+#   1. python scripts/validate_masks.py --multiclass
+#   2. python scripts/preprocess_frames.py --pool 01_annotate_pool --masks \
+#        --mask-dir data/masks/01_annotate_pool_multiclass \
+#        --output-dir data/preprocessed/train/01_annotate_pool_multiclass_256/inputs \
+#        --mask-output-dir data/preprocessed/train/01_annotate_pool_multiclass_256/labels \
+#        --target-size 256 256
+#   3. celldform-train-unet --config configs/multiclass_experiment_256.yaml
+
+# ─── Data paths ──────────────────────────────────────────────────────────────
+data:
+  frames_dir: "data/preprocessed/train/01_annotate_pool_multiclass_256/inputs"
+  masks_dir:  "data/preprocessed/train/01_annotate_pool_multiclass_256/labels"
+  features_csv: "data/features.csv"
+  labels_csv: "data/labels.csv"
+  val_split: 0.15
+  test_split: 0.10
+
+# ─── Preprocessing ───────────────────────────────────────────────────────────
+# Record-of-what-was-used only — preprocess_frames.py does not read this file;
+# pass --target-size to match when you run it (see prerequisites above).
+preprocessing:
+  target_size: [256, 256]
+  median_kernel: 3
+  clahe_clip_limit: 2.0
+  clahe_tile_grid: [8, 8]
+  morph_kernel_size: 3
+  enabled:
+    denoise: true
+    enhance: true
+    morphology: true
+    resize: true
+    normalize: true
+
+# ─── U-Net ───────────────────────────────────────────────────────────────────
+unet:
+  in_channels: 1
+  base_features: 64
+  out_channels: 3   # 0=background, 1=trapped cell, 2=other/decoy object
+
+# ─── Training ────────────────────────────────────────────────────────────────
+training:
+  epochs: 100
+  batch_size: 16
+  lr: 0.0001
+  weight_decay: 0.0001
+  optimizer: "adamw"
+  scheduler: "reduce_on_plateau"
+  scheduler_patience: 5
+  scheduler_factor: 0.5
+  num_workers: 6
+  seed: 42                        # same as configs/multiclass_experiment.yaml / binary_experiment_256.yaml
+  loss_alpha: 0.3
+  class_weights: [1.0, 3.0, 3.0]  # same as configs/multiclass_experiment.yaml — only resolution differs
+  use_amp: true
+
+# ─── Compute ─────────────────────────────────────────────────────────────────
+device: null
+
+# ─── Resume ──────────────────────────────────────────────────────────────────
+resume:
+  checkpoint: null
+  load_optimizer: true
+  load_scheduler: true
+
+# ─── Checkpointing ───────────────────────────────────────────────────────────
+checkpoint_dir: "checkpoints/multiclass_experiment_256"
+keep_n_checkpoints: 3
+
+# ─── Feature extraction ──────────────────────────────────────────────────────
+features:
+  pixel_size_um: null
+  min_area_px: 50
+
+# ─── Classification ──────────────────────────────────────────────────────────
+classification:
+  scale_features: true
+  random_state: 42
+
+# ─── Biomechanics ────────────────────────────────────────────────────────────
+biomechanics:
+  metric: "aspect_ratio"
+  window_s: null
+  laser_power_mW: 0.0
+  trap_current_mA: 0.0
+
+# ─── Frame extraction ────────────────────────────────────────────────────────
+acquisition:
+  target_fps: null
+  every_n: 1
+  max_frames: null
+  image_format: "png"
+  change_threshold: 2.0
+  dark_percentile: 20.0
+  channel_width: 0.30
+  min_circularity: 0.60

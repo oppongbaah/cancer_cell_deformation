@@ -225,6 +225,24 @@ def main():
     # ── Train ────────────────────────────────────────────────────────────────
     history = trainer.fit()
 
+    # ── Reload best checkpoint ──────────────────────────────────────────────
+    # trainer.model holds the LAST epoch's weights when fit() returns, not
+    # necessarily the best one — small datasets like this often overfit past
+    # their peak validation DSC well before training ends. Reload the
+    # checkpoint fit() already saved whenever val_dsc improved, so the
+    # reported metrics and curve reflect the best model, not wherever
+    # training happened to stop.
+    best_epoch = None
+    best_ckpt_path = trainer.checkpoint_dir / "unet_best.pt"
+    if best_ckpt_path.exists():
+        best_ckpt = torch.load(best_ckpt_path, map_location=trainer.device)
+        trainer.model.load_state_dict(best_ckpt["model_state_dict"])
+        best_epoch = best_ckpt["epoch"]
+        print(
+            f"\n[celldform] Reloaded best checkpoint for final evaluation: "
+            f"epoch {best_epoch}, val_dsc={best_ckpt['val_dsc']:.4f}"
+        )
+
     # ── Final evaluation ─────────────────────────────────────────────────────
     metrics = trainer.evaluate()
     print("\nFinal validation metrics:")
@@ -249,7 +267,9 @@ def main():
     curve_path = results_dir / f"unet_training_curves_v{next_version}{suffix}.png"
 
     viz = Visualizer()
-    viz.plot_training_curves(history, save_path=str(curve_path))
+    viz.plot_training_curves(
+        history, final_metrics=metrics, best_epoch=best_epoch, save_path=str(curve_path)
+    )
     print(f"Training curves saved to {curve_path}")
 
 

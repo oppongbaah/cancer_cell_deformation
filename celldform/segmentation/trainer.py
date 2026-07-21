@@ -163,8 +163,9 @@ class SegmentationTrainer:
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
         on_cuda = self.device.startswith("cuda")
+        self.device_type = "cuda" if on_cuda else "cpu"  # autocast/GradScaler want a bare type, not e.g. "cuda:0"
         self.use_amp = conf.training.use_amp and on_cuda
-        self.scaler = torch.cuda.amp.GradScaler(enabled=self.use_amp)
+        self.scaler = torch.amp.GradScaler(self.device_type, enabled=self.use_amp)
         if on_cuda:
             torch.backends.cudnn.benchmark = True  # fixed 256×256 input → cuDNN picks optimal kernel once
 
@@ -261,7 +262,7 @@ class SegmentationTrainer:
         self.model.eval()
         all_preds, all_targets = [], []
 
-        with torch.no_grad(), torch.cuda.amp.autocast(enabled=self.use_amp):
+        with torch.no_grad(), torch.amp.autocast(self.device_type, enabled=self.use_amp):
             for images, masks in loader:
                 images = images.to(self.device, non_blocking=True)
                 logits = self.model(images)
@@ -291,7 +292,7 @@ class SegmentationTrainer:
             images = images.to(self.device, non_blocking=True)
             masks = masks.to(self.device, non_blocking=True).to(target_dtype)
             self.optimizer.zero_grad()
-            with torch.cuda.amp.autocast(enabled=self.use_amp):
+            with torch.amp.autocast(self.device_type, enabled=self.use_amp):
                 loss = self.criterion(self.model(images), masks)
             self.scaler.scale(loss).backward()
             self.scaler.step(self.optimizer)
@@ -308,7 +309,7 @@ class SegmentationTrainer:
         total_dsc = 0.0
         target_dtype = torch.long if self.out_channels > 1 else torch.float32
 
-        with torch.no_grad(), torch.cuda.amp.autocast(enabled=self.use_amp):
+        with torch.no_grad(), torch.amp.autocast(self.device_type, enabled=self.use_amp):
             for images, masks in self.val_loader:
                 images = images.to(self.device, non_blocking=True)
                 masks = masks.to(self.device, non_blocking=True).to(target_dtype)
