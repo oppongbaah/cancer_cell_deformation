@@ -12,18 +12,20 @@ data/
 │   ├── high/                       High HER2-expression cells (9 videos)
 │   ├── low/                        Low HER2-expression cells (5 videos)
 │   ├── cell 1 low 50 increments.mp4
-│   └── legacy/20210825_cancer/     223 unlabelled JPGs from 2021 microscope
+│   └── legacy/20210825_cancer/     220 unlabelled JPGs from 2021 microscope
 │
 ├── frames/                         Raw extracted frames (1228×922 greyscale JPEG)
 │   ├── 01_annotate_pool/           U-Net training source
 │   ├── 02_unet_holdout/            U-Net test source
+│   │   └── legacy_holdout/         20 reserved legacy frames — separate diagnostic DSC
 │   ├── 03_mask_factory/            Inference → classifier training
 │   └── 04_clf_arena/               Final classifier evaluation
 │
 ├── masks/                          Hand-drawn masks (1228×922 PNG)
 │   ├── 01_annotate_pool/           U-Net training labels (binary, 0/255)
 │   ├── 01_annotate_pool_multiclass/  Experimental 3-class labels (0/1/2), same 40 frames
-│   └── 02_unet_holdout/            U-Net test ground truth
+│   ├── 02_unet_holdout/            U-Net test ground truth
+│   └── 02_unet_holdout/legacy_holdout/  Ground truth for the legacy holdout frames
 │
 └── preprocessed/                   256×256 pipeline-ready data
     ├── train/01_annotate_pool/
@@ -32,6 +34,9 @@ data/
     ├── evaluate/02_unet_holdout/
     │   ├── inputs/                 Preprocessed frames → U-Net evaluation inputs
     │   └── labels/                 Resized masks       → U-Net evaluation labels
+    ├── evaluate/02_unet_holdout/legacy_holdout/
+    │   ├── inputs/                 Preprocessed legacy holdout frames → separate DSC
+    │   └── labels/                 Resized legacy holdout masks
     ├── inference/
     │   ├── 03_mask_factory/inputs/ Preprocessed frames → classifier training
     │   └── 04_clf_arena/inputs/    Preprocessed frames → final evaluation
@@ -47,10 +52,12 @@ data/
 | `raw/` | Source — never modified | In filename | None | Never |
 | `frames/01_annotate_pool/` | U-Net training source | No | Hand-drawn (required) | Annotate now |
 | `frames/02_unet_holdout/` | U-Net test source | No | Hand-drawn (required) | After U-Net training |
+| `frames/02_unet_holdout/legacy_holdout/` | Legacy-domain diagnostic source | No | Hand-drawn (required) | After U-Net training |
 | `frames/03_mask_factory/` | Classifier training source | Yes | U-Net predicted | After U-Net training |
 | `frames/04_clf_arena/` | Classifier test source | Yes | U-Net predicted | Final evaluation only |
 | `masks/01_annotate_pool/` | U-Net training labels | No | Binary, hand-drawn | During annotation |
 | `masks/02_unet_holdout/` | U-Net test labels | No | Binary, hand-drawn | After U-Net training |
+| `masks/02_unet_holdout/legacy_holdout/` | Legacy-domain diagnostic labels | No | Binary, hand-drawn | After U-Net training |
 | `preprocessed/train/.../inputs/` | U-Net training inputs (256×256) | No | — | After preprocessing |
 | `preprocessed/train/.../labels/` | U-Net training labels (256×256) | No | Resized binary | After preprocessing |
 | `preprocessed/evaluate/.../inputs/` | U-Net evaluation inputs (256×256) | No | — | After holdout annotation |
@@ -63,13 +70,13 @@ data/
 
 ## Pool descriptions
 
-### `01_annotate_pool` — 243 images (U-Net training)
+### `01_annotate_pool` — 240 images (U-Net training)
 
 Source for U-Net training masks. Annotate every image before running preprocessing.
 
 | Subset | Count | Notes |
 |--------|-------|-------|
-| Legacy cancer images (2021) | 223 | Filename: `YYYYMMDDHHMMSS.jpg` — no HER2 label |
+| Legacy cancer images (2021) | 220 | Filename: `YYYYMMDDHHMMSS.jpg` — no HER2 label |
 | Domain-adapt samples | 20 | Prefix: `domain_<her2>_<cell_id>_<frame>.jpg` |
 
 Domain-adapt frames come from cells also in `03_mask_factory`. The U-Net trains on them, then runs inference on the full set from those cells.
@@ -87,6 +94,9 @@ Held out from all training. Annotate **after** U-Net training is complete.
 | cell6 | low | 51 |
 
 The DSC score from evaluating on this pool is the thesis-reportable segmentation metric.
+
+!!! note "`02_unet_holdout/legacy_holdout/` — 20 images, evaluated separately"
+    A diagnostic subset nested under `02_unet_holdout/` but **never merged** into the DSC above. Reserved unannotated from `01_annotate_pool` (evenly sampled across the legacy frames unannotated at the time) before annotated training data included any real-cell frames. Since training was legacy-only while `02_unet_holdout` is real-cell-only, one blended DSC couldn't separate "weak segmentation" from "domain gap." Evaluating this subset on its own (own `--image-dir`/`--mask-dir` pair; `evaluate_unet.py --pool 02_unet_holdout` doesn't recurse into it) gives a second, comparable DSC — high legacy-holdout DSC + low real-cell-holdout DSC points to the domain gap specifically.
 
 ### `03_mask_factory` — 557 images (classifier training)
 

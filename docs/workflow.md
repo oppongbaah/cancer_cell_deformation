@@ -27,7 +27,7 @@ Outputs:
 
 | Folder | Images | Purpose |
 |--------|--------|---------|
-| `data/frames/01_annotate_pool/` | 248 | U-Net training source — annotate these |
+| `data/frames/01_annotate_pool/` | 240 | U-Net training source — annotate these |
 | `data/frames/02_unet_holdout/` | 101 | U-Net test — annotate **after** training |
 | `data/frames/03_mask_factory/` | 557 | U-Net inference → classifier training |
 | `data/frames/04_clf_arena/` | 101 | Final classifier evaluation only |
@@ -150,6 +150,9 @@ python scripts/evaluate_unet.py --checkpoint checkpoints/unet_best.pt
 ```
 
 The DSC reported by `evaluate_unet.py` is the **thesis-reportable segmentation score** — these cells were never seen during training or hyperparameter tuning.
+
+!!! note "Optional — legacy-domain diagnostic"
+    `data/frames/02_unet_holdout/legacy_holdout/` holds 20 legacy frames reserved separately for a second, independent DSC — it isolates "the segmentation is weak" from "there's a domain gap between legacy microscope images and the real optical-tweezer setup." Repeat 5a–5d with `--image-dir data/frames/02_unet_holdout/legacy_holdout --mask-dir data/masks/02_unet_holdout/legacy_holdout` and separate `--output-dir`/`--mask-output-dir` for preprocessing. Report it as its own number — do not merge it with the DSC above.
 
 ---
 

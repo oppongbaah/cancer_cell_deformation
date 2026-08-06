@@ -13,6 +13,8 @@ S   Save current mask as a binary PNG and advance to the next image
 N   Skip (no mask saved) and advance
 B   Go back to the previous image (reclaimed from napari's default "toggle
     preserve labels" shortcut on the mask layer)
+C   Return to the current frame — the last one reached via S/N — after
+    browsing away with N/B (a no-op if you're already there)
 P   Toggle paint mode on the mask layer (napari's default binding — left
     alone; use the mask layer's mode buttons for erase/fill/pick)
 
@@ -60,8 +62,19 @@ if sys.platform == "linux" and not Path("/dev/dri").exists():
 import cv2
 import napari
 import numpy as np
+from napari.utils.colormaps import DirectLabelColormap
 
 _EXTS = {".jpg", ".jpeg", ".png", ".tif", ".tiff"}
+
+# Fixed label->color mapping for --multiclass mode. Without this, napari's default
+# Labels colormap is auto-generated and can reassign colors when the layer's .data is
+# swapped out for a new array on every frame change (as _update_viewer does, rather
+# than creating a fresh Labels layer each time) — observed as label 1 (trapped cell)
+# and label 2 (other/decoy) sometimes rendering as the same color after navigating
+# with B/N. A DirectLabelColormap is a plain fixed dict, immune to that.
+_MULTICLASS_COLORMAP = DirectLabelColormap(
+    color_dict={0: "transparent", 1: "green", 2: "red", None: "transparent"},
+)
 
 
 def _load_gray(path: Path) -> np.ndarray:
@@ -133,7 +146,8 @@ def _update_viewer(
     else:
         viewer.add_image(img, name="raw", colormap="gray")
         viewer.add_image(enhanced, name="enhanced", colormap="gray", visible=False)
-        viewer.add_labels(mask, name="mask", opacity=0.5)
+        label_colormap = _MULTICLASS_COLORMAP if multiclass else None
+        viewer.add_labels(mask, name="mask", opacity=0.5, colormap=label_colormap)
 
     status = "  [saved]" if mask_path.exists() else ""
     viewer.title = f"celldform annotator  [{idx + 1}/{total}]  {path.name}{status}"
@@ -193,17 +207,18 @@ def main() -> None:
         print(f"Starting at the first unannotated image: {start_idx + 1}/{len(all_images)}")
     else:
         print("All images already annotated — starting from the beginning.")
-    print("\nKeybindings:  S = save & next   N = skip   B = previous   P = toggle paint\n")
+    print("\nKeybindings:  S = save & next   N = skip   B = previous   "
+          "C = return to current   P = toggle paint\n")
     if args.multiclass:
         print("Multi-class mode: label 1 = trapped cell, label 2 = other/decoy object.")
         print('Switch labels with the "label" spinbox in the Labels layer controls, or "-"/"=".\n')
 
-    state = {"idx": start_idx, "saved": 0, "skipped": 0}
+    state = {"idx": start_idx, "anchor": start_idx, "saved": 0, "skipped": 0}
 
     viewer = napari.Viewer(title="celldform annotator")
     _update_viewer(viewer, todo[start_idx], start_idx, len(todo), mask_dir, seed_dir, args.multiclass)
 
-    def _advance(delta: int) -> None:
+    def _advance(delta: int, update_anchor: bool = True) -> None:
         nxt = state["idx"] + delta
         if nxt < 0:
             print("Already at the first image.")
@@ -214,6 +229,8 @@ def main() -> None:
             viewer.close()
             return
         state["idx"] = nxt
+        if update_anchor:
+            state["anchor"] = nxt
         _update_viewer(viewer, todo[nxt], nxt, len(todo), mask_dir, seed_dir, args.multiclass)
 
     @viewer.bind_key("s")
@@ -233,7 +250,7 @@ def main() -> None:
 
     @viewer.bind_key("b")
     def _prev(viewer: napari.Viewer) -> None:
-        _advance(-1)
+        _advance(-1, update_anchor=False)
 
     # napari's Labels layer binds "B" to "toggle preserve labels" by default
     # (napari.utils.shortcuts), which shadows the viewer-level "b" above
@@ -242,7 +259,16 @@ def main() -> None:
     # default paint-mode toggle.
     @viewer.layers["mask"].bind_key("b", overwrite=True)
     def _prev_from_mask_layer(layer) -> None:
-        _advance(-1)
+        _advance(-1, update_anchor=False)
+
+    @viewer.bind_key("c")
+    def _return_to_current(viewer: napari.Viewer) -> None:
+        anchor = state["anchor"]
+        if state["idx"] == anchor:
+            print("Already at the current frame.")
+            return
+        state["idx"] = anchor
+        _update_viewer(viewer, todo[anchor], anchor, len(todo), mask_dir, seed_dir, args.multiclass)
 
     napari.run()
     print(f"\nSession ended.  Saved: {state['saved']}, Skipped: {state['skipped']}")

@@ -22,10 +22,10 @@ Preliminary training results from the first annotation sessions. The model is no
 
 ## Run 2 — With class imbalance correction
 
-**Masks:** 30 annotated out of 243 available (12.3%)  |  **Epochs:** 50  |  **Loss:** Dice+BCE (α=0.3, pos\_weight=100)
+**Masks:** 30 annotated out of 240 available (12.5%)  |  **Epochs:** 50  |  **Loss:** Dice+BCE (α=0.3, pos\_weight=100)
 
-!!! success "DSC 0.72 from just 30 of 243 masks"
-    This result was produced using only **30 hand-drawn masks — 12.3% of the full 243-image annotation pool**. The remaining 213 frames have not yet been annotated. A DSC of 0.72 at this stage is a strong indicator that the annotations are correct and the pipeline is working as expected. With the full pool annotated, DSC of 0.85+ is anticipated.
+!!! success "DSC 0.72 from just 30 of 240 masks"
+    This result was produced using only **30 hand-drawn masks — 12.5% of the full 240-image annotation pool**. The remaining 210 frames have not yet been annotated. A DSC of 0.72 at this stage is a strong indicator that the annotations are correct and the pipeline is working as expected. With the full pool annotated, DSC of 0.85+ is anticipated.
 
 | Metric | Value |
 |--------|-------|
