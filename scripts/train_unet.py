@@ -31,6 +31,8 @@ from __future__ import annotations
 
 import argparse
 import random
+from collections import defaultdict
+from datetime import datetime
 from pathlib import Path
 
 import numpy as np
@@ -126,6 +128,86 @@ def _worker_init_fn(worker_id: int) -> None:
     random.seed(worker_seed)
 
 
+_LEGACY_TS_FMT = "%Y%m%d%H%M%S"
+_LEGACY_BURST_GAP_S = 5  # gap between legacy frame timestamps that starts a new acquisition burst
+
+
+def _assign_legacy_bursts(stems: list[str], gap_s: int = _LEGACY_BURST_GAP_S) -> dict[str, str]:
+    """Cluster legacy timestamp-named frames into acquisition bursts.
+
+    Legacy frames are named by capture timestamp (YYYYMMDDHHMMSS) and were
+    sampled roughly one second apart within a burst — consecutive seconds of
+    an essentially static trapped cell, i.e. near-duplicate images. A gap
+    larger than gap_s between sorted timestamps marks a new burst.
+    """
+    ordered = sorted(stems, key=int)
+    groups: dict[str, str] = {}
+    burst_id = 0
+    prev_ts = None
+    for stem in ordered:
+        ts = datetime.strptime(stem, _LEGACY_TS_FMT)
+        if prev_ts is not None and (ts - prev_ts).total_seconds() > gap_s:
+            burst_id += 1
+        groups[stem] = f"legacy_burst_{burst_id}"
+        prev_ts = ts
+    return groups
+
+
+def _build_groups(pairs: list[tuple[Path, Path]]) -> list[str]:
+    """Assign a group id per (frame, mask) pair so correlated frames never
+    split across train/val/test.
+
+    Two sources of correlation in this dataset:
+      - legacy frames: one-second-apart bursts of a near-static cell (see
+        _assign_legacy_bursts)
+      - domain_<cell>_<frame> frames: multiple samples drawn from the same
+        real trapped cell, grouped by cell id
+    """
+    stems = [f.stem for f, _ in pairs]
+    legacy_bursts = _assign_legacy_bursts([s for s in stems if s.isdigit()])
+
+    groups = []
+    for stem in stems:
+        if stem.startswith("domain_"):
+            parts = stem.split("_")
+            groups.append("_".join(parts[1:-1]))  # domain_high_cell1_002042 -> high_cell1
+        elif stem in legacy_bursts:
+            groups.append(legacy_bursts[stem])
+        else:
+            groups.append(stem)  # unrecognised naming scheme: treat as its own group
+    return groups
+
+
+def _group_split(
+    pairs: list[tuple[Path, Path]], groups: list[str], n_test: int, n_val: int
+) -> tuple[list, list, list]:
+    """Split pairs into train/val/test by whole group, never splitting a
+    group across sets. Group order is shuffled (uses the already-seeded
+    `random` module), then groups are assigned to test, then val, then train
+    until each set's target frame count is reached — so split sizes
+    approximate n_test/n_val rather than matching exactly, since groups vary
+    in size.
+    """
+    by_group: dict[str, list] = defaultdict(list)
+    for pair, g in zip(pairs, groups):
+        by_group[g].append(pair)
+
+    group_ids = list(by_group.keys())
+    random.shuffle(group_ids)
+
+    test_pairs, val_pairs, train_pairs = [], [], []
+    for g in group_ids:
+        items = by_group[g]
+        if len(test_pairs) < n_test:
+            test_pairs.extend(items)
+        elif len(val_pairs) < n_val:
+            val_pairs.extend(items)
+        else:
+            train_pairs.extend(items)
+
+    return train_pairs, val_pairs, test_pairs
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -173,17 +255,16 @@ def main():
             f"No matched frame/mask pairs found in {frames_dir} / {masks_dir}."
         )
 
-    random.shuffle(pairs)
     n = len(pairs)
     n_test = int(n * conf.data.test_split)
     n_val = int(n * conf.data.val_split)
 
-    test_pairs = pairs[:n_test]
-    val_pairs = pairs[n_test:n_test + n_val]
-    train_pairs = pairs[n_test + n_val:]
+    groups = _build_groups(pairs)
+    train_pairs, val_pairs, test_pairs = _group_split(pairs, groups, n_test, n_val)
 
+    n_groups = len(set(groups))
     print(
-        f"[celldform] Dataset split — "
+        f"[celldform] Dataset split (group-aware, {n_groups} groups) — "
         f"train: {len(train_pairs)}  val: {len(val_pairs)}  test: {len(test_pairs)}"
     )
 
