@@ -159,6 +159,7 @@ class UNet(nn.Module):
         image: "np.ndarray",  # noqa: F821 — avoid circular import
         threshold: float = 0.5,
         device: Optional[str] = None,
+        binary_output: bool = False,
     ) -> "np.ndarray":
         """Segment a single preprocessed NumPy image, return a class mask.
 
@@ -171,12 +172,24 @@ class UNet(nn.Module):
             Ignored in multiclass mode (softmax + argmax is used instead).
         device:
             ``"cuda"`` or ``"cpu"``.  Auto-detected if *None*.
+        binary_output:
+            Multiclass mode only. When True, collapse the 3-class map to a
+            trapped-cell-only binary mask (class 1 -> 1, everything else,
+            including decoy/class 2, -> 0) instead of returning the raw
+            class ids. The decoy class exists to help the network learn a
+            sharper trapped-cell boundary (see the label-scheme ablation in
+            CLAUDE.md) — final consumers (MorphologyExtractor and anything
+            downstream of it) must never see decoy pixels as foreground, or
+            a decoy blob larger than the trapped cell would get picked up by
+            MorphologyExtractor._largest_region()'s ``mask > 0`` foreground
+            test. No effect in binary mode, which is already 0/1.
 
         Returns
         -------
-        Binary mode (``out_channels == 1``): uint8 array, 0/1.
-        Multiclass mode (``out_channels > 1``): uint8 array of class ids
-        (0 = background, 1 = trapped cell, 2 = other/decoy, ...).
+        Binary mode (``out_channels == 1``), or multiclass with
+        ``binary_output=True``: uint8 array, 0/1 (1 = trapped cell).
+        Multiclass mode with ``binary_output=False`` (default): uint8 array
+        of class ids (0 = background, 1 = trapped cell, 2 = other/decoy, ...).
         """
         import numpy as np
 
@@ -196,6 +209,8 @@ class UNet(nn.Module):
             return (prob >= threshold).astype(np.uint8)
 
         class_map = torch.softmax(logit, dim=1).argmax(dim=1).squeeze().cpu().numpy()
+        if binary_output:
+            return (class_map == 1).astype(np.uint8)
         return class_map.astype(np.uint8)
 
     # ------------------------------------------------------------------

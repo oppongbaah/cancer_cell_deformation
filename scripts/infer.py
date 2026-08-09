@@ -116,7 +116,9 @@ def main():
             break
 
         processed = preprocessor(frame)
-        mask = unet.predict(processed, device=device)
+        # binary_output=True: downstream (MorphologyExtractor, saved masks) must only ever
+        # see the trapped cell, never decoy/class-2 pixels — see UNet.predict() docstring.
+        mask = unet.predict(processed, device=device, binary_output=True)
         features = extractor.extract(mask)
         features["frame_index"] = frame_idx
         features["timestamp"] = timestamp

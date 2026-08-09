@@ -129,7 +129,9 @@ class RealTimePipeline:
         t_start = time.perf_counter()
 
         processed = self.preprocessor(frame)
-        mask = self.unet.predict(processed, device=self.device)
+        # binary_output=True: downstream (MorphologyExtractor, the returned mask) must only
+        # ever see the trapped cell, never decoy/class-2 pixels — see UNet.predict() docstring.
+        mask = self.unet.predict(processed, device=self.device, binary_output=True)
         features = self.extractor.extract(mask)
 
         label_arr = self.classifier.predict(
