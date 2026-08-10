@@ -230,8 +230,15 @@ class UNet(nn.Module):
         out_channels: int = 1,
         device: Optional[str] = None,
     ) -> "UNet":
-        """Load a previously saved U-Net from a checkpoint file."""
+        """Load a previously saved U-Net from a checkpoint file.
+
+        Accepts either a bare state dict (from :meth:`save`) or a full
+        training checkpoint dict (from ``SegmentationTrainer._save_checkpoint``,
+        e.g. ``unet_best.pt``), which wraps the weights under
+        ``"model_state_dict"`` alongside optimizer/scheduler state.
+        """
         dev = device or ("cuda" if torch.cuda.is_available() else "cpu")
         model = cls(in_channels=in_channels, base_features=base_features, out_channels=out_channels)
-        model.load_state_dict(torch.load(Path(path), map_location=dev))
+        state = torch.load(Path(path), map_location=dev)
+        model.load_state_dict(state["model_state_dict"] if "model_state_dict" in state else state)
         return model.to(dev).eval()
