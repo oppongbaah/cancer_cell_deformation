@@ -37,7 +37,7 @@ from pathlib import Path
 
 import numpy as np
 import torch
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader, Dataset, WeightedRandomSampler
 
 from celldform.config import load as load_config
 from celldform.segmentation.trainer import SegmentationTrainer
@@ -218,6 +218,11 @@ def main():
                         help="Path to YAML config file.")
     parser.add_argument("--seed", type=int, default=None,
                         help="Random seed (overrides config value).")
+    parser.add_argument("--domain-oversample-weight", type=float, default=None,
+                        help="Sampling weight for domain_-prefixed (real-cell) train frames "
+                             "vs. legacy frames (overrides training.domain_oversample_weight). "
+                             "1.0 = off/uniform (default); pass 1.0 explicitly to force it off "
+                             "when the config has it enabled.")
     parser.add_argument("--tag", default=None,
                         help="Suffix appended to the saved training-curve filename "
                              "(e.g. --tag auto -> unet_training_curves_v6_auto.png), "
@@ -225,6 +230,8 @@ def main():
     args = parser.parse_args()
 
     conf = load_config(args.config)
+    if args.domain_oversample_weight is not None:
+        conf.training.domain_oversample_weight = args.domain_oversample_weight
 
     seed = args.seed if args.seed is not None else conf.training.seed
     torch.manual_seed(seed)
@@ -272,13 +279,14 @@ def main():
     n_workers = conf.training.num_workers
     multiclass = conf.unet.out_channels > 1
 
-    def make_loader(pairs, shuffle, augment=False):
+    def make_loader(pairs, shuffle, augment=False, sampler=None):
         fs, ms = zip(*pairs)
         ds = CellDataset(list(fs), list(ms), augment=augment, multiclass=multiclass)
         return DataLoader(
             ds,
             batch_size=conf.training.batch_size,
-            shuffle=shuffle,
+            shuffle=shuffle if sampler is None else False,  # mutually exclusive with sampler
+            sampler=sampler,
             num_workers=n_workers,
             pin_memory=on_cuda,
             persistent_workers=(n_workers > 0),
@@ -286,7 +294,25 @@ def main():
             worker_init_fn=_worker_init_fn if n_workers > 0 else None,
         )
 
-    train_loader = make_loader(train_pairs, shuffle=True, augment=True)
+    train_sampler = None
+    domain_weight = conf.training.domain_oversample_weight
+    if domain_weight != 1.0:
+        is_domain = [f.stem.startswith("domain_") for f, m in train_pairs]
+        n_domain = sum(is_domain)
+        sample_weights = [domain_weight if d else 1.0 for d in is_domain]
+        train_sampler = WeightedRandomSampler(
+            sample_weights, num_samples=len(train_pairs), replacement=True
+        )
+        effective_domain_frac = (n_domain * domain_weight) / (
+            n_domain * domain_weight + (len(train_pairs) - n_domain)
+        )
+        print(
+            f"[celldform] Domain oversampling enabled (weight={domain_weight}): "
+            f"{n_domain} domain / {len(train_pairs) - n_domain} legacy train frames -> "
+            f"~{100 * effective_domain_frac:.1f}% domain per epoch (sampled with replacement)"
+        )
+
+    train_loader = make_loader(train_pairs, shuffle=True, augment=True, sampler=train_sampler)
     val_loader = make_loader(val_pairs, shuffle=False, augment=False)
 
     # ── Model ────────────────────────────────────────────────────────────────

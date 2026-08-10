@@ -77,6 +77,9 @@ class TrainingCfg:
     loss_pos_weight: float = 100.0 # pos_weight for BCEWithLogitsLoss; compensates cell/background imbalance
     use_amp: bool = True           # Automatic Mixed Precision — uses A100 BF16/TF32 units; auto-disabled on CPU
     class_weights: Optional[List[float]] = None  # per-class weight for CrossEntropyLoss (multiclass only); null = uniform
+    domain_oversample_weight: float = 1.0  # sampling weight for domain_-prefixed (real-cell) train frames vs.
+                                            # legacy frames; 1.0 = no oversampling (uniform, default). See
+                                            # scripts/train_unet.py's WeightedRandomSampler for how this is applied.
 
 
 @dataclass
@@ -272,6 +275,7 @@ def _parse_training(t: dict) -> TrainingCfg:
         loss_pos_weight=float(t.get("loss_pos_weight", 100.0)),
         use_amp=bool(t.get("use_amp", True)),
         class_weights=class_weights,
+        domain_oversample_weight=float(t.get("domain_oversample_weight", 1.0)),
     )
 
 
