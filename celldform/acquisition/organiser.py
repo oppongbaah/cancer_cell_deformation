@@ -66,8 +66,15 @@ def _video_lists(raw: Path) -> dict[str, List[Tuple[Path, str, str]]]:
         "domain_adapt": [
             (high / "cell 1 high 50 increments.mp4",  "high", "cell1"),
             (high / "cell 2 high 50 increments.mp4",  "high", "cell2"),
+            (high / "cell 3 high 50 increments.mp4",  "high", "cell3"),
+            (high / "cell 4 high 50 increments.mp4",  "high", "cell4"),
+            (high / "cell 6 high 50 increments.mp4",  "high", "cell6"),
+            (high / "cell 7 high 50 increments.mp4",  "high", "cell7"),
+            (high / "cell 8 high 50 increments.mp4",  "high", "cell8"),
+            (raw  / "cell 1 low 50 increments.mp4",   "low",  "cell1"),
             (low  / "cell 2 low 50 increments.mp4",   "low",  "cell2"),
             (low  / "cell 3 low 50 increments.mp4",   "low",  "cell3"),
+            (low  / "cell 4 low 50 increments.mp4",   "low",  "cell4"),
         ],
     }
 
