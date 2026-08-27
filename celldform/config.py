@@ -119,6 +119,8 @@ class AcquisitionCfg:
     dark_percentile: float = 20.0             # bottom X% of channel intensities = candidate cells
     channel_width: float = 0.30               # vertical channel width as fraction of image width (centred)
     min_circularity: float = 0.60             # min 4π·area/perimeter² score to accept a blob as a cell
+    domain_adapt_n: int = 5                   # frames per cell copied into 01_annotate_pool by the
+                                              # dataset organiser (celldform-organize-dataset)
 
 
 @dataclass
@@ -323,6 +325,7 @@ def _parse_acquisition(ac: dict) -> AcquisitionCfg:
         dark_percentile=float(ac.get("dark_percentile", 20.0)),
         channel_width=float(ac.get("channel_width", 0.30)),
         min_circularity=float(ac.get("min_circularity", 0.60)),
+        domain_adapt_n=int(ac.get("domain_adapt_n", 5)),
     )
 
 

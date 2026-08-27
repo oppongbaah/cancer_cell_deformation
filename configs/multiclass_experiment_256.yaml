@@ -104,3 +104,4 @@ acquisition:
   dark_percentile: 20.0
   channel_width: 0.30
   min_circularity: 0.60
+  domain_adapt_n: 20   # frames/cell into 01_annotate_pool (celldform-organize-dataset); raised 5→20 on 2026-08-19

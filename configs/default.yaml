@@ -89,3 +89,5 @@ acquisition:
                             # centred at the horizontal midpoint (e.g. 0.30 = ±15% from centre)
   min_circularity: 0.60    # minimum blob circularity (4π·area/perimeter²) to be treated as a cell;
                             # 1.0 = perfect circle; reject non-circular noise with lower values
+  domain_adapt_n: 20       # frames per cell copied into 01_annotate_pool by celldform-organize-dataset
+                            # (raised 5→20 on 2026-08-19 — see docs/training.md, Domain Gap)

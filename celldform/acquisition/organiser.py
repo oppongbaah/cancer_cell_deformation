@@ -150,7 +150,17 @@ def _domain_adapt(
     n: int,
     target_size: Tuple[int, int],
 ) -> List[dict]:
-    """Copy n evenly-spaced frames from each 2025 video into the annotation pool."""
+    """Copy n evenly-spaced frames from each 2025 video into the annotation pool.
+
+    Re-running with a larger n (e.g. topping up from n=5 to n=20 on a cell
+    already sampled) picks a different step, so the new target indices don't
+    coincide with the old ones — both sets of files end up on disk rather
+    than one replacing the other. Existing frames are never annotation-work
+    dropped, but to keep them out of the manifest for this run would silently
+    orphan them from traceability, so every domain_{her2}_{cell_id}_*.jpg
+    already present is included in the returned rows, not just this run's
+    freshly extracted targets.
+    """
     rows: List[dict] = []
     for vid_path, her2, cell_id in video_list:
         if not vid_path.exists():
@@ -169,17 +179,22 @@ def _domain_adapt(
             change_threshold=None,
         ).seek_extract(targets, file_stem=f"domain_{her2}_{cell_id}")
 
-        for t in targets:
-            p = ann_dir / f"domain_{her2}_{cell_id}_{t:06d}.jpg"
-            if p.exists():
-                rows.append({
-                    "source":      str(vid_path),
-                    "her2":        her2,
-                    "cell_id":     cell_id,
-                    "frame_index": t,
-                    "output_path": str(p),
-                })
-        print(f"  domain/{her2}/{cell_id}: {len(targets)} frames", flush=True)
+        prefix = f"domain_{her2}_{cell_id}_"
+        existing = sorted(ann_dir.glob(f"{prefix}*.jpg"))
+        for p in existing:
+            frame_index = int(p.stem[len(prefix):])
+            rows.append({
+                "source":      str(vid_path),
+                "her2":        her2,
+                "cell_id":     cell_id,
+                "frame_index": frame_index,
+                "output_path": str(p),
+            })
+        print(
+            f"  domain/{her2}/{cell_id}: {len(existing)} frames on disk "
+            f"({len(targets)} targeted this run)",
+            flush=True,
+        )
 
     return rows
 
@@ -215,9 +230,22 @@ def organise(
     ann_dir   = folders["annotate"]
     ann_dir.mkdir(parents=True, exist_ok=True)
     legacy_dir = raw_dir / "legacy/20210825_cancer"
+
+    # A subset of legacy frames is permanently reserved as an untouched,
+    # protocol-frozen holdout (data/frames/02_unet_holdout/legacy_holdout) —
+    # used alongside 02_unet_holdout itself to separate "domain gap" from
+    # "general holdout weakness" once the real U-Net holdout is evaluated.
+    # Exclude those filenames here so re-running this step (e.g. --no-clean
+    # after growing the domain-adapt pool) can never silently recopy them
+    # back into the annotation pool.
+    legacy_holdout_dir = folders["unet_test"] / "legacy_holdout"
+    reserved_names = {p.name for p in legacy_holdout_dir.glob("*.jpg")} if legacy_holdout_dir.exists() else set()
+
     print("\n[annotate_pool] Copying legacy cancer images ...", flush=True)
     ann_rows: List[dict] = []
     for img in sorted(legacy_dir.glob("*.jpg")) + sorted(legacy_dir.glob("*.JPG")):
+        if img.name in reserved_names:
+            continue
         shutil.copy(img, ann_dir / img.name)
         ann_rows.append({
             "source":      str(img),
@@ -226,7 +254,7 @@ def organise(
             "frame_index": "",
             "output_path": str(ann_dir / img.name),
         })
-    print(f"  → {len(ann_rows)} images", flush=True)
+    print(f"  → {len(ann_rows)} images ({len(reserved_names)} legacy_holdout frames excluded)", flush=True)
 
     # Domain-adapt samples
     print("\n[annotate_pool] Adding 2025-camera domain samples ...", flush=True)
@@ -281,8 +309,14 @@ def build_parser() -> argparse.ArgumentParser:
         help=f"Sample every N-th frame from each video (default: {DEFAULT_EVERY_N}).",
     )
     p.add_argument(
-        "--domain-adapt-n", type=int, default=DEFAULT_DA_N,
-        help=f"Frames per cell added to annotate_pool for domain adaptation (default: {DEFAULT_DA_N}).",
+        "--config", type=Path, default=None,
+        help="Optional celldform YAML config; acquisition.domain_adapt_n supplies the "
+             "--domain-adapt-n default (an explicit --domain-adapt-n still wins).",
+    )
+    p.add_argument(
+        "--domain-adapt-n", type=int, default=None,
+        help=f"Frames per cell added to annotate_pool for domain adaptation "
+             f"(default: acquisition.domain_adapt_n from --config, else {DEFAULT_DA_N}).",
     )
     p.add_argument(
         "--no-clean", action="store_true",
@@ -296,10 +330,19 @@ def main() -> None:
     if not args.raw_dir.exists():
         print(f"[ERROR] --raw-dir not found: {args.raw_dir}", file=sys.stderr)
         sys.exit(1)
+
+    domain_adapt_n = args.domain_adapt_n
+    if domain_adapt_n is None:
+        if args.config is not None:
+            from celldform.config import load
+            domain_adapt_n = load(args.config).acquisition.domain_adapt_n
+        else:
+            domain_adapt_n = DEFAULT_DA_N
+
     organise(
         raw_dir=args.raw_dir,
         frames_dir=args.frames_dir,
         every_n=args.every_n,
-        domain_adapt_n=args.domain_adapt_n,
+        domain_adapt_n=domain_adapt_n,
         clean=not args.no_clean,
     )
