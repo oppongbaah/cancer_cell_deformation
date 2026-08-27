@@ -65,29 +65,33 @@ python scripts/preview_masks.py --alpha 0.5 --limit 10
 
 ## `validate_masks.py` — mask validation gate
 
-Validates the masks that are present in a pool. Iterates over masks in `data/masks/<pool>/` directly — does not require every frame to have a mask. Use as a pre-training gate.
+Validates the masks that are present in a pool, and (by default) that every frame in the pool has one. Use as a pre-training gate.
 
 ```bash
 python scripts/validate_masks.py                          # 01_annotate_pool
 python scripts/validate_masks.py --pool 02_unet_holdout
 python scripts/validate_masks.py --multiclass              # validates 01_annotate_pool_multiclass
+python scripts/validate_masks.py --no-completeness         # skip the "every frame has a mask" check
 ```
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `--pool` | `01_annotate_pool` | Pool folder name |
+| `--pool` | `01_annotate_pool` | Pool folder name (used for both `data/frames/<pool>` and `data/masks/<pool>`) |
 | `--mask-dir` | `data/masks/<pool>` (or `<pool>_multiclass` with `--multiclass`) | Override mask directory |
+| `--image-dir` | `data/frames/<pool>` | Override frame directory (completeness check) |
+| `--no-completeness` | off | Skip the "every pool image has a mask" check entirely |
 | `--multiclass` | off | Validate 3-class masks (0/1/2) instead of binary (0/255) |
 
-**Checks performed on each mask that exists:**
+**Checks performed:**
 
 | Check | Fail condition (binary) | Fail condition (`--multiclass`) |
 |-------|---------------|---------------|
+| Present | Frame in the pool has no corresponding mask file (skippable with `--no-completeness`) | same |
 | Readable | File cannot be decoded by OpenCV | same |
 | Binary/label-valid | Pixel values other than 0 or 255 | Pixel values other than 0, 1, or 2 |
-| Non-empty | No cell pixels (all zeros) | No trapped-cell pixels (label 1) |
+| Non-empty | No foreground pixels (255) at all | No foreground pixels of **any** class (neither label 1 nor label 2) — a mask with only a decoy object (label 2) and no trapped cell is a valid deliberate negative and passes |
 
-Exits with code `0` if all present masks pass, `1` if any issues are found. Reports `Valid: N/N (100%)` against the masks found, not against the full frame pool.
+Exits with code `0` if all checks pass, `1` if any issues are found. Reports `Valid: N/N (100%)` against the full pool count (or the mask count with `--no-completeness`).
 
 ---
 
@@ -136,15 +140,17 @@ python scripts/preprocess_frames.py --masks --target-size 128 128   # override o
 Trains the U-Net on preprocessed data. Expects already-preprocessed PNGs at whatever size was used for preprocessing (256×256 by default) — no preprocessing is applied internally. Reads `unet.out_channels` from the config: `1` (default) trains binary segmentation; `>1` trains multiclass (`CellDataset` loads raw integer label masks instead of binarising, and `_DiceCELoss` replaces `_DiceBCELoss`).
 
 ```bash
-python scripts/train_unet.py --config configs/default.yaml
+python scripts/train_unet.py --config configs/multiclass_experiment_256.yaml   # frozen scheme
 python scripts/train_unet.py --config configs/default.yaml --seed 123
 python scripts/train_unet.py --config configs/multiclass_experiment_256.yaml --tag auto
+python scripts/train_unet.py --config configs/multiclass_experiment_256.yaml --domain-oversample-weight 8.0
 ```
 
 | Option | Default | Description |
 |--------|---------|-------------|
 | `--config` | `configs/default.yaml` | YAML config file |
 | `--seed` | config value | Random seed override |
+| `--domain-oversample-weight` | config value (`1.0` if unset) | Sampling weight for `domain_`-prefixed (real-cell) train frames vs. legacy frames — builds a `WeightedRandomSampler`. `1.0` = off/uniform; pass `1.0` explicitly to force it off even if the config enables it. See [Training Results — Domain Gap](training.md#domain-gap) (tested at weight=8.0: no improvement on the small real-cell test sample available so far). |
 | `--tag` | none | Suffix appended to the saved training-curve filename (e.g. `--tag auto` → `unet_training_curves_v6_auto.png`), for distinguishing runs at a glance |
 
 The script reads `data.frames_dir` and `data.masks_dir` from the config. Pairs frames and masks by filename stem. Saves best and last checkpoints to `checkpoint_dir`. After training, it reloads `unet_best.pt` (not necessarily the last epoch's weights, which can be past the peak validation DSC on small datasets) before running final evaluation and plotting the training curves.
@@ -156,8 +162,9 @@ The script reads `data.frames_dir` and `data.masks_dir` from the config. Pairs f
 Evaluates a trained U-Net on `02_unet_holdout` and reports the thesis-reportable segmentation metrics.
 
 ```bash
-python scripts/evaluate_unet.py --checkpoint checkpoints/unet_best.pt
-python scripts/evaluate_unet.py --checkpoint checkpoints/unet_best.pt --pool 02_unet_holdout
+python scripts/evaluate_unet.py --checkpoint checkpoints/multiclass_experiment_256/unet_best.pt \
+    --config configs/multiclass_experiment_256.yaml   # frozen scheme — --config must match out_channels
+python scripts/evaluate_unet.py --checkpoint checkpoints/unet_best.pt --pool 02_unet_holdout  # binary baseline
 ```
 
 | Option | Default | Description |
@@ -178,9 +185,10 @@ Thin wrapper around `celldform.acquisition.organiser.organise()`.
 ```bash
 python scripts/organize_dataset.py
 python scripts/organize_dataset.py --every-n 100 --domain-adapt-n 10
+python scripts/organize_dataset.py --no-clean --domain-adapt-n 20   # expand domain-adapt only, don't wipe data/frames/ — run 2026-08-19
 ```
 
-Equivalent to `celldform-organize-dataset`. See [CLI Reference](cli.md).
+Equivalent to `celldform-organize-dataset`. See [CLI Reference](cli.md). The `domain_adapt` cell list in `celldform/acquisition/organiser.py` covers all 11 `03_mask_factory` cells (as of 2026-08-10, extended from 4); `--domain-adapt-n` was raised 5→20/cell on 2026-08-19 — see [Training Results — Domain Gap](training.md#domain-gap) for why. Re-running with a larger N doesn't lose frames/masks from an earlier N — every `domain_*` file already on disk is kept and re-enumerated into the manifest, and legacy frames reserved in `02_unet_holdout/legacy_holdout/` are always excluded from the copy regardless of N (a contamination bug where this wasn't true was found and fixed the same day).
 
 ---
 

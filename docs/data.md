@@ -15,7 +15,7 @@ data/
 │   └── legacy/20210825_cancer/     220 unlabelled JPGs from 2021 microscope
 │
 ├── frames/                         Raw extracted frames (1228×922 greyscale JPEG)
-│   ├── 01_annotate_pool/           U-Net training source
+│   ├── 01_annotate_pool/           U-Net training source (428 images: 200 legacy + 228 domain-adapt)
 │   ├── 02_unet_holdout/            U-Net test source
 │   │   └── legacy_holdout/         20 reserved legacy frames — separate diagnostic DSC
 │   ├── 03_mask_factory/            Inference → classifier training
@@ -70,23 +70,29 @@ data/
 
 ## Pool descriptions
 
-### `01_annotate_pool` — 240 images (U-Net training)
+### `01_annotate_pool` — 428 images (U-Net training)
 
-Source for U-Net training masks. Annotate every image before running preprocessing.
+Source for U-Net training masks. **220/220 fully annotated as of 2026-08-10** (multiclass scheme — see below); grown to 428 on 2026-08-19 to address the domain gap (see warning below) — **208 new domain-adapt frames are currently unannotated and are the annotation priority** (see [Training Results](training.md#next-steps)).
 
 | Subset | Count | Notes |
 |--------|-------|-------|
-| Legacy cancer images (2021) | 220 | Filename: `YYYYMMDDHHMMSS.jpg` — no HER2 label |
-| Domain-adapt samples | 20 | Prefix: `domain_<her2>_<cell_id>_<frame>.jpg` |
+| Legacy cancer images (2021) | 200 | Filename: `YYYYMMDDHHMMSS.jpg` — no HER2 label. 20 of the original 220 legacy JPGs were reserved into `02_unet_holdout/legacy_holdout/` before annotation, which is why this subset is 200, not 220. |
+| Domain-adapt samples | 228 | Prefix: `domain_<her2>_<cell_id>_<frame>.jpg`. ~20 frames each from all 11 `03_mask_factory` cells (up from 5 frames × 4 cells) — the 4 originally-covered cells landed at 24 frames each rather than exactly 20 since a different N samples a different evenly-spaced grid, so the earlier 5 didn't line up with the new 20 and both sets stayed on disk. 220 of the 228 are already annotated (the original 4-cell batch); 208 are new. |
 
-Domain-adapt frames come from cells also in `03_mask_factory`. The U-Net trains on them, then runs inference on the full set from those cells.
+Domain-adapt frames come from cells also in `03_mask_factory`. The U-Net trains on them, then runs inference on the full set from those cells — same video, different sampled frame indices, so no contamination.
 
-!!! note "Multiclass labels"
-    The same 40 currently-annotated frames also have an experimental 3-class labeling (`data/masks/01_annotate_pool_multiclass/`: 0=background, 1=trapped cell, 2=other/decoy object) used for the binary-vs-multiclass ablation in [Training Results](training.md). `scripts/annotate.py --multiclass` seeds label 1 from the existing binary mask, so only decoy objects need to be painted.
+!!! warning "Domain gap between legacy and real-cell frames — mitigation in progress"
+    With only 20 real-cell frames from 4 cells, segmenting held-out real-cell frames scored far worse than held-out legacy frames (DSC 0.538 vs. 0.944) — see [Training Results](training.md#domain-gap) for the full finding. **As of 2026-08-19:** `celldform/acquisition/organiser.py`'s `domain_adapt` cell list was extended to all 11 `03_mask_factory` cells and `--domain-adapt-n` increased 5→20/cell (`celldform-organize-dataset --no-clean --domain-adapt-n 20`), rather than waiting on the `02_unet_holdout` DSC to pick a value — see [Training Results — Next Steps](training.md#next-steps) for why `02_unet_holdout` annotation is deliberately being deferred instead.
+
+!!! danger "Contamination bug found and fixed (2026-08-19)"
+    The legacy-image copy step in `organise()` had no exclusion for the 20 frames permanently reserved in `02_unet_holdout/legacy_holdout/` (see below) — running `--no-clean` after raising `--domain-adapt-n` silently recopied all 220 legacy JPGs, holdout included, back into `01_annotate_pool`. Caught before annotation touched them (no masks existed yet for those 20 filenames). `organise()` now reads `02_unet_holdout/legacy_holdout/` and permanently excludes those filenames from the legacy copy step, so re-running `--no-clean` can no longer recontaminate the pool.
+
+!!! note "Label scheme: multiclass (frozen)"
+    The 220 originally-annotated frames use the 3-class scheme (`data/masks/01_annotate_pool_multiclass/`: 0=background, 1=trapped cell, 2=other/decoy object) — this is the scheme the pipeline trains on going forward (decided 2026-08-10; binary annotation stalled at 43/220 and isn't being continued). `scripts/annotate.py --multiclass` seeds label 1 from the existing binary mask where one exists, so only decoy objects need to be painted from scratch; it resumes on the first unannotated image, so it lands directly on the 208 new domain frames.
 
 ### `02_unet_holdout` — 101 images (U-Net test)
 
-Held out from all training. Annotate **after** U-Net training is complete.
+Held out from all training. Annotate **after** U-Net training is complete, and **after** the domain-adapt re-annotation above shows a solid validation-split domain DSC (see [Training Results](training.md#next-steps)) — this holdout is the one-shot, thesis-reportable number, so it's deliberately not being spent evaluating an intermediate checkpoint.
 
 | Cell | HER2 | Frames |
 |------|------|--------|
@@ -138,4 +144,12 @@ The data split ensures no training signal leaks into final evaluation:
 celldform-organize-dataset                                    # defaults
 celldform-organize-dataset --every-n 100 --domain-adapt-n 10 # denser sampling
 celldform-organize-dataset --no-clean                         # skip wiping data/frames/
+celldform-organize-dataset --no-clean --domain-adapt-n 20     # expand domain-adapt frames only — run 2026-08-19
+                                                                # (use --no-clean so 02_unet_holdout isn't wiped
+                                                                # mid-annotation; legacy_holdout frames are always
+                                                                # excluded from the legacy copy regardless of N;
+                                                                # existing domain-adapt frames/masks whose exact
+                                                                # frame index doesn't fall on the new N's sampling
+                                                                # grid are kept on disk, not deleted, so no
+                                                                # annotation work is lost across re-runs)
 ```

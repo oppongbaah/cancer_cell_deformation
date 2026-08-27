@@ -27,7 +27,7 @@ Outputs:
 
 | Folder | Images | Purpose |
 |--------|--------|---------|
-| `data/frames/01_annotate_pool/` | 240 | U-Net training source — annotate these |
+| `data/frames/01_annotate_pool/` | 428 | U-Net training source — annotate these. 220 fully annotated as of 2026-08-10 (multiclass scheme frozen); grown by 208 domain-adapt frames on 2026-08-19 to close the domain gap (see [Training Results](training.md#domain-gap)) — those 208 are the current annotation priority |
 | `data/frames/02_unet_holdout/` | 101 | U-Net test — annotate **after** training |
 | `data/frames/03_mask_factory/` | 557 | U-Net inference → classifier training |
 | `data/frames/04_clf_arena/` | 101 | Final classifier evaluation only |
@@ -125,8 +125,8 @@ Checkpoints are saved to `checkpoints/`:
 | `unet_last.pt` | Final epoch checkpoint |
 | `config.yaml` | Config snapshot for reproducibility |
 
-!!! note "Experiment configs"
-    `configs/binary_experiment_{128,256}.yaml` and `configs/multiclass_experiment{,_256}.yaml` run the same training loop at alternate resolutions and/or the experimental multiclass label scheme — each config's header comment lists its own preprocessing pre-requisites. See [Training Results](training.md) for a head-to-head comparison.
+!!! note "Which config to use"
+    `configs/multiclass_experiment_256.yaml` is the frozen label scheme/resolution (decided 2026-08-10) and the config actually being trained on — its checkpoint lives at `checkpoints/multiclass_experiment_256/unet_best.pt`, **not** `checkpoints/unet_best.pt` (that path is `configs/default.yaml`'s binary/256×256 checkpoint, kept as a baseline but not the primary one). `configs/binary_experiment_{128,256}.yaml` and `configs/multiclass_experiment.yaml` (128×128) are the historical ablation that made that decision — see [Training Results](training.md) for the comparison and the domain-gap finding since. `configs/multiclass_experiment_256_domain_oversample.yaml` is an A/B variant (`training.domain_oversample_weight: 8.0`, own checkpoint dir) — tested, did not help, kept for the record.
 
 ---
 
@@ -134,6 +134,9 @@ Checkpoints are saved to `checkpoints/`:
 
 !!! warning
     Complete Steps 1–4 before annotating `02_unet_holdout`. Annotating earlier risks biasing the reported DSC.
+
+!!! danger "Deferred until the domain-adapt retrain looks solid (as of 2026-08-19)"
+    `02_unet_holdout` is the one-shot, thesis-reportable number, so it's deliberately **not** the next step right now. The current priority is annotating the 208 new domain-adapt frames in `01_annotate_pool` (Steps 1–4 above, `--multiclass`) and checking the legacy-vs-domain-adapt DSC split on the internal validation/test data — the same breakdown used in [Domain Gap](training.md#domain-gap) — to see whether growing the pool closed the gap. Only come back to this step once that number looks solid; see [Training Results — Next Steps](training.md#next-steps).
 
 ```bash
 # 5a — annotate holdout images
@@ -145,11 +148,16 @@ python scripts/validate_masks.py --pool 02_unet_holdout
 # 5c — preprocess holdout data
 python scripts/preprocess_frames.py --masks --pool 02_unet_holdout
 
-# 5d — evaluate and report DSC
-python scripts/evaluate_unet.py --checkpoint checkpoints/unet_best.pt
+# 5d — evaluate and report DSC (--config must match the checkpoint's architecture —
+#      multiclass_experiment_256.yaml is the frozen scheme, out_channels=3)
+python scripts/evaluate_unet.py --checkpoint checkpoints/multiclass_experiment_256/unet_best.pt \
+    --config configs/multiclass_experiment_256.yaml
 ```
 
 The DSC reported by `evaluate_unet.py` is the **thesis-reportable segmentation score** — these cells were never seen during training or hyperparameter tuning.
+
+!!! warning "Expect a lower number than the 0.943 training-time DSC"
+    Training validation was measured on a legacy-dominated split; on the 5 held-out real-cell frames available so far, DSC drops to 0.538 (recall 0.386). This step's result — on the full 101-frame real-cell holdout — is expected to land well below 0.943 and is the number that should actually drive whether the U-Net gets frozen. See [Domain Gap](training.md#domain-gap) for the full finding.
 
 !!! note "Optional — legacy-domain diagnostic"
     `data/frames/02_unet_holdout/legacy_holdout/` holds 20 legacy frames reserved separately for a second, independent DSC — it isolates "the segmentation is weak" from "there's a domain gap between legacy microscope images and the real optical-tweezer setup." Repeat 5a–5d with `--image-dir data/frames/02_unet_holdout/legacy_holdout --mask-dir data/masks/02_unet_holdout/legacy_holdout` and separate `--output-dir`/`--mask-output-dir` for preprocessing. Report it as its own number — do not merge it with the DSC above.
