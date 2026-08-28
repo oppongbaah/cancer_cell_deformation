@@ -8,9 +8,12 @@ Checks performed per mask
 2. Readable   — the file is a valid image OpenCV can decode
 3. Binary     — pixel values are strictly 0 or 255 (--multiclass: 0, 1, or 2)
 4. Non-empty  — at least one foreground pixel is present (255 for binary;
-                label 1 or label 2 for --multiclass). A multiclass mask with
-                only a decoy object (label 2) and no trapped cell (label 1)
-                is a valid deliberate negative and passes this check.
+                label 1 or label 2 for --multiclass)
+5. Has trapped cell — (--multiclass only) at least one label-1 pixel is
+                present. Every frame in these experiments contains a trapped
+                cell, so a mask with only decoy objects (label 2) means the
+                trapped cell was missed or mislabeled. For binary masks this
+                is the same as check 4, since foreground = trapped cell.
 
 Exit code 0 if all present masks pass; non-zero otherwise (suitable for CI /
 pre-train gate scripts).
@@ -23,6 +26,7 @@ python scripts/validate_masks.py --image-dir data/frames/01_annotate_pool \\
                                   --mask-dir  data/masks/01_annotate_pool
 python scripts/validate_masks.py --multiclass \\
                                   --mask-dir  data/masks/01_annotate_pool_multiclass
+python scripts/annotate_frame.py --multiclass domain_high_cell8_000000 
 """
              
 from __future__ import annotations
@@ -48,6 +52,7 @@ def validate(mask_dir: Path, multiclass: bool = False, image_dir: Path | None = 
         "unreadable": [],
         "not_binary": [],
         "empty": [],
+        "no_trapped_cell": [],
     }
 
     if image_dir is not None:
@@ -66,12 +71,17 @@ def validate(mask_dir: Path, multiclass: bool = False, image_dir: Path | None = 
             results["unreadable"].append(mask_path.name)
             continue
 
-        if not set(np.unique(mask)).issubset(valid_values):
+        values = set(np.unique(mask))
+        if not values.issubset(valid_values):
             results["not_binary"].append(mask_path.name)
             continue
 
-        if not np.any(mask != 0):
+        if values == {0}:
             results["empty"].append(mask_path.name)
+            continue
+
+        if multiclass and 1 not in values:
+            results["no_trapped_cell"].append(mask_path.name)
             continue
 
         results["ok"] += 1
@@ -129,8 +139,12 @@ def main() -> None:
     _print_list("Unreadable", r["unreadable"])
     _print_list(f"Not binary ({label_desc})", r["not_binary"])
     _print_list(f"Empty ({empty_desc})", r["empty"])
+    _print_list("No trapped cell (label 2 only — trapped cell missed or mislabeled)",
+                r["no_trapped_cell"])
 
-    n_issues = sum(len(r[k]) for k in ("missing", "unreadable", "not_binary", "empty"))
+    n_issues = sum(
+        len(r[k]) for k in ("missing", "unreadable", "not_binary", "empty", "no_trapped_cell")
+    )
     if n_issues == 0:
         print("\nAll masks valid.")
         sys.exit(0)

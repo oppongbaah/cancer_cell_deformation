@@ -68,10 +68,19 @@ class Visualizer:
         ----------
         history:
             Dict from :meth:`SegmentationTrainer.fit` with ``train_loss``,
-            ``val_loss``, ``val_dsc``. ``val_dsc`` is the primary-cell-class
-            DSC — trapped_cell (class 1) in multiclass mode, the single
-            foreground class in binary mode — never a macro mean across
-            classes, so it's directly comparable between the two modes.
+            ``val_loss``, ``val_dsc``, and (when present — older histories
+            saved before train_dsc was added won't have it) ``train_dsc``.
+            Both DSC series are the primary-cell-class DSC — trapped_cell
+            (class 1) in multiclass mode, the single foreground class in
+            binary mode — never a macro mean across classes, so they're
+            directly comparable between the two modes. ``train_dsc`` is
+            measured per-batch *before* that batch's weight update (same
+            convention as ``train_loss``), so it runs slightly behind the
+            model's true epoch-end performance — expect it to sit a bit
+            below ``val_dsc`` even absent overfitting, especially early in
+            training. It is also computed with dropout/batchnorm in train
+            mode (unlike val_dsc's eval-mode forward pass), another source
+            of a small, expected gap.
         final_metrics:
             Optional dict from :meth:`SegmentationTrainer.evaluate` — ideally
             evaluated on the *best* checkpoint (see ``best_epoch``), not
@@ -109,6 +118,9 @@ class Visualizer:
         ax1.set_title("Segmentation Loss")
         ax1.legend()
 
+        if "train_dsc" in history:
+            ax2.plot(epochs, history["train_dsc"], color="steelblue", alpha=0.8,
+                     label="Train DSC (primary cell class)")
         ax2.plot(epochs, history["val_dsc"], color="green", label="Val DSC (primary cell class)")
         if best_epoch is not None and 1 <= best_epoch <= len(history["val_dsc"]):
             best_val = history["val_dsc"][best_epoch - 1]
@@ -119,7 +131,7 @@ class Visualizer:
             )
         ax2.set_xlabel("Epoch")
         ax2.set_ylabel("DSC")
-        ax2.set_title("Validation Dice Score")
+        ax2.set_title("Dice Score" if "train_dsc" in history else "Validation Dice Score")
         ax2.legend(loc="lower right", fontsize=8)
 
         if has_table:

@@ -205,10 +205,13 @@ class SegmentationTrainer:
 
         Returns
         -------
-        History dict with keys ``train_loss``, ``val_loss``, ``val_dsc``.
+        History dict with keys ``train_loss``, ``train_dsc``, ``val_loss``,
+        ``val_dsc``.
         """
         n_epochs = epochs if epochs is not None else self.conf.training.epochs
-        history: Dict[str, list] = {"train_loss": [], "val_loss": [], "val_dsc": []}
+        history: Dict[str, list] = {
+            "train_loss": [], "train_dsc": [], "val_loss": [], "val_dsc": [],
+        }
         best_dsc = 0.0
 
         # Snapshot the config so the checkpoint folder is self-contained.
@@ -218,19 +221,20 @@ class SegmentationTrainer:
 
         for epoch in range(self.start_epoch, n_epochs + 1):
             t0 = time.time()
-            train_loss = self._train_one_epoch()
+            train_loss, train_dsc = self._train_one_epoch()
             val_loss, val_dsc = self._validate()
             self._step_scheduler(val_dsc)
 
             history["train_loss"].append(train_loss)
+            history["train_dsc"].append(train_dsc)
             history["val_loss"].append(val_loss)
             history["val_dsc"].append(val_dsc)
 
             elapsed = time.time() - t0
             print(
                 f"Epoch {epoch:03d}/{n_epochs}  "
-                f"train_loss={train_loss:.4f}  val_loss={val_loss:.4f}  "
-                f"val_DSC={val_dsc:.4f}  ({elapsed:.1f}s)"
+                f"train_loss={train_loss:.4f}  train_DSC={train_dsc:.4f}  "
+                f"val_loss={val_loss:.4f}  val_DSC={val_dsc:.4f}  ({elapsed:.1f}s)"
             )
 
             if val_dsc > best_dsc:
@@ -283,9 +287,15 @@ class SegmentationTrainer:
     # Private helpers
     # ------------------------------------------------------------------
 
-    def _train_one_epoch(self) -> float:
+    def _train_one_epoch(self) -> Tuple[float, float]:
+        """Returns (train_loss, train_dsc). train_dsc is measured on each
+        batch's predictions *before* that batch's weight update (same
+        convention as train_loss), using the same batch-pooled,
+        batch-size-weighted averaging as ``_validate`` so the two curves are
+        computed the same way — see ``_validate`` docstring."""
         self.model.train()
         total_loss = 0.0
+        total_dsc = 0.0
 
         target_dtype = torch.long if self.out_channels > 1 else torch.float32
         for images, masks in self.train_loader:
@@ -293,13 +303,25 @@ class SegmentationTrainer:
             masks = masks.to(self.device, non_blocking=True).to(target_dtype)
             self.optimizer.zero_grad()
             with torch.amp.autocast(self.device_type, enabled=self.use_amp):
-                loss = self.criterion(self.model(images), masks)
+                logits = self.model(images)
+                loss = self.criterion(logits, masks)
             self.scaler.scale(loss).backward()
             self.scaler.step(self.optimizer)
             self.scaler.update()
             total_loss += loss.item() * images.size(0)
 
-        return total_loss / len(self.train_loader.dataset)
+            with torch.no_grad():
+                if self.out_channels == 1:
+                    preds = (torch.sigmoid(logits) >= 0.5).float()
+                    total_dsc += self.metrics.dice(preds.cpu(), masks.cpu()) * images.size(0)
+                else:
+                    preds = torch.softmax(logits, dim=1).argmax(dim=1)
+                    total_dsc += self.metrics.dice(
+                        (preds.cpu() == 1), (masks.cpu() == 1)
+                    ) * images.size(0)
+
+        n = len(self.train_loader.dataset)
+        return total_loss / n, total_dsc / n
 
     def _validate(self) -> Tuple[float, float]:
         """Returns (val_loss, val_dsc). For multiclass, val_dsc is the
