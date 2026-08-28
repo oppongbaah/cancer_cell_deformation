@@ -1,0 +1,1808 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Real-Time Machine Learning Framework for Quantitative SKBR3 Cell Deformation Analysis in Dual-Beam Optical Tweezer Systems">
+      
+      
+        <meta name="author" content="Isaac Oppong-Baah">
+      
+      
+      
+        <link rel="prev" href="../workflow/">
+      
+      
+        <link rel="next" href="../data/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Training Results - celldform</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#u-net-training-results" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="celldform" class="md-header__button md-logo" aria-label="celldform" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            celldform
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Training Results
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/oppongbaah/cancer_cell_deformation" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    oppongbaah/cancer_cell_deformation
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../pipeline/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Pipeline Overview
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../workflow/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Workflow Guide
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Training Results
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../data/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Data Layout
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../scripts/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Scripts Reference
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../cli/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  CLI Reference
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../gpu/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  GPU & Hardware
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../hpc/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  HPC Guide
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../api/acquisition/" class="md-tabs__link">
+          
+  
+  
+  API Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="celldform" class="md-nav__button md-logo" aria-label="celldform" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    celldform
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/oppongbaah/cancer_cell_deformation" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    oppongbaah/cancer_cell_deformation
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pipeline Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../workflow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Workflow Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Training Results
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Training Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#run-1-baseline-no-class-imbalance-correction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run 1 — Baseline (no class imbalance correction)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#run-2-with-class-imbalance-correction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run 2 — With class imbalance correction
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#training-curves-run-2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Training curves (Run 2)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#run-3-binary-vs-multiclass-label-scheme-resolution-ablation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run 3 — Binary vs. multiclass label scheme × resolution ablation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#run-4-full-220-mask-pool" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run 4 — Full 220-mask pool
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#domain-gap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Domain Gap
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Domain Gap">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mitigations-tried" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mitigations tried
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#checkpoint-loading-bug-found-and-fixed-2026-08-10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Checkpoint-loading bug found and fixed (2026-08-10)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#contamination-bug-found-and-fixed-2026-08-19" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Contamination bug found and fixed (2026-08-19)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#loss-function" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Loss function
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#expected-trajectory-superseded-see-run-4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Expected trajectory (superseded — see Run 4)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-augmentation-and-class-imbalance-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Augmentation and Class-Imbalance Handling
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Next Steps
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Layout
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../scripts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scripts Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gpu/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GPU & Hardware
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hpc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HPC Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/acquisition/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Acquisition
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/preprocessing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Preprocessing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/segmentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Segmentation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/features/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Features
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/classification/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Classification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/biomechanics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Biomechanics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#run-1-baseline-no-class-imbalance-correction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run 1 — Baseline (no class imbalance correction)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#run-2-with-class-imbalance-correction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run 2 — With class imbalance correction
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#training-curves-run-2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Training curves (Run 2)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#run-3-binary-vs-multiclass-label-scheme-resolution-ablation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run 3 — Binary vs. multiclass label scheme × resolution ablation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#run-4-full-220-mask-pool" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run 4 — Full 220-mask pool
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#domain-gap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Domain Gap
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Domain Gap">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mitigations-tried" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mitigations tried
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#checkpoint-loading-bug-found-and-fixed-2026-08-10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Checkpoint-loading bug found and fixed (2026-08-10)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#contamination-bug-found-and-fixed-2026-08-19" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Contamination bug found and fixed (2026-08-19)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#loss-function" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Loss function
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#expected-trajectory-superseded-see-run-4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Expected trajectory (superseded — see Run 4)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-augmentation-and-class-imbalance-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Augmentation and Class-Imbalance Handling
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Next Steps
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="u-net-training-results">U-Net Training Results<a class="headerlink" href="#u-net-training-results" title="Permanent link">&para;</a></h1>
+<p>Training results across the annotation sessions, from the first 39-mask smoke test through the fully-annotated 220-mask pool. As of 2026-08-10 the label scheme and resolution are decided (multiclass, 256×256 — Run 3), and <code>01_annotate_pool</code> was 100% annotated (Run 4) — but Run 4 surfaced a real legacy/real-cell domain gap (see <a href="#domain-gap">Domain Gap</a>).</p>
+<p><strong>Plan change (2026-08-19):</strong> rather than immediately spending the one-shot, thesis-reportable <code>02_unet_holdout</code> holdout to measure that gap, the annotation pool is being grown first. <code>01_annotate_pool</code> now has 428 images (200 legacy + 228 domain-adapt across all 11 usable cells, up from 20 domain frames across just 4), with 208 new domain frames pending annotation. The U-Net is not yet frozen; Run 5, after this re-annotation and retrain, is the next result that matters — see <a href="#next-steps">Next Steps</a>.</p>
+<hr />
+<h2 id="run-1-baseline-no-class-imbalance-correction">Run 1 — Baseline (no class imbalance correction)<a class="headerlink" href="#run-1-baseline-no-class-imbalance-correction" title="Permanent link">&para;</a></h2>
+<p><strong>Masks:</strong> 39 annotated  |  <strong>Epochs:</strong> 50  |  <strong>Loss:</strong> Dice+BCE (α=0.5, no pos_weight)</p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DSC</td>
+<td>0.0902</td>
+</tr>
+<tr>
+<td>IoU</td>
+<td>0.0473</td>
+</tr>
+<tr>
+<td>Precision</td>
+<td>0.0511</td>
+</tr>
+<tr>
+<td>Recall</td>
+<td>0.3880</td>
+</tr>
+<tr>
+<td>Accuracy</td>
+<td>0.9857</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Diagnosis:</strong> The model learned to predict mostly background. SKBR3 cells occupy roughly 0.18% of each 256×256 frame (~118 pixels out of 65,536), giving a ~550:1 background-to-cell pixel ratio. Without compensation, the BCE loss is dominated by background pixels — achieving near-zero loss simply by ignoring the cell. High accuracy (0.985) is misleading here: it reflects correct background prediction, not cell segmentation. Low precision (0.05) combined with moderate recall (0.39) indicates the model was guessing large regions that partially overlapped the cell.</p>
+<hr />
+<h2 id="run-2-with-class-imbalance-correction">Run 2 — With class imbalance correction<a class="headerlink" href="#run-2-with-class-imbalance-correction" title="Permanent link">&para;</a></h2>
+<p><strong>Masks:</strong> 30 annotated out of 220 available (13.6%)  |  <strong>Epochs:</strong> 50  |  <strong>Loss:</strong> Dice+BCE (α=0.3, pos_weight=100)</p>
+<div class="admonition success">
+<p class="admonition-title">DSC 0.72 from just 30 of 220 masks</p>
+<p>This result was produced using only <strong>30 hand-drawn masks — 13.6% of the 220-image annotation pool</strong> (the pool was briefly misdocumented as 240 elsewhere; see <code>CLAUDE.md</code> — it's 220, 200 legacy + 20 domain-adapt). The remaining 190 frames were not yet annotated at this point. A DSC of 0.72 at this stage was a strong indicator that the annotations were correct and the pipeline was working as expected. The full pool has since been annotated — see Run 4 below.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DSC</td>
+<td><strong>0.7162</strong></td>
+</tr>
+<tr>
+<td>IoU</td>
+<td>0.5581</td>
+</tr>
+<tr>
+<td>Precision</td>
+<td>0.5594</td>
+</tr>
+<tr>
+<td>Recall</td>
+<td><strong>0.9958</strong></td>
+</tr>
+<tr>
+<td>Accuracy</td>
+<td>0.9986</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Interpretation:</strong> Adding <code>pos_weight=100</code> to the BCE term makes each cell pixel count as 100 background pixels in the loss, forcing the model to prioritise finding the cell. The result is near-perfect recall (the model finds virtually all cell pixels) at the cost of slightly over-segmenting the boundary (precision=0.56). This is the expected trade-off at this sample size — a model that over-segments slightly is preferable to one that misses cells. DSC of 0.72 with only 30 training samples confirms that annotations are correct and consistent.</p>
+<p>The <code>loss_alpha=0.3</code> change (from 0.5) gives Dice loss 70% of the total signal, further counteracting the imbalance.</p>
+<hr />
+<h2 id="training-curves-run-2">Training curves (Run 2)<a class="headerlink" href="#training-curves-run-2" title="Permanent link">&para;</a></h2>
+<p><img alt="U-Net training curves" src="../assets/unet_training_curves.png" /></p>
+<p><strong>Left — Segmentation loss:</strong> Both train and val loss decrease steadily across 50 epochs, converging to ~0.80. Val loss tracks train loss closely, indicating no significant overfitting with this sample size.</p>
+<p><strong>Right — Validation DSC:</strong> DSC stays near zero for the first ~20 epochs while the model learns basic image features, then climbs sharply between epochs 20–30 as it begins detecting the cell shape. DSC reaches ~0.72 by epoch 50. The oscillation in the second half is expected — the validation set is only ~5 images, so a single mis-segmented frame has a large effect on the reported score.</p>
+<hr />
+<h2 id="run-3-binary-vs-multiclass-label-scheme-resolution-ablation">Run 3 — Binary vs. multiclass label scheme × resolution ablation<a class="headerlink" href="#run-3-binary-vs-multiclass-label-scheme-resolution-ablation" title="Permanent link">&para;</a></h2>
+<p>Same 40 annotated frames as Run 2 (up from 30), used to isolate two variables against the binary 256×256 baseline: the annotation label scheme (binary vs. 3-class) and the preprocessed input resolution (128×128 vs. 256×256). Four configs, each holding the other three variables fixed (seed 42, 100 epochs, <code>loss_alpha=0.3</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Config</th>
+<th>Labels</th>
+<th>Resolution</th>
+<th>Loss weighting</th>
+<th>Trapped-cell DSC</th>
+<th>Best epoch</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>configs/binary_experiment_128.yaml</code></td>
+<td>binary</td>
+<td>128×128</td>
+<td><code>pos_weight=50</code></td>
+<td>0.590</td>
+<td>92</td>
+</tr>
+<tr>
+<td><code>configs/multiclass_experiment.yaml</code></td>
+<td>3-class</td>
+<td>128×128</td>
+<td><code>class_weights=[1,3,3]</code></td>
+<td>0.736</td>
+<td>99</td>
+</tr>
+<tr>
+<td><code>configs/binary_experiment_256.yaml</code></td>
+<td>binary</td>
+<td>256×256</td>
+<td><code>pos_weight=50</code></td>
+<td>0.763</td>
+<td>99</td>
+</tr>
+<tr>
+<td><code>configs/multiclass_experiment_256.yaml</code></td>
+<td>3-class</td>
+<td>256×256</td>
+<td><code>class_weights=[1,3,3]</code></td>
+<td><strong>0.784</strong></td>
+<td>73</td>
+</tr>
+</tbody>
+</table>
+<p>Training curves and per-class metric tables: <code>results/unet_training_curves_v13_binary_128.png</code> through <code>v16_multi_256.png</code>.</p>
+<p><strong>Multiclass detail (256×256, <code>configs/multiclass_experiment_256.yaml</code>):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Class</th>
+<th>DSC</th>
+<th>IoU</th>
+<th>Precision</th>
+<th>Recall</th>
+<th>Accuracy</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>background</td>
+<td>0.996</td>
+<td>0.993</td>
+<td>1.000</td>
+<td>0.993</td>
+<td>0.993</td>
+</tr>
+<tr>
+<td>trapped_cell</td>
+<td><strong>0.784</strong></td>
+<td>0.645</td>
+<td>0.757</td>
+<td>0.813</td>
+<td>0.999</td>
+</tr>
+<tr>
+<td>other/decoy</td>
+<td>0.682</td>
+<td>0.518</td>
+<td>0.518</td>
+<td>0.999</td>
+<td>0.994</td>
+</tr>
+<tr>
+<td>mean</td>
+<td>0.821</td>
+<td>0.719</td>
+<td>0.758</td>
+<td>0.935</td>
+<td>0.995</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Interpretation:</strong></p>
+<ul>
+<li><strong>Labeling scheme matters more than resolution alone.</strong> At 128×128, adding the decoy-object class raised trapped-cell DSC from 0.590 to 0.736 (+0.146) — a larger jump than switching binary from 128×128 to 256×256 (0.590 → 0.763, +0.173, comparable magnitude) or multiclass from 128×128 to 256×256 (0.736 → 0.784, +0.048, smaller). The best result combines both: multiclass at 256×256.</li>
+<li><strong>Why multiclass helps:</strong> giving decoy objects (untrapped cells, debris, lookalike blobs) their own class instead of leaving them as unlabeled background stops the loss from penalizing the model for segmenting them — under the binary scheme, a decoy that visually resembles the trapped cell is background the model is punished for finding, which pushes precision down indiscriminately. Explicitly modeling it as its own class lets the network learn to distinguish "cell-like blob, but not the trapped one" from "the trapped cell," rather than lumping both into one binary decision.</li>
+<li><strong>The decoy class itself is harder</strong> (DSC 0.682 vs. 0.784 for trapped_cell) — expected, since decoy objects are a heterogeneous category (any non-trapped cell-like blob) rather than the single consistent target the trapped-cell class represents.</li>
+<li><strong>Multiclass converges faster and can overfit sooner:</strong> the 256×256 multiclass run peaked at epoch 73 (val DSC 0.784) then declined to ~0.69 by epoch 100, while the binary run kept improving to epoch 99. <code>scripts/train_unet.py</code> reloads <code>unet_best.pt</code> before final evaluation specifically to guard against this — final metrics reflect the peak, not wherever the fixed 100-epoch budget happened to end.</li>
+<li><strong>Caveat:</strong> these are 40-mask, single-seed runs — not yet a controlled statistical comparison.</li>
+</ul>
+<p><strong>Decision (2026-08-10):</strong> multiclass @ 256×256 is the frozen label scheme and resolution going forward. <code>binary_experiment_{128,256}.yaml</code> and the 128×128 multiclass config are no longer being actively pursued — kept only as this historical ablation record. This does not change the downstream contract: <code>UNet.predict(..., binary_output=True)</code> collapses the 3-class map to trapped-cell-only binary before <code>MorphologyExtractor</code> and everything past it (commit <code>b6e181b</code>) — multiclass is a training-time-only mechanism for a sharper trapped-cell boundary.</p>
+<hr />
+<h2 id="run-4-full-220-mask-pool">Run 4 — Full 220-mask pool<a class="headerlink" href="#run-4-full-220-mask-pool" title="Permanent link">&para;</a></h2>
+<p><strong>Masks:</strong> 220 annotated out of 220 available (100% — annotation pool complete)  |  <strong>Epochs:</strong> 100 (best: 45)  |  Same hyperparameters as Run 3's <code>multiclass_experiment_256.yaml</code></p>
+<table>
+<thead>
+<tr>
+<th>Class</th>
+<th>DSC</th>
+<th>IoU</th>
+<th>Precision</th>
+<th>Recall</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>background</td>
+<td>0.999</td>
+<td>0.999</td>
+<td>1.000</td>
+<td>0.999</td>
+</tr>
+<tr>
+<td>trapped_cell</td>
+<td><strong>0.943</strong></td>
+<td>0.891</td>
+<td>0.912</td>
+<td>0.974</td>
+</tr>
+<tr>
+<td>other/decoy</td>
+<td>0.759</td>
+<td>0.612</td>
+<td>0.697</td>
+<td>0.834</td>
+</tr>
+</tbody>
+</table>
+<p>Training curves: <code>results/unet_training_curves_v19.png</code>. The group-aware split (leave-one-cell-out, confirmed in <code>scripts/train_unet.py</code>'s <code>_build_groups</code>/<code>_group_split</code>) means this jump from 0.784 (Run 3, 40 masks) is real added-data signal, not leakage — but see the caveat immediately below before treating 0.943 as the thesis number.</p>
+<h2 id="domain-gap">Domain Gap<a class="headerlink" href="#domain-gap" title="Permanent link">&para;</a></h2>
+<p><strong>The 0.943 DSC above is measured on a validation split that is 100% legacy-domain (2021 microscope) frames</strong> — reproducing the group-aware split with seed 42 shows 0 of the 35 validation frames are <code>domain_</code>-prefixed (real trapped-cell) frames. Breaking the held-out <em>test</em> split out by source tells the real story:</p>
+<table>
+<thead>
+<tr>
+<th>Test subset (unseen in training)</th>
+<th>n</th>
+<th>Trapped-cell DSC</th>
+<th>Recall</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Legacy (2021)</td>
+<td>18</td>
+<td>0.944 (matches the reported 0.943)</td>
+<td>0.972</td>
+</tr>
+<tr>
+<td>Domain-adapt (real trapped cell)</td>
+<td>5</td>
+<td><strong>0.538</strong></td>
+<td><strong>0.386</strong></td>
+</tr>
+</tbody>
+</table>
+<p>High precision (0.895) with collapsed recall means the model under-segments real cells rather than hallucinating — it hasn't learned the live-imaging appearance well. Root cause: only 20/220 (9%) of training frames were real-domain, drawn from just 4 of the 11 usable <code>03_mask_factory</code> cells, so real frames were outnumbered ~10:1 by legacy frames in the actual train split (15 vs. 147). n=5 is small enough not to be precise, but the direction is unambiguous — <strong>0.943 should not be treated as the real-world number</strong> until it's confirmed on the full <code>02_unet_holdout</code> set (101 real-cell frames).</p>
+<h3 id="mitigations-tried">Mitigations tried<a class="headerlink" href="#mitigations-tried" title="Permanent link">&para;</a></h3>
+<p><strong>1. More real cells in training (run 2026-08-19).</strong> <code>celldform/acquisition/organiser.py</code>'s <code>domain_adapt</code> video list was extended from 4 cells to all 11 <code>03_mask_factory</code> cells, and <code>--domain-adapt-n</code> was raised 5→20/cell (<code>celldform-organize-dataset --no-clean --domain-adapt-n 20</code>) rather than waiting on the honest <code>02_unet_holdout</code> DSC to pick a value — the decision was made to grow the pool first and use the legacy-vs-domain DSC breakdown on the internal train/val/test split as the interim feedback signal instead, keeping <code>02_unet_holdout</code> reserved for the eventual thesis number (see <a href="#next-steps">Next Steps</a>). <code>01_annotate_pool</code> grew from 220 → 428 images (200 legacy + 228 domain-adapt); 208 of the domain frames are new and pending annotation. Frames can safely belong to both <code>01_annotate_pool</code> (segmentation training) and <code>03_mask_factory</code> (classifier feature extraction) — same precedent as the existing 4 domain-adapt cells, no contamination, since <code>_domain_adapt()</code> and <code>_extract_group()</code> sample different frame indices from the same video.</p>
+<p><strong>2. Oversampling existing domain frames (tried, did not help).</strong> Added <code>training.domain_oversample_weight</code> (<code>celldform/config.py</code>, default <code>1.0</code>) — a <code>WeightedRandomSampler</code> (<code>scripts/train_unet.py</code>) that resamples <code>domain_</code>-prefixed train frames more often per epoch, at zero new-annotation cost. Toggle via a config's <code>training:</code> block or the <code>--domain-oversample-weight &lt;N&gt;</code> CLI flag on <code>celldform-train-unet</code>/<code>scripts/train_unet.py</code>. A/B tested at weight=8.0 (<code>configs/multiclass_experiment_256_domain_oversample.yaml</code>, ~12%→~41% real-domain frames/epoch) against the Run 4 baseline:</p>
+<table>
+<thead>
+<tr>
+<th>Test subset (n)</th>
+<th>Baseline (weight=1)</th>
+<th>Oversampled (weight=8)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Legacy (18)</td>
+<td>DSC 0.944</td>
+<td>DSC 0.946 (unchanged)</td>
+</tr>
+<tr>
+<td>Domain-adapt (5)</td>
+<td>DSC 0.538, recall 0.386</td>
+<td>DSC 0.455, recall 0.30 (<strong>worse</strong>)</td>
+</tr>
+</tbody>
+</table>
+<p>No improvement — resampling only exposes the model to the same 15 unique real images more often; it can't manufacture appearance diversity that isn't there, and likely overfits harder to the 3 real cells already seen (precision rose to 0.947 while recall fell further). <strong>Conclusion: mitigation 1 (more real cells) is necessary — resampling existing frames is not a substitute.</strong></p>
+<h3 id="checkpoint-loading-bug-found-and-fixed-2026-08-10">Checkpoint-loading bug found and fixed (2026-08-10)<a class="headerlink" href="#checkpoint-loading-bug-found-and-fixed-2026-08-10" title="Permanent link">&para;</a></h3>
+<p><code>UNet.from_checkpoint()</code> (<code>celldform/segmentation/unet.py</code>) did a bare <code>load_state_dict(torch.load(path))</code>, but <code>SegmentationTrainer._save_checkpoint()</code> actually wraps weights in <code>{"epoch", "val_dsc", "model_state_dict", ...}</code> — so <code>celldform-infer</code> and <code>scripts/infer.py</code> would crash on any checkpoint training actually produces. <code>evaluate_unet.py</code> and <code>predict_single_frame.py</code> had each independently worked around it with a manual unwrap; <code>tests/test_segmentation.py</code> didn't catch it because it saves a bare state dict via <code>model.save()</code>, never exercising the wrapped-dict path a real training run produces. Fixed to unwrap <code>model_state_dict</code> when present.</p>
+<h3 id="contamination-bug-found-and-fixed-2026-08-19">Contamination bug found and fixed (2026-08-19)<a class="headerlink" href="#contamination-bug-found-and-fixed-2026-08-19" title="Permanent link">&para;</a></h3>
+<p><code>organise()</code>'s legacy-image copy step (<code>celldform/acquisition/organiser.py</code>) had no exclusion for the 20 frames permanently reserved into <code>02_unet_holdout/legacy_holdout/</code> — running <code>celldform-organize-dataset --no-clean</code> to grow the domain-adapt pool (mitigation 1, above) silently recopied all 220 legacy JPGs, holdout included, back into <code>01_annotate_pool</code>. Caught before annotation touched them (no masks existed yet for those 20 filenames), so no holdout contamination actually reached the model — but a routine <code>--no-clean</code> rerun would eventually have annotated them by accident, since their timestamp-numeric filenames sort before <code>domain_*</code> and <code>scripts/annotate.py</code> resumes on the first unannotated image. Fixed: <code>organise()</code> now reads whatever's in <code>legacy_holdout/</code> and permanently excludes those filenames from the legacy copy, so this can't recur on future reruns; the 20 duplicated files were removed from the pool.</p>
+<hr />
+<h2 id="loss-function">Loss function<a class="headerlink" href="#loss-function" title="Permanent link">&para;</a></h2>
+<p>The combined Dice + BCE loss used in binary-mode runs (Run 1–2, and <code>binary_experiment_*.yaml</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Loss = α × BCE(pos_weight) + (1 − α) × Dice
+</code></pre></div>
+<ul>
+<li><strong>BCE</strong> penalises each pixel individually — gives stable gradients early in training.</li>
+<li><strong>Dice</strong> measures overall mask overlap — keeps the model focused on the cell region rather than pixel counts.</li>
+<li><strong>pos_weight</strong> multiplies the BCE penalty on cell pixels to counter the 550:1 background/cell imbalance.</li>
+</ul>
+<p>Current defaults in <code>configs/default.yaml</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nt">training</span><span class="p">:</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">loss_alpha</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.3</span><span class="w">        </span><span class="c1"># Dice carries 70% of the loss signal</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span><span class="nt">loss_pos_weight</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100.0</span><span class="w"> </span><span class="c1"># increase if recall is low; decrease if precision is low</span>
+</code></pre></div>
+<p><strong>Multiclass mode</strong> (<code>unet.out_channels &gt; 1</code>, e.g. <code>multiclass_experiment_256.yaml</code>) replaces BCE with Cross-Entropy and Dice is computed per-class then averaged:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>Loss = α × CrossEntropy(class_weights) + (1 − α) × mean(Dice per class)
+</code></pre></div>
+<p><code>class_weights</code> (e.g. <code>[1.0, 3.0, 3.0]</code> for background/trapped_cell/other-decoy) plays the same role as <code>pos_weight</code> but is <strong>not</strong> directly comparable in magnitude — <code>CrossEntropyLoss</code>'s weighted-mean reduction renormalises by weight mass, so porting <code>pos_weight=100</code> in directly collapsed precision to ~0.13 by pushing recall to 1.0 everywhere. <code>[1, 3, 3]</code> was the winner of a small sweep (<code>1,1,1</code> / <code>3,3,3</code> / <code>5,5,5</code> / <code>10,10,10</code> / <code>20,20,20</code>, each trained the full 100 epochs) — trapped_cell precision=0.757/recall=0.813, a balanced result rather than recall-saturated.</p>
+<hr />
+<h2 id="expected-trajectory-superseded-see-run-4">Expected trajectory (superseded — see Run 4)<a class="headerlink" href="#expected-trajectory-superseded-see-run-4" title="Permanent link">&para;</a></h2>
+<p>The table below was the pre-Run-4 projection and undershot: 220 masks reached DSC 0.943 on the (legacy-dominated) validation split, not the ~0.80-0.85 range extrapolated here. Kept for the historical record; the actual number that matters going forward is the domain-gap-corrected one from <a href="#domain-gap">Domain Gap</a>, pending the honest <code>02_unet_holdout</code> evaluation.</p>
+<table>
+<thead>
+<tr>
+<th>Masks</th>
+<th>Expected DSC (binary)</th>
+<th>Suggested <code>pos_weight</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>30</td>
+<td>~0.72</td>
+<td>100</td>
+</tr>
+<tr>
+<td>40</td>
+<td>0.76 (binary) / 0.78 (multiclass) — see Run 3</td>
+<td>50</td>
+</tr>
+<tr>
+<td>~80</td>
+<td>~0.80</td>
+<td>50–75</td>
+</tr>
+<tr>
+<td>220 (actual)</td>
+<td><strong>0.943 nominal / 0.538 on real cells — see <a href="#domain-gap">Domain Gap</a></strong></td>
+<td>n/a (multiclass, <code>class_weights=[1,3,3]</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>The thesis-reportable DSC comes from <code>scripts/evaluate_unet.py</code> on the <code>02_unet_holdout</code> pool — annotated only after training is frozen (currently in progress; see <a href="#next-steps">Next Steps</a>). See <a href="../workflow/#step-5-evaluate-on-holdout-set">Workflow Guide</a>.</p>
+<hr />
+<h2 id="data-augmentation-and-class-imbalance-handling">Data Augmentation and Class-Imbalance Handling<a class="headerlink" href="#data-augmentation-and-class-imbalance-handling" title="Permanent link">&para;</a></h2>
+<p>Implemented, enabled on the train split only:</p>
+<ul>
+<li>Horizontal flip (50% chance)</li>
+<li>Vertical flip (50% chance)</li>
+<li>Random 90° rotation (0°, 90°, 180°, or 270°)</li>
+</ul>
+<p><code>CellDataset</code> in <code>scripts/train_unet.py</code> applies these via <code>augment=True</code> (train split only; val/test loaders use <code>augment=False</code>). Intensity augmentation is intentionally excluded — CLAHE in Stage 2 already normalises contrast, so brightness jitter would undo that work.</p>
+<p>Note this only addresses spatial-orientation invariance, not the legacy/real-domain imbalance — see <a href="#domain-gap">Domain Gap</a> for <code>domain_oversample_weight</code>, a separate, purpose-built mechanism for that (tried, did not help; kept as an available toggle regardless).</p>
+<hr />
+<h2 id="next-steps">Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>Current priority:</strong> annotate the 208 new domain frames in <code>01_annotate_pool</code> (<code>python scripts/annotate.py --multiclass</code> — resumes on the first unannotated image, so the 220 already-annotated frames are skipped automatically) → <code>scripts/validate_masks.py --multiclass</code> → <code>scripts/preprocess_frames.py --masks</code> → retrain <code>multiclass_experiment_256.yaml</code> → break out the legacy-vs-domain-adapt DSC on the internal validation/test split (same methodology as the <a href="#domain-gap">Domain Gap</a> table) to check whether the gap closed.</li>
+<li><code>02_unet_holdout</code> (101 real frames, high-cell9 + low-cell6) stays intentionally unannotated until step 1's validation-split domain DSC looks solid — it's the one-shot, thesis-reportable number and shouldn't be spent evaluating an intermediate checkpoint. Once ready: <code>scripts/evaluate_unet.py</code> for the honest holdout DSC.</li>
+<li>Run the frozen U-Net (<code>binary_output=True</code>) over <code>03_mask_factory</code> (557 frames) → extract features → train SVM / RF / DT classifiers.</li>
+<li>Biomechanics: compute RoD, correlate with laser power, fit Kelvin–Voigt model.</li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../workflow/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Workflow Guide">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Workflow Guide
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../data/" class="md-footer__link md-footer__link--next" aria-label="Next: Data Layout">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Data Layout
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.top", "navigation.footer", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

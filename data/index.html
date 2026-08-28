@@ -1,0 +1,1676 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Real-Time Machine Learning Framework for Quantitative SKBR3 Cell Deformation Analysis in Dual-Beam Optical Tweezer Systems">
+      
+      
+        <meta name="author" content="Isaac Oppong-Baah">
+      
+      
+      
+        <link rel="prev" href="../training/">
+      
+      
+        <link rel="next" href="../scripts/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Data Layout - celldform</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#data-layout" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="celldform" class="md-header__button md-logo" aria-label="celldform" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            celldform
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Data Layout
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/oppongbaah/cancer_cell_deformation" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    oppongbaah/cancer_cell_deformation
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../pipeline/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Pipeline Overview
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../workflow/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Workflow Guide
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../training/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Training Results
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Data Layout
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../scripts/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Scripts Reference
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../cli/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  CLI Reference
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../gpu/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  GPU & Hardware
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../hpc/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  HPC Guide
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../api/acquisition/" class="md-tabs__link">
+          
+  
+  
+  API Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="celldform" class="md-nav__button md-logo" aria-label="celldform" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    celldform
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/oppongbaah/cancer_cell_deformation" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    oppongbaah/cancer_cell_deformation
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pipeline Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../workflow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Workflow Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../training/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Training Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Layout
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Layout
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#directory-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Directory structure
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pipeline-role-of-each-folder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pipeline role of each folder
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pool-descriptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pool descriptions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Pool descriptions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#01_annotate_pool-428-images-u-net-training" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        01_annotate_pool — 428 images (U-Net training)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#02_unet_holdout-101-images-u-net-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        02_unet_holdout — 101 images (U-Net test)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#03_mask_factory-557-images-classifier-training" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        03_mask_factory — 557 images (classifier training)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#04_clf_arena-101-images-classifier-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        04_clf_arena — 101 images (classifier test)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#contamination-firewall" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Contamination firewall
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#regenerating-frames" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Regenerating frames
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../scripts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scripts Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gpu/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GPU & Hardware
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hpc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HPC Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/acquisition/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Acquisition
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/preprocessing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Preprocessing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/segmentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Segmentation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/features/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Features
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/classification/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Classification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/biomechanics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Biomechanics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#directory-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Directory structure
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pipeline-role-of-each-folder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pipeline role of each folder
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pool-descriptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pool descriptions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Pool descriptions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#01_annotate_pool-428-images-u-net-training" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        01_annotate_pool — 428 images (U-Net training)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#02_unet_holdout-101-images-u-net-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        02_unet_holdout — 101 images (U-Net test)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#03_mask_factory-557-images-classifier-training" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        03_mask_factory — 557 images (classifier training)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#04_clf_arena-101-images-classifier-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        04_clf_arena — 101 images (classifier test)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#contamination-firewall" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Contamination firewall
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#regenerating-frames" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Regenerating frames
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="data-layout">Data Layout<a class="headerlink" href="#data-layout" title="Permanent link">&para;</a></h1>
+<p>Full documentation of the <code>data/</code> directory — see also <code>data/README.md</code> for per-cell tables and the contamination firewall details.</p>
+<hr />
+<h2 id="directory-structure">Directory structure<a class="headerlink" href="#directory-structure" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>data/
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>├── raw/                            Source recordings — never modified
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>│   ├── high/                       High HER2-expression cells (9 videos)
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>│   ├── low/                        Low HER2-expression cells (5 videos)
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>│   ├── cell 1 low 50 increments.mp4
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>│   └── legacy/20210825_cancer/     220 unlabelled JPGs from 2021 microscope
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>│
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>├── frames/                         Raw extracted frames (1228×922 greyscale JPEG)
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>│   ├── 01_annotate_pool/           U-Net training source (428 images: 200 legacy + 228 domain-adapt)
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>│   ├── 02_unet_holdout/            U-Net test source
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>│   │   └── legacy_holdout/         20 reserved legacy frames — separate diagnostic DSC
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>│   ├── 03_mask_factory/            Inference → classifier training
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>│   └── 04_clf_arena/               Final classifier evaluation
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>│
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>├── masks/                          Hand-drawn masks (1228×922 PNG)
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>│   ├── 01_annotate_pool/           U-Net training labels (binary, 0/255)
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>│   ├── 01_annotate_pool_multiclass/  Experimental 3-class labels (0/1/2), same 40 frames
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>│   ├── 02_unet_holdout/            U-Net test ground truth
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>│   └── 02_unet_holdout/legacy_holdout/  Ground truth for the legacy holdout frames
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>│
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>└── preprocessed/                   256×256 pipeline-ready data
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>    ├── train/01_annotate_pool/
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>    │   ├── inputs/                 Preprocessed frames → U-Net training inputs
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>    │   └── labels/                 Resized masks       → U-Net training labels
+<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>    ├── evaluate/02_unet_holdout/
+<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>    │   ├── inputs/                 Preprocessed frames → U-Net evaluation inputs
+<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>    │   └── labels/                 Resized masks       → U-Net evaluation labels
+<a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>    ├── evaluate/02_unet_holdout/legacy_holdout/
+<a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>    │   ├── inputs/                 Preprocessed legacy holdout frames → separate DSC
+<a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a>    │   └── labels/                 Resized legacy holdout masks
+<a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a>    ├── inference/
+<a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a>    │   ├── 03_mask_factory/inputs/ Preprocessed frames → classifier training
+<a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a>    │   └── 04_clf_arena/inputs/    Preprocessed frames → final evaluation
+<a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a>    └── comparisons/                Pipeline stage figures (reporting)
+</code></pre></div>
+<hr />
+<h2 id="pipeline-role-of-each-folder">Pipeline role of each folder<a class="headerlink" href="#pipeline-role-of-each-folder" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Folder</th>
+<th>ML role</th>
+<th>HER2 label</th>
+<th>Masks</th>
+<th>Touch when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>raw/</code></td>
+<td>Source — never modified</td>
+<td>In filename</td>
+<td>None</td>
+<td>Never</td>
+</tr>
+<tr>
+<td><code>frames/01_annotate_pool/</code></td>
+<td>U-Net training source</td>
+<td>No</td>
+<td>Hand-drawn (required)</td>
+<td>Annotate now</td>
+</tr>
+<tr>
+<td><code>frames/02_unet_holdout/</code></td>
+<td>U-Net test source</td>
+<td>No</td>
+<td>Hand-drawn (required)</td>
+<td>After U-Net training</td>
+</tr>
+<tr>
+<td><code>frames/02_unet_holdout/legacy_holdout/</code></td>
+<td>Legacy-domain diagnostic source</td>
+<td>No</td>
+<td>Hand-drawn (required)</td>
+<td>After U-Net training</td>
+</tr>
+<tr>
+<td><code>frames/03_mask_factory/</code></td>
+<td>Classifier training source</td>
+<td>Yes</td>
+<td>U-Net predicted</td>
+<td>After U-Net training</td>
+</tr>
+<tr>
+<td><code>frames/04_clf_arena/</code></td>
+<td>Classifier test source</td>
+<td>Yes</td>
+<td>U-Net predicted</td>
+<td>Final evaluation only</td>
+</tr>
+<tr>
+<td><code>masks/01_annotate_pool/</code></td>
+<td>U-Net training labels</td>
+<td>No</td>
+<td>Binary, hand-drawn</td>
+<td>During annotation</td>
+</tr>
+<tr>
+<td><code>masks/02_unet_holdout/</code></td>
+<td>U-Net test labels</td>
+<td>No</td>
+<td>Binary, hand-drawn</td>
+<td>After U-Net training</td>
+</tr>
+<tr>
+<td><code>masks/02_unet_holdout/legacy_holdout/</code></td>
+<td>Legacy-domain diagnostic labels</td>
+<td>No</td>
+<td>Binary, hand-drawn</td>
+<td>After U-Net training</td>
+</tr>
+<tr>
+<td><code>preprocessed/train/.../inputs/</code></td>
+<td>U-Net training inputs (256×256)</td>
+<td>No</td>
+<td>—</td>
+<td>After preprocessing</td>
+</tr>
+<tr>
+<td><code>preprocessed/train/.../labels/</code></td>
+<td>U-Net training labels (256×256)</td>
+<td>No</td>
+<td>Resized binary</td>
+<td>After preprocessing</td>
+</tr>
+<tr>
+<td><code>preprocessed/evaluate/.../inputs/</code></td>
+<td>U-Net evaluation inputs (256×256)</td>
+<td>No</td>
+<td>—</td>
+<td>After holdout annotation</td>
+</tr>
+<tr>
+<td><code>preprocessed/evaluate/.../labels/</code></td>
+<td>U-Net evaluation labels (256×256)</td>
+<td>No</td>
+<td>Resized binary</td>
+<td>After holdout annotation</td>
+</tr>
+<tr>
+<td><code>preprocessed/inference/03_.../inputs/</code></td>
+<td>Classifier training inputs</td>
+<td>Yes</td>
+<td>—</td>
+<td>After U-Net training</td>
+</tr>
+<tr>
+<td><code>preprocessed/inference/04_.../inputs/</code></td>
+<td>Classifier test inputs</td>
+<td>Yes</td>
+<td>—</td>
+<td>Final evaluation only</td>
+</tr>
+<tr>
+<td><code>preprocessed/comparisons/</code></td>
+<td>Reporting figures</td>
+<td>—</td>
+<td>—</td>
+<td>On demand (<code>--compare</code>)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="pool-descriptions">Pool descriptions<a class="headerlink" href="#pool-descriptions" title="Permanent link">&para;</a></h2>
+<h3 id="01_annotate_pool-428-images-u-net-training"><code>01_annotate_pool</code> — 428 images (U-Net training)<a class="headerlink" href="#01_annotate_pool-428-images-u-net-training" title="Permanent link">&para;</a></h3>
+<p>Source for U-Net training masks. <strong>220/220 fully annotated as of 2026-08-10</strong> (multiclass scheme — see below); grown to 428 on 2026-08-19 to address the domain gap (see warning below) — <strong>208 new domain-adapt frames are currently unannotated and are the annotation priority</strong> (see <a href="../training/#next-steps">Training Results</a>).</p>
+<table>
+<thead>
+<tr>
+<th>Subset</th>
+<th>Count</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Legacy cancer images (2021)</td>
+<td>200</td>
+<td>Filename: <code>YYYYMMDDHHMMSS.jpg</code> — no HER2 label. 20 of the original 220 legacy JPGs were reserved into <code>02_unet_holdout/legacy_holdout/</code> before annotation, which is why this subset is 200, not 220.</td>
+</tr>
+<tr>
+<td>Domain-adapt samples</td>
+<td>228</td>
+<td>Prefix: <code>domain_&lt;her2&gt;_&lt;cell_id&gt;_&lt;frame&gt;.jpg</code>. ~20 frames each from all 11 <code>03_mask_factory</code> cells (up from 5 frames × 4 cells) — the 4 originally-covered cells landed at 24 frames each rather than exactly 20 since a different N samples a different evenly-spaced grid, so the earlier 5 didn't line up with the new 20 and both sets stayed on disk. 220 of the 228 are already annotated (the original 4-cell batch); 208 are new.</td>
+</tr>
+</tbody>
+</table>
+<p>Domain-adapt frames come from cells also in <code>03_mask_factory</code>. The U-Net trains on them, then runs inference on the full set from those cells — same video, different sampled frame indices, so no contamination.</p>
+<div class="admonition warning">
+<p class="admonition-title">Domain gap between legacy and real-cell frames — mitigation in progress</p>
+<p>With only 20 real-cell frames from 4 cells, segmenting held-out real-cell frames scored far worse than held-out legacy frames (DSC 0.538 vs. 0.944) — see <a href="../training/#domain-gap">Training Results</a> for the full finding. <strong>As of 2026-08-19:</strong> <code>celldform/acquisition/organiser.py</code>'s <code>domain_adapt</code> cell list was extended to all 11 <code>03_mask_factory</code> cells and <code>--domain-adapt-n</code> increased 5→20/cell (<code>celldform-organize-dataset --no-clean --domain-adapt-n 20</code>), rather than waiting on the <code>02_unet_holdout</code> DSC to pick a value — see <a href="../training/#next-steps">Training Results — Next Steps</a> for why <code>02_unet_holdout</code> annotation is deliberately being deferred instead.</p>
+</div>
+<div class="admonition danger">
+<p class="admonition-title">Contamination bug found and fixed (2026-08-19)</p>
+<p>The legacy-image copy step in <code>organise()</code> had no exclusion for the 20 frames permanently reserved in <code>02_unet_holdout/legacy_holdout/</code> (see below) — running <code>--no-clean</code> after raising <code>--domain-adapt-n</code> silently recopied all 220 legacy JPGs, holdout included, back into <code>01_annotate_pool</code>. Caught before annotation touched them (no masks existed yet for those 20 filenames). <code>organise()</code> now reads <code>02_unet_holdout/legacy_holdout/</code> and permanently excludes those filenames from the legacy copy step, so re-running <code>--no-clean</code> can no longer recontaminate the pool.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Label scheme: multiclass (frozen)</p>
+<p>The 220 originally-annotated frames use the 3-class scheme (<code>data/masks/01_annotate_pool_multiclass/</code>: 0=background, 1=trapped cell, 2=other/decoy object) — this is the scheme the pipeline trains on going forward (decided 2026-08-10; binary annotation stalled at 43/220 and isn't being continued). <code>scripts/annotate.py --multiclass</code> seeds label 1 from the existing binary mask where one exists, so only decoy objects need to be painted from scratch; it resumes on the first unannotated image, so it lands directly on the 208 new domain frames.</p>
+</div>
+<h3 id="02_unet_holdout-101-images-u-net-test"><code>02_unet_holdout</code> — 101 images (U-Net test)<a class="headerlink" href="#02_unet_holdout-101-images-u-net-test" title="Permanent link">&para;</a></h3>
+<p>Held out from all training. Annotate <strong>after</strong> U-Net training is complete, and <strong>after</strong> the domain-adapt re-annotation above shows a solid validation-split domain DSC (see <a href="../training/#next-steps">Training Results</a>) — this holdout is the one-shot, thesis-reportable number, so it's deliberately not being spent evaluating an intermediate checkpoint.</p>
+<table>
+<thead>
+<tr>
+<th>Cell</th>
+<th>HER2</th>
+<th>Frames</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>cell9</td>
+<td>high</td>
+<td>50</td>
+</tr>
+<tr>
+<td>cell6</td>
+<td>low</td>
+<td>51</td>
+</tr>
+</tbody>
+</table>
+<p>The DSC score from evaluating on this pool is the thesis-reportable segmentation metric.</p>
+<div class="admonition note">
+<p class="admonition-title"><code>02_unet_holdout/legacy_holdout/</code> — 20 images, evaluated separately</p>
+<p>A diagnostic subset nested under <code>02_unet_holdout/</code> but <strong>never merged</strong> into the DSC above. Reserved unannotated from <code>01_annotate_pool</code> (evenly sampled across the legacy frames unannotated at the time) before annotated training data included any real-cell frames. Since training was legacy-only while <code>02_unet_holdout</code> is real-cell-only, one blended DSC couldn't separate "weak segmentation" from "domain gap." Evaluating this subset on its own (own <code>--image-dir</code>/<code>--mask-dir</code> pair; <code>evaluate_unet.py --pool 02_unet_holdout</code> doesn't recurse into it) gives a second, comparable DSC — high legacy-holdout DSC + low real-cell-holdout DSC points to the domain gap specifically.</p>
+</div>
+<h3 id="03_mask_factory-557-images-classifier-training"><code>03_mask_factory</code> — 557 images (classifier training)<a class="headerlink" href="#03_mask_factory-557-images-classifier-training" title="Permanent link">&para;</a></h3>
+<p>U-Net inference pool. Each predicted mask → 15 morphological features → one classifier training sample.</p>
+<table>
+<thead>
+<tr>
+<th>HER2</th>
+<th>Cells</th>
+<th>Frames</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>high</td>
+<td>1, 2, 3, 4, 6, 7, 8</td>
+<td>355</td>
+</tr>
+<tr>
+<td>low</td>
+<td>1, 2, 3, 4</td>
+<td>202</td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td></td>
+<td><strong>557</strong></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="admonition-title">Class imbalance</p>
+<p>Training set is ~64 % high / 36 % low. Use <code>class_weight='balanced'</code> on all classifiers.</p>
+</div>
+<h3 id="04_clf_arena-101-images-classifier-test"><code>04_clf_arena</code> — 101 images (classifier test)<a class="headerlink" href="#04_clf_arena-101-images-classifier-test" title="Permanent link">&para;</a></h3>
+<p>Completely held out. These cells were never annotated and never seen by any model during training.</p>
+<table>
+<thead>
+<tr>
+<th>Cell</th>
+<th>HER2</th>
+<th>Frames</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>cell10</td>
+<td>high</td>
+<td>50</td>
+</tr>
+<tr>
+<td>cell5</td>
+<td>low</td>
+<td>51</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="contamination-firewall">Contamination firewall<a class="headerlink" href="#contamination-firewall" title="Permanent link">&para;</a></h2>
+<p>The data split ensures no training signal leaks into final evaluation:</p>
+<ul>
+<li><strong>Legacy images</strong> have no HER2 label — safe for U-Net training; cannot contaminate the classifier.</li>
+<li><strong><code>02_unet_holdout</code></strong> cells were never used during U-Net training. Annotated masks give an unbiased segmentation DSC.</li>
+<li><strong><code>04_clf_arena</code></strong> cells were never annotated, never used to generate classifier training features, and never included in cross-validation. They are the single honest test of classifier generalisation.</li>
+</ul>
+<hr />
+<h2 id="regenerating-frames">Regenerating frames<a class="headerlink" href="#regenerating-frames" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>celldform-organize-dataset<span class="w">                                    </span><span class="c1"># defaults</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>celldform-organize-dataset<span class="w"> </span>--every-n<span class="w"> </span><span class="m">100</span><span class="w"> </span>--domain-adapt-n<span class="w"> </span><span class="m">10</span><span class="w"> </span><span class="c1"># denser sampling</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>celldform-organize-dataset<span class="w"> </span>--no-clean<span class="w">                         </span><span class="c1"># skip wiping data/frames/</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>celldform-organize-dataset<span class="w"> </span>--no-clean<span class="w"> </span>--domain-adapt-n<span class="w"> </span><span class="m">20</span><span class="w">     </span><span class="c1"># expand domain-adapt frames only — run 2026-08-19</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">                                                                </span><span class="c1"># (use --no-clean so 02_unet_holdout isn't wiped</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">                                                                </span><span class="c1"># mid-annotation; legacy_holdout frames are always</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">                                                                </span><span class="c1"># excluded from the legacy copy regardless of N;</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">                                                                </span><span class="c1"># existing domain-adapt frames/masks whose exact</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">                                                                </span><span class="c1"># frame index doesn't fall on the new N's sampling</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">                                                                </span><span class="c1"># grid are kept on disk, not deleted, so no</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">                                                                </span><span class="c1"># annotation work is lost across re-runs)</span>
+</code></pre></div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../training/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Training Results">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Training Results
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../scripts/" class="md-footer__link md-footer__link--next" aria-label="Next: Scripts Reference">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Scripts Reference
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.top", "navigation.footer", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

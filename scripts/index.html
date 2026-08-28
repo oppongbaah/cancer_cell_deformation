@@ -1,0 +1,1776 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Real-Time Machine Learning Framework for Quantitative SKBR3 Cell Deformation Analysis in Dual-Beam Optical Tweezer Systems">
+      
+      
+        <meta name="author" content="Isaac Oppong-Baah">
+      
+      
+      
+        <link rel="prev" href="../data/">
+      
+      
+        <link rel="next" href="../cli/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Scripts Reference - celldform</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#scripts-reference" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="celldform" class="md-header__button md-logo" aria-label="celldform" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            celldform
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Scripts Reference
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/oppongbaah/cancer_cell_deformation" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    oppongbaah/cancer_cell_deformation
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../pipeline/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Pipeline Overview
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../workflow/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Workflow Guide
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../training/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Training Results
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../data/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Data Layout
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Scripts Reference
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../cli/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  CLI Reference
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../gpu/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  GPU & Hardware
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../hpc/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  HPC Guide
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../api/acquisition/" class="md-tabs__link">
+          
+  
+  
+  API Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="celldform" class="md-nav__button md-logo" aria-label="celldform" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    celldform
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/oppongbaah/cancer_cell_deformation" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    oppongbaah/cancer_cell_deformation
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pipeline Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../workflow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Workflow Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../training/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Training Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Layout
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scripts Reference
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scripts Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#annotatepy-napari-annotation-tool" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        annotate.py — napari annotation tool
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#preview_maskspy-colorized-mask-preview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        preview_masks.py — colorized mask preview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validate_maskspy-mask-validation-gate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validate_masks.py — mask validation gate
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#preprocess_framespy-manual-preprocessing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        preprocess_frames.py — manual preprocessing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#train_unetpy-u-net-training" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        train_unet.py — U-Net training
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#evaluate_unetpy-holdout-evaluation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        evaluate_unet.py — holdout evaluation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#organize_datasetpy-dataset-organiser" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        organize_dataset.py — dataset organiser
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#extract_framespy-single-video-extraction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        extract_frames.py — single video extraction
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inferpy-full-inference-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        infer.py — full inference pipeline
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gpu/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GPU & Hardware
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hpc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HPC Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/acquisition/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Acquisition
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/preprocessing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Preprocessing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/segmentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Segmentation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/features/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Features
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/classification/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Classification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/biomechanics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Biomechanics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#annotatepy-napari-annotation-tool" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        annotate.py — napari annotation tool
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#preview_maskspy-colorized-mask-preview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        preview_masks.py — colorized mask preview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validate_maskspy-mask-validation-gate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validate_masks.py — mask validation gate
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#preprocess_framespy-manual-preprocessing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        preprocess_frames.py — manual preprocessing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#train_unetpy-u-net-training" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        train_unet.py — U-Net training
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#evaluate_unetpy-holdout-evaluation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        evaluate_unet.py — holdout evaluation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#organize_datasetpy-dataset-organiser" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        organize_dataset.py — dataset organiser
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#extract_framespy-single-video-extraction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        extract_frames.py — single video extraction
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inferpy-full-inference-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        infer.py — full inference pipeline
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="scripts-reference">Scripts Reference<a class="headerlink" href="#scripts-reference" title="Permanent link">&para;</a></h1>
+<p>All scripts live under <code>scripts/</code> and are thin wrappers or standalone tools. They can be run directly with <code>python scripts/&lt;name&gt;.py</code>.</p>
+<hr />
+<h2 id="annotatepy-napari-annotation-tool"><code>annotate.py</code> — napari annotation tool<a class="headerlink" href="#annotatepy-napari-annotation-tool" title="Permanent link">&para;</a></h2>
+<p>Opens every image in an annotation pool, in order, in napari — including already-annotated ones, so <code>N</code>/<code>B</code> can freely browse and correct earlier work rather than only stepping through what's left. The viewer opens on the first not-yet-annotated image (not the start of the pool); revisiting an annotated frame loads its saved mask instead of a blank one, and the window title shows <code>[saved]</code> for frames that already have a mask on disk. Paint the cell mask on the Labels layer, then press <code>S</code> to save and advance.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>python<span class="w"> </span>scripts/annotate.py<span class="w">                             </span><span class="c1"># 01_annotate_pool (default)</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>python<span class="w"> </span>scripts/annotate.py<span class="w"> </span>--pool<span class="w"> </span>02_unet_holdout<span class="w">      </span><span class="c1"># holdout set</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>python<span class="w"> </span>scripts/annotate.py<span class="w"> </span>--multiclass<span class="w">                </span><span class="c1"># experimental 3-class labels (same 40 images)</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--pool</code></td>
+<td><code>01_annotate_pool</code></td>
+<td>Pool folder name under <code>data/frames/</code></td>
+</tr>
+<tr>
+<td><code>--image-dir</code></td>
+<td><code>data/frames/&lt;pool&gt;</code></td>
+<td>Override source image directory</td>
+</tr>
+<tr>
+<td><code>--mask-dir</code></td>
+<td><code>data/masks/&lt;pool&gt;</code></td>
+<td>Override mask output directory</td>
+</tr>
+<tr>
+<td><code>--multiclass</code></td>
+<td>off</td>
+<td>Annotate 3 classes (0=background, 1=trapped cell, 2=other/decoy object) instead of binary. Masks default to <code>data/masks/&lt;pool&gt;_multiclass/</code> and are seeded from the existing binary mask (as label 1) when one exists, so you only need to paint decoy objects</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Keybindings:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>2</code></td>
+<td>Paint brush</td>
+</tr>
+<tr>
+<td><code>3</code></td>
+<td>Eraser</td>
+</tr>
+<tr>
+<td><code>[</code> / <code>]</code></td>
+<td>Smaller / larger brush</td>
+</tr>
+<tr>
+<td><code>Ctrl+Z</code></td>
+<td>Undo last stroke</td>
+</tr>
+<tr>
+<td><code>S</code></td>
+<td>Save mask → next image</td>
+</tr>
+<tr>
+<td><code>N</code></td>
+<td>Skip (no save) → next image</td>
+</tr>
+<tr>
+<td><code>B</code></td>
+<td>Previous image</td>
+</tr>
+<tr>
+<td><code>P</code></td>
+<td>Toggle paint mode (napari default — left alone)</td>
+</tr>
+<tr>
+<td><code>-</code> / <code>=</code></td>
+<td>Step the active paint label down/up (multiclass mode)</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="admonition-title">P vs. B</p>
+<p><code>P</code> used to mean "previous image" but napari's Labels layer binds it by default to "toggle preserve labels," which shadows any viewer-level binding while the mask layer is active. <code>B</code> is reclaimed for "previous" instead; <code>P</code> is left as napari's default paint-mode toggle.</p>
+</div>
+<p>Binary mode: masks are saved as uint8 PNGs with values 0 (background) / 255 (cell). Multiclass mode: masks are saved with raw label values 0/1/2 (not binarized) — use <code>scripts/preview_masks.py</code> to view them, since label values 1–2 are visually indistinguishable from background in a plain image viewer.</p>
+<hr />
+<h2 id="preview_maskspy-colorized-mask-preview"><code>preview_masks.py</code> — colorized mask preview<a class="headerlink" href="#preview_maskspy-colorized-mask-preview" title="Permanent link">&para;</a></h2>
+<p>Renders saved masks overlaid on their raw frames as real color PNGs — no napari needed. Multiclass masks (label ids 0/1/2) are nearly invisible in a plain image viewer; this renders label 1 (trapped cell) as green and label 2 (other/decoy) as red. Legacy binary masks (0/255) also work — foreground renders green.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>python<span class="w"> </span>scripts/preview_masks.py<span class="w">                                    </span><span class="c1"># 01_annotate_pool_multiclass (default)</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>python<span class="w"> </span>scripts/preview_masks.py<span class="w"> </span>--pool<span class="w"> </span>01_annotate_pool<span class="w">            </span><span class="c1"># binary masks</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>python<span class="w"> </span>scripts/preview_masks.py<span class="w"> </span>--alpha<span class="w"> </span><span class="m">0</span>.5<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--pool</code></td>
+<td><code>01_annotate_pool_multiclass</code></td>
+<td>Pool folder name under <code>data/masks/</code> (raw frame pool is inferred by stripping <code>_multiclass</code>)</td>
+</tr>
+<tr>
+<td><code>--image-dir</code></td>
+<td><code>data/frames/&lt;inferred pool&gt;</code></td>
+<td>Override raw frame directory</td>
+</tr>
+<tr>
+<td><code>--mask-dir</code></td>
+<td><code>data/masks/&lt;pool&gt;</code></td>
+<td>Override mask directory</td>
+</tr>
+<tr>
+<td><code>--output-dir</code></td>
+<td><code>data/masks/&lt;pool&gt;_preview</code></td>
+<td>Override output directory</td>
+</tr>
+<tr>
+<td><code>--alpha</code></td>
+<td><code>0.45</code></td>
+<td>Overlay blend strength (0–1)</td>
+</tr>
+<tr>
+<td><code>--limit</code></td>
+<td>none</td>
+<td>Only preview the first N masks</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="validate_maskspy-mask-validation-gate"><code>validate_masks.py</code> — mask validation gate<a class="headerlink" href="#validate_maskspy-mask-validation-gate" title="Permanent link">&para;</a></h2>
+<p>Validates the masks that are present in a pool, and (by default) that every frame in the pool has one. Use as a pre-training gate.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>python<span class="w"> </span>scripts/validate_masks.py<span class="w">                          </span><span class="c1"># 01_annotate_pool</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>python<span class="w"> </span>scripts/validate_masks.py<span class="w"> </span>--pool<span class="w"> </span>02_unet_holdout
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>python<span class="w"> </span>scripts/validate_masks.py<span class="w"> </span>--multiclass<span class="w">              </span><span class="c1"># validates 01_annotate_pool_multiclass</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>python<span class="w"> </span>scripts/validate_masks.py<span class="w"> </span>--no-completeness<span class="w">         </span><span class="c1"># skip the "every frame has a mask" check</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--pool</code></td>
+<td><code>01_annotate_pool</code></td>
+<td>Pool folder name (used for both <code>data/frames/&lt;pool&gt;</code> and <code>data/masks/&lt;pool&gt;</code>)</td>
+</tr>
+<tr>
+<td><code>--mask-dir</code></td>
+<td><code>data/masks/&lt;pool&gt;</code> (or <code>&lt;pool&gt;_multiclass</code> with <code>--multiclass</code>)</td>
+<td>Override mask directory</td>
+</tr>
+<tr>
+<td><code>--image-dir</code></td>
+<td><code>data/frames/&lt;pool&gt;</code></td>
+<td>Override frame directory (completeness check)</td>
+</tr>
+<tr>
+<td><code>--no-completeness</code></td>
+<td>off</td>
+<td>Skip the "every pool image has a mask" check entirely</td>
+</tr>
+<tr>
+<td><code>--multiclass</code></td>
+<td>off</td>
+<td>Validate 3-class masks (0/1/2) instead of binary (0/255)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Checks performed:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Check</th>
+<th>Fail condition (binary)</th>
+<th>Fail condition (<code>--multiclass</code>)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Present</td>
+<td>Frame in the pool has no corresponding mask file (skippable with <code>--no-completeness</code>)</td>
+<td>same</td>
+</tr>
+<tr>
+<td>Readable</td>
+<td>File cannot be decoded by OpenCV</td>
+<td>same</td>
+</tr>
+<tr>
+<td>Binary/label-valid</td>
+<td>Pixel values other than 0 or 255</td>
+<td>Pixel values other than 0, 1, or 2</td>
+</tr>
+<tr>
+<td>Non-empty</td>
+<td>No foreground pixels (255) at all</td>
+<td>No foreground pixels of <strong>any</strong> class (neither label 1 nor label 2) — a mask with only a decoy object (label 2) and no trapped cell is a valid deliberate negative and passes</td>
+</tr>
+</tbody>
+</table>
+<p>Exits with code <code>0</code> if all checks pass, <code>1</code> if any issues are found. Reports <code>Valid: N/N (100%)</code> against the full pool count (or the mask count with <code>--no-completeness</code>).</p>
+<hr />
+<h2 id="preprocess_framespy-manual-preprocessing"><code>preprocess_frames.py</code> — manual preprocessing<a class="headerlink" href="#preprocess_framespy-manual-preprocessing" title="Permanent link">&para;</a></h2>
+<p>Applies <code>PreprocessingPipeline</code> to frames and saves PNGs (256×256 by default). <strong>Required before training.</strong> Optionally resizes masks to match.</p>
+<div class="admonition note">
+<p class="admonition-title">Mask-gated processing</p>
+<p>When <code>--masks</code> is passed, only frames that have a corresponding mask in <code>data/masks/&lt;pool&gt;/</code> are processed. Frames without a mask are skipped. The summary line reports how many were skipped.</p>
+</div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>python<span class="w"> </span>scripts/preprocess_frames.py<span class="w"> </span>--masks<span class="w">                        </span><span class="c1"># train pool</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>python<span class="w"> </span>scripts/preprocess_frames.py<span class="w"> </span>--masks<span class="w"> </span>--pool<span class="w"> </span>02_unet_holdout<span class="w"> </span><span class="c1"># evaluate pool</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>python<span class="w"> </span>scripts/preprocess_frames.py<span class="w"> </span>--pool<span class="w"> </span>03_mask_factory<span class="w">          </span><span class="c1"># inference pool</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>python<span class="w"> </span>scripts/preprocess_frames.py<span class="w"> </span>--pool<span class="w"> </span>04_clf_arena<span class="w">             </span><span class="c1"># inference pool</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>python<span class="w"> </span>scripts/preprocess_frames.py<span class="w"> </span>--masks<span class="w"> </span>--compare<span class="w"> </span>--n-compare<span class="w"> </span><span class="m">10</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>python<span class="w"> </span>scripts/preprocess_frames.py<span class="w"> </span>--masks<span class="w"> </span>--target-size<span class="w"> </span><span class="m">128</span><span class="w"> </span><span class="m">128</span><span class="w">   </span><span class="c1"># override output resolution</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--pool</code></td>
+<td><code>01_annotate_pool</code></td>
+<td>Pool folder name</td>
+</tr>
+<tr>
+<td><code>--stage</code></td>
+<td>auto-detected</td>
+<td><code>train</code>, <code>evaluate</code>, or <code>inference</code></td>
+</tr>
+<tr>
+<td><code>--masks</code></td>
+<td>off</td>
+<td>Also resize and save masks (binary or label, nearest-neighbour)</td>
+</tr>
+<tr>
+<td><code>--compare</code></td>
+<td>off</td>
+<td>Save pipeline stage comparison figures</td>
+</tr>
+<tr>
+<td><code>--n-compare</code></td>
+<td><code>5</code></td>
+<td>Number of images to generate figures for</td>
+</tr>
+<tr>
+<td><code>--image-dir</code></td>
+<td><code>data/frames/&lt;pool&gt;</code></td>
+<td>Override source directory</td>
+</tr>
+<tr>
+<td><code>--output-dir</code></td>
+<td><code>data/preprocessed/&lt;stage&gt;/&lt;pool&gt;/inputs</code></td>
+<td>Override frame output</td>
+</tr>
+<tr>
+<td><code>--mask-dir</code></td>
+<td><code>data/masks/&lt;pool&gt;</code></td>
+<td>Override source mask directory</td>
+</tr>
+<tr>
+<td><code>--mask-output-dir</code></td>
+<td><code>data/preprocessed/&lt;stage&gt;/&lt;pool&gt;/labels</code></td>
+<td>Override mask output</td>
+</tr>
+<tr>
+<td><code>--target-size</code></td>
+<td><code>256 256</code></td>
+<td>Output spatial size <code>H W</code>. Both dims should stay divisible by 16 (U-Net's 4 downsampling steps) — the U-Net is fully convolutional, so no model code changes are needed, but whatever size is chosen here is what <code>CellDataset</code> will load during training</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Stage auto-detection:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Pool</th>
+<th>Stage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>01_annotate_pool</code></td>
+<td><code>train</code></td>
+</tr>
+<tr>
+<td><code>02_unet_holdout</code></td>
+<td><code>evaluate</code></td>
+</tr>
+<tr>
+<td><code>03_mask_factory</code></td>
+<td><code>inference</code></td>
+</tr>
+<tr>
+<td><code>04_clf_arena</code></td>
+<td><code>inference</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="train_unetpy-u-net-training"><code>train_unet.py</code> — U-Net training<a class="headerlink" href="#train_unetpy-u-net-training" title="Permanent link">&para;</a></h2>
+<p>Trains the U-Net on preprocessed data. Expects already-preprocessed PNGs at whatever size was used for preprocessing (256×256 by default) — no preprocessing is applied internally. Reads <code>unet.out_channels</code> from the config: <code>1</code> (default) trains binary segmentation; <code>&gt;1</code> trains multiclass (<code>CellDataset</code> loads raw integer label masks instead of binarising, and <code>_DiceCELoss</code> replaces <code>_DiceBCELoss</code>).</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>python<span class="w"> </span>scripts/train_unet.py<span class="w"> </span>--config<span class="w"> </span>configs/multiclass_experiment_256.yaml<span class="w">   </span><span class="c1"># frozen scheme</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>python<span class="w"> </span>scripts/train_unet.py<span class="w"> </span>--config<span class="w"> </span>configs/default.yaml<span class="w"> </span>--seed<span class="w"> </span><span class="m">123</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>python<span class="w"> </span>scripts/train_unet.py<span class="w"> </span>--config<span class="w"> </span>configs/multiclass_experiment_256.yaml<span class="w"> </span>--tag<span class="w"> </span>auto
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>python<span class="w"> </span>scripts/train_unet.py<span class="w"> </span>--config<span class="w"> </span>configs/multiclass_experiment_256.yaml<span class="w"> </span>--domain-oversample-weight<span class="w"> </span><span class="m">8</span>.0
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--config</code></td>
+<td><code>configs/default.yaml</code></td>
+<td>YAML config file</td>
+</tr>
+<tr>
+<td><code>--seed</code></td>
+<td>config value</td>
+<td>Random seed override</td>
+</tr>
+<tr>
+<td><code>--domain-oversample-weight</code></td>
+<td>config value (<code>1.0</code> if unset)</td>
+<td>Sampling weight for <code>domain_</code>-prefixed (real-cell) train frames vs. legacy frames — builds a <code>WeightedRandomSampler</code>. <code>1.0</code> = off/uniform; pass <code>1.0</code> explicitly to force it off even if the config enables it. See <a href="../training/#domain-gap">Training Results — Domain Gap</a> (tested at weight=8.0: no improvement on the small real-cell test sample available so far).</td>
+</tr>
+<tr>
+<td><code>--tag</code></td>
+<td>none</td>
+<td>Suffix appended to the saved training-curve filename (e.g. <code>--tag auto</code> → <code>unet_training_curves_v6_auto.png</code>), for distinguishing runs at a glance</td>
+</tr>
+</tbody>
+</table>
+<p>The script reads <code>data.frames_dir</code> and <code>data.masks_dir</code> from the config. Pairs frames and masks by filename stem. Saves best and last checkpoints to <code>checkpoint_dir</code>. After training, it reloads <code>unet_best.pt</code> (not necessarily the last epoch's weights, which can be past the peak validation DSC on small datasets) before running final evaluation and plotting the training curves.</p>
+<hr />
+<h2 id="evaluate_unetpy-holdout-evaluation"><code>evaluate_unet.py</code> — holdout evaluation<a class="headerlink" href="#evaluate_unetpy-holdout-evaluation" title="Permanent link">&para;</a></h2>
+<p>Evaluates a trained U-Net on <code>02_unet_holdout</code> and reports the thesis-reportable segmentation metrics.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>python<span class="w"> </span>scripts/evaluate_unet.py<span class="w"> </span>--checkpoint<span class="w"> </span>checkpoints/multiclass_experiment_256/unet_best.pt<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">    </span>--config<span class="w"> </span>configs/multiclass_experiment_256.yaml<span class="w">   </span><span class="c1"># frozen scheme — --config must match out_channels</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>python<span class="w"> </span>scripts/evaluate_unet.py<span class="w"> </span>--checkpoint<span class="w"> </span>checkpoints/unet_best.pt<span class="w"> </span>--pool<span class="w"> </span>02_unet_holdout<span class="w">  </span><span class="c1"># binary baseline</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--checkpoint</code></td>
+<td>required</td>
+<td>Path to trained <code>.pt</code> checkpoint</td>
+</tr>
+<tr>
+<td><code>--pool</code></td>
+<td><code>02_unet_holdout</code></td>
+<td>Pool to evaluate</td>
+</tr>
+<tr>
+<td><code>--config</code></td>
+<td><code>configs/default.yaml</code></td>
+<td>YAML config</td>
+</tr>
+<tr>
+<td><code>--batch-size</code></td>
+<td><code>8</code></td>
+<td>Inference batch size</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Metrics reported:</strong> DSC, IoU, precision, recall, accuracy. When the checkpoint's config has <code>unet.out_channels &gt; 1</code>, results are reported per class (<code>background</code>, <code>trapped_cell</code>, ...) instead of as a single flat table.</p>
+<hr />
+<h2 id="organize_datasetpy-dataset-organiser"><code>organize_dataset.py</code> — dataset organiser<a class="headerlink" href="#organize_datasetpy-dataset-organiser" title="Permanent link">&para;</a></h2>
+<p>Thin wrapper around <code>celldform.acquisition.organiser.organise()</code>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>python<span class="w"> </span>scripts/organize_dataset.py
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>python<span class="w"> </span>scripts/organize_dataset.py<span class="w"> </span>--every-n<span class="w"> </span><span class="m">100</span><span class="w"> </span>--domain-adapt-n<span class="w"> </span><span class="m">10</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>python<span class="w"> </span>scripts/organize_dataset.py<span class="w"> </span>--no-clean<span class="w"> </span>--domain-adapt-n<span class="w"> </span><span class="m">20</span><span class="w">   </span><span class="c1"># expand domain-adapt only, don't wipe data/frames/ — run 2026-08-19</span>
+</code></pre></div>
+<p>Equivalent to <code>celldform-organize-dataset</code>. See <a href="../cli/">CLI Reference</a>. The <code>domain_adapt</code> cell list in <code>celldform/acquisition/organiser.py</code> covers all 11 <code>03_mask_factory</code> cells (as of 2026-08-10, extended from 4); <code>--domain-adapt-n</code> was raised 5→20/cell on 2026-08-19 — see <a href="../training/#domain-gap">Training Results — Domain Gap</a> for why. Re-running with a larger N doesn't lose frames/masks from an earlier N — every <code>domain_*</code> file already on disk is kept and re-enumerated into the manifest, and legacy frames reserved in <code>02_unet_holdout/legacy_holdout/</code> are always excluded from the copy regardless of N (a contamination bug where this wasn't true was found and fixed the same day).</p>
+<hr />
+<h2 id="extract_framespy-single-video-extraction"><code>extract_frames.py</code> — single video extraction<a class="headerlink" href="#extract_framespy-single-video-extraction" title="Permanent link">&para;</a></h2>
+<p>Thin wrapper around <code>FrameExtractor</code> for a single video.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>python<span class="w"> </span>scripts/extract_frames.py<span class="w"> </span>--video<span class="w"> </span>data/raw/high/<span class="s2">"cell 1 high 50 increments.mp4"</span>
+</code></pre></div>
+<p>Equivalent to <code>celldform-extract-frames</code>. See <a href="../cli/">CLI Reference</a>.</p>
+<hr />
+<h2 id="inferpy-full-inference-pipeline"><code>infer.py</code> — full inference pipeline<a class="headerlink" href="#inferpy-full-inference-pipeline" title="Permanent link">&para;</a></h2>
+<p>Runs stages 1–6 on a video or directory of preprocessed images.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>python<span class="w"> </span>scripts/infer.py<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">    </span>--video<span class="w"> </span>data/raw/high/<span class="s2">"cell 1 high 50 increments.mp4"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">    </span>--unet-ckpt<span class="w"> </span>checkpoints/unet_best.pt<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">    </span>--classifier-ckpt<span class="w"> </span>checkpoints/svm.pkl
+</code></pre></div>
+<p>Equivalent to <code>celldform-infer</code>. See <a href="../cli/">CLI Reference</a>.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../data/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Data Layout">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Data Layout
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../cli/" class="md-footer__link md-footer__link--next" aria-label="Next: CLI Reference">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                CLI Reference
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.top", "navigation.footer", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
