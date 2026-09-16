@@ -1,6 +1,9 @@
 # Data Layout
 
-Full documentation of the `data/` directory — see also `data/README.md` for per-cell tables and the contamination firewall details.
+Full documentation of the `data/` directory — see also `data/README.md` for the contamination-firewall details.
+
+!!! note "Last verified against disk: 2026-09-04"
+    Update this page whenever pool counts or cell roles change — it should always match what's actually on disk, not a snapshot from whenever it was last convenient to check.
 
 ---
 
@@ -8,133 +11,126 @@ Full documentation of the `data/` directory — see also `data/README.md` for pe
 
 ```
 data/
-├── raw/                            Source recordings — never modified
-│   ├── high/                       High HER2-expression cells (9 videos)
-│   ├── low/                        Low HER2-expression cells (5 videos)
+├── raw/                                Source recordings — never modified
+│   ├── high/                           High HER2-expression cells (9 videos)
+│   ├── low/                            Low HER2-expression cells (5 videos)
 │   ├── cell 1 low 50 increments.mp4
-│   └── legacy/20210825_cancer/     220 unlabelled JPGs from 2021 microscope
+│   └── legacy/20210825_cancer/         220 unlabelled JPGs from 2021 microscope
 │
-├── frames/                         Raw extracted frames (1228×922 greyscale JPEG)
-│   ├── 01_annotate_pool/           U-Net training source (428 images: 200 legacy + 228 domain-adapt)
-│   ├── 02_unet_holdout/            U-Net test source
-│   │   └── legacy_holdout/         20 reserved legacy frames — separate diagnostic DSC
-│   ├── 03_mask_factory/            Inference → classifier training
-│   └── 04_clf_arena/               Final classifier evaluation
+├── frames/                             Raw extracted frames (1228×922 greyscale JPEG)
+│   ├── 01_annotate_pool/               U-Net training source (445 images: 200 legacy + 245 domain-adapt)
+│   ├── 02_unet_holdout/                Development set — high_cell9 (50) + low_cell6 (51)
+│   │   ├── legacy_holdout/             20 reserved legacy frames — separate diagnostic DSC
+│   │   └── final_test/                 Blind test — high_cell10 (50), reserved, unannotated
+│   └── 03_mask_factory/                Inference → classifier training (608 images)
 │
-├── masks/                          Hand-drawn masks (1228×922 PNG)
-│   ├── 01_annotate_pool/           U-Net training labels (binary, 0/255)
-│   ├── 01_annotate_pool_multiclass/  Experimental 3-class labels (0/1/2), same 40 frames
-│   ├── 02_unet_holdout/            U-Net test ground truth
-│   └── 02_unet_holdout/legacy_holdout/  Ground truth for the legacy holdout frames
+├── masks/                              Hand-drawn masks (1228×922 PNG)
+│   ├── 01_annotate_pool_multiclass/    U-Net training labels (0=bg, 1=trapped cell, 2=decoy)
+│   └── 02_unet_holdout_multiclass/     Development-set ground truth (cell9 + cell6 done; cell10 pending, deliberately)
 │
-└── preprocessed/                   256×256 pipeline-ready data
-    ├── train/01_annotate_pool/
-    │   ├── inputs/                 Preprocessed frames → U-Net training inputs
-    │   └── labels/                 Resized masks       → U-Net training labels
+└── preprocessed/                       256×256 pipeline-ready data
+    ├── train/01_annotate_pool_multiclass_256/
+    │   ├── inputs/                     Preprocessed frames → U-Net training inputs
+    │   └── labels/                     Resized masks       → U-Net training labels
     ├── evaluate/02_unet_holdout/
-    │   ├── inputs/                 Preprocessed frames → U-Net evaluation inputs
-    │   └── labels/                 Resized masks       → U-Net evaluation labels
-    ├── evaluate/02_unet_holdout/legacy_holdout/
-    │   ├── inputs/                 Preprocessed legacy holdout frames → separate DSC
-    │   └── labels/                 Resized legacy holdout masks
-    ├── inference/
-    │   ├── 03_mask_factory/inputs/ Preprocessed frames → classifier training
-    │   └── 04_clf_arena/inputs/    Preprocessed frames → final evaluation
-    └── comparisons/                Pipeline stage figures (reporting)
+    │   ├── inputs/ · labels/           Development-set inputs/labels (cell9 + cell6 only)
+    │   └── legacy_holdout/             Legacy-domain diagnostic inputs/labels
+    ├── inference/03_mask_factory/inputs/  Preprocessed frames → classifier training
+    └── comparisons/                    Pipeline stage figures (reporting)
 ```
 
----
-
-## Pipeline role of each folder
-
-| Folder | ML role | HER2 label | Masks | Touch when |
-|--------|---------|-----------|-------|-----------|
-| `raw/` | Source — never modified | In filename | None | Never |
-| `frames/01_annotate_pool/` | U-Net training source | No | Hand-drawn (required) | Annotate now |
-| `frames/02_unet_holdout/` | U-Net test source | No | Hand-drawn (required) | After U-Net training |
-| `frames/02_unet_holdout/legacy_holdout/` | Legacy-domain diagnostic source | No | Hand-drawn (required) | After U-Net training |
-| `frames/03_mask_factory/` | Classifier training source | Yes | U-Net predicted | After U-Net training |
-| `frames/04_clf_arena/` | Classifier test source | Yes | U-Net predicted | Final evaluation only |
-| `masks/01_annotate_pool/` | U-Net training labels | No | Binary, hand-drawn | During annotation |
-| `masks/02_unet_holdout/` | U-Net test labels | No | Binary, hand-drawn | After U-Net training |
-| `masks/02_unet_holdout/legacy_holdout/` | Legacy-domain diagnostic labels | No | Binary, hand-drawn | After U-Net training |
-| `preprocessed/train/.../inputs/` | U-Net training inputs (256×256) | No | — | After preprocessing |
-| `preprocessed/train/.../labels/` | U-Net training labels (256×256) | No | Resized binary | After preprocessing |
-| `preprocessed/evaluate/.../inputs/` | U-Net evaluation inputs (256×256) | No | — | After holdout annotation |
-| `preprocessed/evaluate/.../labels/` | U-Net evaluation labels (256×256) | No | Resized binary | After holdout annotation |
-| `preprocessed/inference/03_.../inputs/` | Classifier training inputs | Yes | — | After U-Net training |
-| `preprocessed/inference/04_.../inputs/` | Classifier test inputs | Yes | — | Final evaluation only |
-| `preprocessed/comparisons/` | Reporting figures | — | — | On demand (`--compare`) |
+There is **no `04_clf_arena` anymore** — it was collapsed into `03_mask_factory` on 2026-09-03 (its two cells, `high_cell10` and `low_cell5`, became new U-Net training identities instead of a separate classifier-only firewall) and `high_cell10` was then reassigned again on 2026-09-04 (see [Cell roles](#cell-roles) below). If you're looking at an older doc, script comment, or memory that still mentions it, treat it as historical.
 
 ---
 
-## Pool descriptions
+## Pool summary
 
-### `01_annotate_pool` — 428 images (U-Net training)
+| Pool | Images | Role | Masks |
+|---|---|---|---|
+| `01_annotate_pool` | 445 | U-Net **training** source | Hand-drawn, multiclass — **445/445 complete as of 2026-09-10** (`low_cell5` was the last cell) |
+| `02_unet_holdout` | 101 | **Development set** — U-Net + classifier, evaluated repeatedly to guide tuning | Hand-drawn, multiclass (done) |
+| `02_unet_holdout/legacy_holdout/` | 20 | Legacy-domain diagnostic — isolates domain gap from segmentation quality | Hand-drawn, multiclass |
+| `02_unet_holdout/final_test/` | 50 | **Blind test** — `high_cell10`, reserved, one-shot | None yet — deliberately deferred |
+| `03_mask_factory` | 608 | U-Net inference → classifier **training** features (12 cells) | U-Net-predicted (not hand-drawn) |
 
-Source for U-Net training masks. **220/220 fully annotated as of 2026-08-10** (multiclass scheme — see below); grown to 428 on 2026-08-19 to address the domain gap (see warning below) — **208 new domain-adapt frames are currently unannotated and are the annotation priority** (see [Training Results](training.md#next-steps)).
+---
 
-| Subset | Count | Notes |
-|--------|-------|-------|
-| Legacy cancer images (2021) | 200 | Filename: `YYYYMMDDHHMMSS.jpg` — no HER2 label. 20 of the original 220 legacy JPGs were reserved into `02_unet_holdout/legacy_holdout/` before annotation, which is why this subset is 200, not 220. |
-| Domain-adapt samples | 228 | Prefix: `domain_<her2>_<cell_id>_<frame>.jpg`. ~20 frames each from all 11 `03_mask_factory` cells (up from 5 frames × 4 cells) — the 4 originally-covered cells landed at 24 frames each rather than exactly 20 since a different N samples a different evenly-spaced grid, so the earlier 5 didn't line up with the new 20 and both sets stayed on disk. 220 of the 228 are already annotated (the original 4-cell batch); 208 are new. |
+## Three-tier evaluation terminology
 
-Domain-adapt frames come from cells also in `03_mask_factory`. The U-Net trains on them, then runs inference on the full set from those cells — same video, different sampled frame indices, so no contamination.
+Three genuinely different things get called "validation" or "test" informally — worth being precise, since a pooled score from the wrong tier is easy to over-trust:
 
-!!! warning "Domain gap between legacy and real-cell frames — mitigation in progress"
-    With only 20 real-cell frames from 4 cells, segmenting held-out real-cell frames scored far worse than held-out legacy frames (DSC 0.538 vs. 0.944) — see [Training Results](training.md#domain-gap) for the full finding. **As of 2026-08-19:** `celldform/acquisition/organiser.py`'s `domain_adapt` cell list was extended to all 11 `03_mask_factory` cells and `--domain-adapt-n` increased 5→20/cell (`celldform-organize-dataset --no-clean --domain-adapt-n 20`), rather than waiting on the `02_unet_holdout` DSC to pick a value — see [Training Results — Next Steps](training.md#next-steps) for why `02_unet_holdout` annotation is deliberately being deferred instead.
+| Tier | What it is | Where | Used for |
+|---|---|---|---|
+| **Internal validation split** | Frames of cell identities the model *has* trained on (just held-out frames of them) | `data.val_split` inside `01_annotate_pool`, drawn fresh each training run | Checkpoint selection and early stopping *within one run*. Not evaluated against real generalization — see [the finding below](#why-internal-validation-was-misleading). |
+| **Development set** | Genuinely novel cells, never trained on, evaluated repeatedly across many recipes | `02_unet_holdout` (`high_cell9` + `low_cell6`) | Guides which hyperparameters/augmentations to keep. Not a blind test — every score here has shaped a decision. |
+| **Blind test** | A reserved cell, evaluated exactly once, uninvolved in any decision | `02_unet_holdout/final_test/` (`high_cell10`) | The one honest, thesis-reportable generalization number — see [Cell roles](#cell-roles) for the protocol that keeps it clean. |
 
-!!! danger "Contamination bug found and fixed (2026-08-19)"
-    The legacy-image copy step in `organise()` had no exclusion for the 20 frames permanently reserved in `02_unet_holdout/legacy_holdout/` (see below) — running `--no-clean` after raising `--domain-adapt-n` silently recopied all 220 legacy JPGs, holdout included, back into `01_annotate_pool`. Caught before annotation touched them (no masks existed yet for those 20 filenames). `organise()` now reads `02_unet_holdout/legacy_holdout/` and permanently excludes those filenames from the legacy copy step, so re-running `--no-clean` can no longer recontaminate the pool.
+A **smoke test** (does the code run at all — shapes, dtypes, no crash) is a different concept entirely from any of the three above; it says nothing about model quality, only about basic correctness, and is cheap enough to run constantly.
 
-!!! note "Label scheme: multiclass (frozen)"
-    The 220 originally-annotated frames use the 3-class scheme (`data/masks/01_annotate_pool_multiclass/`: 0=background, 1=trapped cell, 2=other/decoy object) — this is the scheme the pipeline trains on going forward (decided 2026-08-10; binary annotation stalled at 43/220 and isn't being continued). `scripts/annotate.py --multiclass` seeds label 1 from the existing binary mask where one exists, so only decoy objects need to be painted from scratch; it resumes on the first unannotated image, so it lands directly on the 208 new domain frames.
+---
 
-### `02_unet_holdout` — 101 images (U-Net test)
+## Cell roles
 
-Held out from all training. Annotate **after** U-Net training is complete, and **after** the domain-adapt re-annotation above shows a solid validation-split domain DSC (see [Training Results](training.md#next-steps)) — this holdout is the one-shot, thesis-reportable number, so it's deliberately not being spent evaluating an intermediate checkpoint.
+| Role | High cells | Low cells |
+|---|---|---|
+| U-Net training (`01_annotate_pool`, domain-adapt) | 1, 2, 3, 4, 6, 7, 8 | 1, 2, 3, 4, 5 |
+| Development set (`02_unet_holdout`, top level) | 9 | 6 |
+| Blind test (`02_unet_holdout/final_test/`) | 10 | — |
 
-| Cell | HER2 | Frames |
-|------|------|--------|
-| cell9 | high | 50 |
-| cell6 | low | 51 |
+**Changed 2026-09-04.** `high_cell10` and `low_cell5` were both folded out of the retired `04_clf_arena` into training on 2026-09-03 — but by 2026-09-04, annotated training cells were imbalanced (7 high vs. 4 low), and per-cell evaluation had revealed `high_cell9` and `low_cell6` needed genuinely different treatment (see below). So `low_cell5` stayed a training identity (grows the scarcer low-HER2 category), while `high_cell10` moved to the holdout instead — as the reserved **blind test**, not a third development cell, since `high_cell9`/`low_cell6` were already "spent" as a development signal.
 
-The DSC score from evaluating on this pool is the thesis-reportable segmentation metric.
+`high_cell10`'s frames are extracted the same way as `high_cell9`/`low_cell6` (`_extract_group()`, `every_n=200` across the full video — 50 frames, matching `cell9`'s count exactly), but physically nested under `02_unet_holdout/final_test/` rather than sitting at the top level. This isn't just organizational: `annotate.py`, `validate_masks.py`, `preprocess_frames.py`, and `evaluate_unet.py` are all non-recursive (`iterdir()`/glob-based), so a routine `--pool 02_unet_holdout` command **physically cannot** see into `final_test/` — mirroring the existing `legacy_holdout/` pattern. Combined with `high_cell10` having no masks yet at all (so it can't be scored even if pointed at directly), this is a hard, structural guarantee against the blind test leaking into development, not just a convention to remember.
 
-!!! note "`02_unet_holdout/legacy_holdout/` — 20 images, evaluated separately"
-    A diagnostic subset nested under `02_unet_holdout/` but **never merged** into the DSC above. Reserved unannotated from `01_annotate_pool` (evenly sampled across the legacy frames unannotated at the time) before annotated training data included any real-cell frames. Since training was legacy-only while `02_unet_holdout` is real-cell-only, one blended DSC couldn't separate "weak segmentation" from "domain gap." Evaluating this subset on its own (own `--image-dir`/`--mask-dir` pair; `evaluate_unet.py --pool 02_unet_holdout` doesn't recurse into it) gives a second, comparable DSC — high legacy-holdout DSC + low real-cell-holdout DSC points to the domain gap specifically.
+**Deliberately deferred — do not annotate `high_cell10` yet.** Full protocol:
 
-### `03_mask_factory` — 557 images (classifier training)
+1. Keep tuning using the development set (`high_cell9` + `low_cell6`), as normal.
+2. Once the recipe is genuinely settled, fold `high_cell9` + `low_cell6` into the training pool.
+3. Train the final/production checkpoint once, same recipe, on the enlarged pool.
+4. *Only then* annotate `high_cell10` (`python scripts/annotate.py --image-dir data/frames/02_unet_holdout/final_test --mask-dir data/masks/02_unet_holdout_multiclass --multiclass` — note the explicit `--image-dir`/`--mask-dir` pair; a bare `--pool 02_unet_holdout/final_test` does not resolve the mask directory correctly).
+5. Evaluate the final checkpoint on `high_cell10` exactly once. That's the reported blind-test score.
 
-U-Net inference pool. Each predicted mask → 15 morphological features → one classifier training sample.
+If asked to annotate or evaluate `high_cell10` before step 2 has actually happened, that's very likely premature — confirm first.
 
-| HER2 | Cells | Frames |
-|------|-------|--------|
-| high | 1, 2, 3, 4, 6, 7, 8 | 355 |
-| low | 1, 2, 3, 4 | 202 |
-| **Total** | | **557** |
+**Resolved 2026-09-10.** `high_cell10` was removed from `03_mask_factory` on **2026-09-10** — it is the U-Net's blind test and must not also feed classifier training. The pool is now 608 frames across 12 cells, and those 12 are exactly the cells that feed `01_annotate_pool`'s domain-adapt frames. Its frames had been sitting there since the 2026-09-03 merge, from before its role changed.
 
-!!! note "Class imbalance"
-    Training set is ~64 % high / 36 % low. Use `class_weight='balanced'` on all classifiers.
+---
 
-### `04_clf_arena` — 101 images (classifier test)
+## Train/val split (`01_annotate_pool`)
 
-Completely held out. These cells were never annotated and never seen by any model during training.
+| Split | Frames | % | Role |
+|---|---|---|---|
+| Train | 371 | ~90% | U-Net training |
+| Val | 54 | ~10% | Checkpoint selection / early stopping only — **not** the reportable score |
 
-| Cell | HER2 | Frames |
-|------|------|--------|
-| cell10 | high | 50 |
-| cell5 | low | 51 |
+**There is no third "test" split inside `01_annotate_pool` anymore** (removed 2026-09-04, `celldform.config.DataConfig`/`scripts/train_unet.py`) — it was computed every run and printed in the split summary, but never actually built into a loader or evaluated by anything; the external `02_unet_holdout` development/blind-test evaluation already fulfills the role a third split would have, so keeping one was pure redundancy that shrank the training pool for nothing. The current 90/10 split reuses what used to be a separate, unused 10% "test" allocation as `val_split` instead of the old dedicated 15% — net effect: the training pool grew from ~69% to ~90% of the annotated data with the same monitoring mechanics, just on a smaller slice.
+
+### How the grouping works
+
+Splitting is **group-aware** (`scripts/train_unet.py::_build_groups`/`_group_split`) — frames from the same cell or the same legacy acquisition burst never split across train/val, since they're correlated (same biology, same laser session). Two group types:
+
+- **Legacy frames** (`YYYYMMDDHHMMSS.jpg`) are clustered into acquisition **bursts** — a gap of more than 5 seconds between sorted timestamps starts a new burst.
+- **Domain-adapt frames** (`domain_<her2>_<cell_id>_<frame>.jpg`) are grouped by cell identity.
+
+At the current pool size (445 frames), this produces **22 groups**: 11 legacy bursts (~17-20 frames each) and 11 domain cells (~19-24 frames each). The split algorithm shuffles group order (seeded, reproducible), then fills the val bucket with whole groups until it reaches the target frame count, with the remainder going to train — so split sizes *approximate* the configured ratio rather than hitting it exactly, since group sizes vary and a bucket only checks "have I reached target" before adding the next whole group (it can overshoot, never undershoot).
+
+---
+
+## Why internal validation was misleading
+
+The single most consequential finding from the 2026-09 evaluation sweep, worth keeping visible here since it shapes why the three-tier terminology above exists at all:
+
+The internal validation split tests generalization to **unseen frames of already-trained-on cell identities** — not to a genuinely novel cell. A checkpoint tuned to look excellent on it (`bf32_reg2_cos`, internal val DSC 0.862) scored only **DSC 0.163** on the first genuinely held-out cell ever evaluated (`high_cell9`), while a "worse-looking" checkpoint (higher internal train/val gap, informally called "overfitting") scored **0.428** — roughly 2.6× better on real generalization despite scoring worse on the metric everything had been tuned against.
+
+**Root cause, once the full development set was evaluated:** both `high_cell9` and `low_cell6`'s true trapped-cell size (704 / 886 px²) falls at or below every one of the 11 training cells' (825-1549 px²) — a real train/development-set size mismatch that the internal split, drawn from the same size distribution as training, could never surface. See [Training Results](training.md#the-2026-09-full-evaluation-sweep) for the full sweep, the per-cell breakdown, and what fixed it (partially).
 
 ---
 
 ## Contamination firewall
 
-The data split ensures no training signal leaks into final evaluation:
-
-- **Legacy images** have no HER2 label — safe for U-Net training; cannot contaminate the classifier.
-- **`02_unet_holdout`** cells were never used during U-Net training. Annotated masks give an unbiased segmentation DSC.
-- **`04_clf_arena`** cells were never annotated, never used to generate classifier training features, and never included in cross-validation. They are the single honest test of classifier generalisation.
+- **Legacy images** carry no HER2 label — safe for U-Net training, cannot contaminate the classifier.
+- **`02_unet_holdout`'s top level** (`high_cell9`, `low_cell6`) was never used during U-Net training. It *is* used repeatedly during development, though — see the terminology table above; this is not the same guarantee as a blind test.
+- **`02_unet_holdout/final_test/`** (`high_cell10`) has never been evaluated against anything, and physically cannot be reached by any routine pool command until it's pointed at explicitly (see [Cell roles](#cell-roles)). This is the one genuinely untouched pool.
+- **`03_mask_factory`** cells were never part of `02_unet_holdout` at any point and never will be. `high_cell10` briefly sat in both after the 2026-09-03→09-04 role change; that was resolved on 2026-09-10 (see [Cell roles](#cell-roles)) and the two pools now share no cell.
 
 ---
 
@@ -142,14 +138,9 @@ The data split ensures no training signal leaks into final evaluation:
 
 ```bash
 celldform-organize-dataset                                    # defaults
-celldform-organize-dataset --every-n 100 --domain-adapt-n 10 # denser sampling
-celldform-organize-dataset --no-clean                         # skip wiping data/frames/
-celldform-organize-dataset --no-clean --domain-adapt-n 20     # expand domain-adapt frames only — run 2026-08-19
-                                                                # (use --no-clean so 02_unet_holdout isn't wiped
-                                                                # mid-annotation; legacy_holdout frames are always
-                                                                # excluded from the legacy copy regardless of N;
-                                                                # existing domain-adapt frames/masks whose exact
-                                                                # frame index doesn't fall on the new N's sampling
-                                                                # grid are kept on disk, not deleted, so no
-                                                                # annotation work is lost across re-runs)
+celldform-organize-dataset --every-n 100 --domain-adapt-n 10  # denser sampling
+celldform-organize-dataset --no-clean                          # skip wiping data/frames/
 ```
+
+!!! warning "The full `celldform-organize-dataset` pipeline does not currently reproduce the 2026-09-04 cell reallocation"
+    `celldform/acquisition/organiser.py`'s `_video_lists()` has been updated so a **fresh** run would put `high_cell10` in `unet_test` and `low_cell5` in `domain_adapt`/`inference` correctly — but the *current* data on disk was fixed by hand (moving files, not rerunning the organiser) specifically to avoid re-touching `02_unet_holdout` mid-annotation and re-decoding videos unnecessarily. Don't run `celldform-organize-dataset --no-clean` casually right now without checking it won't fight the manual `final_test/` nesting — a full `--clean` rerun would rebuild everything correctly from scratch, but would also wipe existing annotations, which almost certainly isn't what you want mid-project.

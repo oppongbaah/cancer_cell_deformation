@@ -22,7 +22,10 @@ The script expects two directories configured in the YAML:
     data.masks_dir  — corresponding 256×256 binary PNG masks (same basename)
 
 File pairs are matched by filename stem.  The dataset is split into
-train / val / test according to data.val_split and data.test_split.
+train / val according to data.val_split — val is a monitoring split only
+(checkpoint selection, early stopping), not the thesis-reportable score;
+that comes from evaluate_unet.py against the external 02_unet_holdout pool,
+which a train/val/test split would be redundant with (removed 2026-09-04).
 The best checkpoint (by val DSC) and a config snapshot are written to
 the checkpoint directory for full reproducibility.
 """
@@ -30,10 +33,17 @@ the checkpoint directory for full reproducibility.
 from __future__ import annotations
 
 import argparse
+import os
 import random
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
+
+# Must be set before CUDA is initialized (i.e. before `import torch` below) —
+# required for cuBLAS's deterministic algorithms, used by
+# torch.use_deterministic_algorithms() in SegmentationTrainer for reproducible
+# training across runs with the same seed.
+os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
 
 import numpy as np
 import torch
@@ -60,20 +70,65 @@ class CellDataset(Dataset):
       - horizontal flip (p=0.5)
       - vertical flip   (p=0.5)
       - 90-degree rotation: 0 / 90 / 180 / 270 (uniform)
-    Intensity augmentation is intentionally omitted — CLAHE in Stage 2 already
-    normalises contrast, so brightness jitter would undo that work.
+    Additive Gaussian noise (noise_std, off by default) is a separate,
+    narrower knob: it perturbs per-pixel intensity without touching overall
+    contrast, meant to make the model less sensitive to the legacy-vs-real-
+    domain appearance gap (see training.augment_noise_std in config.py).
+    Applied to the frame only, never the mask.
+
+    Cutout (cutout_prob, off by default): erases one random rectangular patch
+    of the frame (filled with the frame's own mean intensity), leaving the
+    mask untouched. Targets memorizing per-cell-identity local texture rather
+    than boundary shape, by forcing the label to stay correct even when part
+    of the evidence for it is missing (see training.augment_cutout_prob).
+
+    Brightness/contrast jitter (brightness_contrast_prob, off by default):
+    random global brightness shift (+/-0.15) and contrast scale (0.8-1.2x)
+    applied to the frame only. Originally omitted on the reasoning that
+    CLAHE in Stage 2 already normalises contrast, so jitter would undo that
+    work — revisited 2026-09-04 once the full 2-cell holdout sweep showed
+    the model is precision-, not recall-, bottlenecked (it finds the cell
+    fine, it predicts too much area around it) and the over-segmentation is
+    laser-power-correlated. CLAHE equalises *local* contrast within each
+    already-preprocessed frame; it does not erase the *global* exposure
+    level a frame was captured at, which is exactly what plausibly tracks
+    laser power. The two aren't redundant: this targets a training-time
+    invariance CLAHE's offline, per-image normalisation doesn't provide.
+    See training.augment_brightness_contrast_prob in config.py. Tried once
+    (bf64_bc, 2026-09-04) — no real effect on the real holdout, precision
+    barely moved; see CLAUDE.md. Kept as a knob, not removed, but not the
+    active hypothesis anymore.
+
+    Scale/zoom jitter (scale_prob, off by default): resizes the frame+mask
+    together by a random factor (0.7-1.3x), then center-crops (zoom in) or
+    pads with the frame's own mean (zoom out) back to the original size —
+    the same transform applied to both, so they stay aligned, unlike
+    brightness/contrast which only ever touches the frame. Added 2026-09-04
+    after finding both holdout cells' true trapped-cell size (704/886 px^2)
+    falls at or below every one of the 11 training cells (825-1549 px^2) —
+    a real train/holdout size mismatch, not a laser-power-sampling artifact
+    (that was checked and ruled out). The model likely leans on an implicit
+    learned "typical size" from training, which doesn't transfer to a
+    genuinely smaller novel cell — this forces scale invariance the fixed
+    256x256 crop alone doesn't provide. See training.augment_scale_prob.
 
     When multiclass=True, masks are loaded as raw integer class-id arrays
     (0=background, 1=trapped cell, 2=other/decoy, ...) instead of being
     binarised — used for the experimental multiclass annotation path.
     """
 
-    def __init__(self, frame_paths, mask_paths, augment: bool = False, multiclass: bool = False) -> None:
+    def __init__(self, frame_paths, mask_paths, augment: bool = False, multiclass: bool = False,
+                 noise_std: float = 0.0, cutout_prob: float = 0.0,
+                 brightness_contrast_prob: float = 0.0, scale_prob: float = 0.0) -> None:
         assert len(frame_paths) == len(mask_paths)
         self.frame_paths = frame_paths
         self.mask_paths = mask_paths
         self.augment = augment
         self.multiclass = multiclass
+        self.noise_std = noise_std
+        self.cutout_prob = cutout_prob
+        self.brightness_contrast_prob = brightness_contrast_prob
+        self.scale_prob = scale_prob
 
     def __len__(self):
         return len(self.frame_paths)
@@ -101,6 +156,51 @@ class CellDataset(Dataset):
             if k:
                 frame_f = np.rot90(frame_f, k).copy()
                 mask_arr = np.rot90(mask_arr, k).copy()
+            if self.scale_prob > 0 and random.random() < self.scale_prob:
+                h, w = frame_f.shape
+                scale = random.uniform(0.7, 1.3)
+                new_h = max(1, int(round(h * scale)))
+                new_w = max(1, int(round(w * scale)))
+                frame_resized = cv2.resize(frame_f, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
+                mask_resized = cv2.resize(
+                    mask_arr.astype(np.uint8) if self.multiclass else mask_arr,
+                    (new_w, new_h), interpolation=cv2.INTER_NEAREST,
+                )
+                if self.multiclass:
+                    mask_resized = mask_resized.astype(np.int64)
+                if scale >= 1.0:
+                    # Zoomed in — center-crop back to (h, w).
+                    y0 = (new_h - h) // 2
+                    x0 = (new_w - w) // 2
+                    frame_f = frame_resized[y0:y0 + h, x0:x0 + w].copy()
+                    mask_arr = mask_resized[y0:y0 + h, x0:x0 + w].copy()
+                else:
+                    # Zoomed out — pad back to (h, w), centered. Frame padded with its own mean
+                    # intensity (matches cutout's fill choice below); mask padded with background (0).
+                    pad_h, pad_w = h - new_h, w - new_w
+                    top, bottom = pad_h // 2, pad_h - pad_h // 2
+                    left, right = pad_w // 2, pad_w - pad_w // 2
+                    frame_f = cv2.copyMakeBorder(frame_resized, top, bottom, left, right,
+                                                  cv2.BORDER_CONSTANT, value=float(frame_f.mean()))
+                    mask_arr = cv2.copyMakeBorder(mask_resized, top, bottom, left, right,
+                                                   cv2.BORDER_CONSTANT, value=0)
+            if self.noise_std > 0:
+                frame_f = np.clip(
+                    frame_f + np.random.normal(0.0, self.noise_std, frame_f.shape), 0.0, 1.0
+                ).astype(np.float32)
+            if self.cutout_prob > 0 and random.random() < self.cutout_prob:
+                h, w = frame_f.shape
+                ph = random.randint(int(0.08 * h), int(0.25 * h))
+                pw = random.randint(int(0.08 * w), int(0.25 * w))
+                y0 = random.randint(0, h - ph)
+                x0 = random.randint(0, w - pw)
+                frame_f = frame_f.copy()
+                frame_f[y0:y0 + ph, x0:x0 + pw] = float(frame_f.mean())
+            if self.brightness_contrast_prob > 0 and random.random() < self.brightness_contrast_prob:
+                brightness = random.uniform(-0.15, 0.15)
+                contrast = random.uniform(0.8, 1.2)
+                mean = float(frame_f.mean())
+                frame_f = np.clip((frame_f - mean) * contrast + mean + brightness, 0.0, 1.0).astype(np.float32)
 
         frame_t = torch.from_numpy(frame_f[np.newaxis])    # (1, H, W)
         if self.multiclass:
@@ -179,14 +279,17 @@ def _build_groups(pairs: list[tuple[Path, Path]]) -> list[str]:
 
 
 def _group_split(
-    pairs: list[tuple[Path, Path]], groups: list[str], n_test: int, n_val: int
-) -> tuple[list, list, list]:
-    """Split pairs into train/val/test by whole group, never splitting a
-    group across sets. Group order is shuffled (uses the already-seeded
-    `random` module), then groups are assigned to test, then val, then train
-    until each set's target frame count is reached — so split sizes
-    approximate n_test/n_val rather than matching exactly, since groups vary
-    in size.
+    pairs: list[tuple[Path, Path]], groups: list[str], n_val: int
+) -> tuple[list, list]:
+    """Split pairs into train/val by whole group, never splitting a group
+    across sets. Group order is shuffled (uses the already-seeded `random`
+    module), then groups are assigned to val, then train, until val's target
+    frame count is reached — so the split size approximates n_val rather
+    than matching exactly, since groups vary in size.
+
+    Two-way only (no test split) since 2026-09-04 — a third internal split
+    was redundant with the external 02_unet_holdout evaluation (see
+    train_unet.py's module docstring and celldform.config.DataConfig).
     """
     by_group: dict[str, list] = defaultdict(list)
     for pair, g in zip(pairs, groups):
@@ -195,17 +298,15 @@ def _group_split(
     group_ids = list(by_group.keys())
     random.shuffle(group_ids)
 
-    test_pairs, val_pairs, train_pairs = [], [], []
+    val_pairs, train_pairs = [], []
     for g in group_ids:
         items = by_group[g]
-        if len(test_pairs) < n_test:
-            test_pairs.extend(items)
-        elif len(val_pairs) < n_val:
+        if len(val_pairs) < n_val:
             val_pairs.extend(items)
         else:
             train_pairs.extend(items)
 
-    return train_pairs, val_pairs, test_pairs
+    return train_pairs, val_pairs
 
 
 # ---------------------------------------------------------------------------
@@ -263,16 +364,15 @@ def main():
         )
 
     n = len(pairs)
-    n_test = int(n * conf.data.test_split)
     n_val = int(n * conf.data.val_split)
 
     groups = _build_groups(pairs)
-    train_pairs, val_pairs, test_pairs = _group_split(pairs, groups, n_test, n_val)
+    train_pairs, val_pairs = _group_split(pairs, groups, n_val)
 
     n_groups = len(set(groups))
     print(
         f"[celldform] Dataset split (group-aware, {n_groups} groups) — "
-        f"train: {len(train_pairs)}  val: {len(val_pairs)}  test: {len(test_pairs)}"
+        f"train: {len(train_pairs)}  val: {len(val_pairs)}"
     )
 
     on_cuda = torch.cuda.is_available()
@@ -281,7 +381,13 @@ def main():
 
     def make_loader(pairs, shuffle, augment=False, sampler=None):
         fs, ms = zip(*pairs)
-        ds = CellDataset(list(fs), list(ms), augment=augment, multiclass=multiclass)
+        noise_std = conf.training.augment_noise_std if augment else 0.0
+        cutout_prob = conf.training.augment_cutout_prob if augment else 0.0
+        brightness_contrast_prob = conf.training.augment_brightness_contrast_prob if augment else 0.0
+        scale_prob = conf.training.augment_scale_prob if augment else 0.0
+        ds = CellDataset(list(fs), list(ms), augment=augment, multiclass=multiclass,
+                          noise_std=noise_std, cutout_prob=cutout_prob,
+                          brightness_contrast_prob=brightness_contrast_prob, scale_prob=scale_prob)
         return DataLoader(
             ds,
             batch_size=conf.training.batch_size,
@@ -320,6 +426,7 @@ def main():
         in_channels=conf.unet.in_channels,
         base_features=conf.unet.base_features,
         out_channels=conf.unet.out_channels,
+        dropout=conf.unet.dropout,
     )
 
     trainer = SegmentationTrainer(
@@ -345,10 +452,10 @@ def main():
         best_ckpt = torch.load(best_ckpt_path, map_location=trainer.device)
         trainer.model.load_state_dict(best_ckpt["model_state_dict"])
         best_epoch = best_ckpt["epoch"]
-        print(
-            f"\n[celldform] Reloaded best checkpoint for final evaluation: "
-            f"epoch {best_epoch}, val_dsc={best_ckpt['val_dsc']:.4f}"
-        )
+        # val_dsc intentionally omitted here — it's the per-epoch curve's batch-pooled-then-averaged
+        # figure (SegmentationTrainer._validate), not the globally-pooled DSC the "Final validation
+        # metrics" table below reports (SegmentationTrainer.evaluate) — quote the table's number instead.
+        print(f"\n[celldform] Reloaded best checkpoint for final evaluation: epoch {best_epoch}")
 
     # ── Final evaluation ─────────────────────────────────────────────────────
     metrics = trainer.evaluate()
@@ -356,6 +463,9 @@ def main():
     if multiclass:
         class_names = {0: "background", 1: "trapped_cell"}
         for class_id, class_metrics in metrics.items():
+            if class_id == 0:
+                continue  # background: trivially near-1.0 from pixel imbalance, not informative; "mean"
+                          # (SegmentationMetrics.per_class) already excludes it too
             label = class_names.get(class_id, f"class_{class_id}" if isinstance(class_id, int) else class_id)
             print(f"  [{label}]")
             for k, v in class_metrics.items():

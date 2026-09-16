@@ -37,9 +37,16 @@ import torch.nn.functional as F
 # ---------------------------------------------------------------------------
 
 class _DoubleConv(nn.Module):
-    """Two consecutive (Conv → BN → ReLU) layers — the core U-Net block."""
+    """Two consecutive (Conv → BN → ReLU) layers — the core U-Net block.
 
-    def __init__(self, in_ch: int, out_ch: int) -> None:
+    dropout: spatial dropout (nn.Dropout2d, zeroes whole feature-map channels
+    rather than individual pixels — more effective for conv nets than plain
+    Dropout) applied after the block. 0.0 (default) = no-op, so existing
+    checkpoints/configs are unaffected. See UNet's dropout parameter for
+    where this gets applied.
+    """
+
+    def __init__(self, in_ch: int, out_ch: int, dropout: float = 0.0) -> None:
         super().__init__()
         self.block = nn.Sequential(
             nn.Conv2d(in_ch, out_ch, kernel_size=3, padding=1, bias=False),
@@ -48,6 +55,7 @@ class _DoubleConv(nn.Module):
             nn.Conv2d(out_ch, out_ch, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(out_ch),
             nn.ReLU(inplace=True),
+            nn.Dropout2d(dropout),
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -57,11 +65,11 @@ class _DoubleConv(nn.Module):
 class _Down(nn.Module):
     """Encoder step: MaxPool2d(2) → DoubleConv."""
 
-    def __init__(self, in_ch: int, out_ch: int) -> None:
+    def __init__(self, in_ch: int, out_ch: int, dropout: float = 0.0) -> None:
         super().__init__()
         self.pool_conv = nn.Sequential(
             nn.MaxPool2d(2),
-            _DoubleConv(in_ch, out_ch),
+            _DoubleConv(in_ch, out_ch, dropout=dropout),
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -71,11 +79,11 @@ class _Down(nn.Module):
 class _Up(nn.Module):
     """Decoder step: bilinear upsample → concatenate skip → DoubleConv."""
 
-    def __init__(self, in_ch: int, out_ch: int) -> None:
+    def __init__(self, in_ch: int, out_ch: int, dropout: float = 0.0) -> None:
         super().__init__()
         # Halve the channels before concatenation so the concat gives in_ch total.
         self.up = nn.ConvTranspose2d(in_ch, in_ch // 2, kernel_size=2, stride=2)
-        self.conv = _DoubleConv(in_ch, out_ch)
+        self.conv = _DoubleConv(in_ch, out_ch, dropout=dropout)
 
     def forward(self, x: torch.Tensor, skip: torch.Tensor) -> torch.Tensor:
         x = self.up(x)
@@ -106,9 +114,18 @@ class UNet(nn.Module):
         ``forward()`` returns a single sigmoid logit channel. ``>1`` = multiclass
         segmentation — logits are interpreted with softmax/argmax; ``predict()``
         branches accordingly.
+    dropout:
+        Spatial dropout probability (0.0 = off, the default — architecture is
+        then identical to before this parameter existed). Applied only to the
+        three highest-capacity blocks (enc4, bottleneck, dec4) rather than
+        every block, since those carry the most parameters and the shallow
+        blocks are more sensitive to losing low-level detail. Disabled
+        automatically outside of ``model.train()`` mode (standard PyTorch
+        Dropout behaviour), so it has no effect on inference/predict().
     """
 
-    def __init__(self, in_channels: int = 1, base_features: int = 64, out_channels: int = 1) -> None:
+    def __init__(self, in_channels: int = 1, base_features: int = 64, out_channels: int = 1,
+                 dropout: float = 0.0) -> None:
         super().__init__()
         f = base_features
 
@@ -116,13 +133,13 @@ class UNet(nn.Module):
         self.enc1 = _DoubleConv(in_channels, f)
         self.enc2 = _Down(f, f * 2)
         self.enc3 = _Down(f * 2, f * 4)
-        self.enc4 = _Down(f * 4, f * 8)
+        self.enc4 = _Down(f * 4, f * 8, dropout=dropout)
 
         # Bottleneck
-        self.bottleneck = _Down(f * 8, f * 16)
+        self.bottleneck = _Down(f * 8, f * 16, dropout=dropout)
 
         # Decoder
-        self.dec4 = _Up(f * 16, f * 8)
+        self.dec4 = _Up(f * 16, f * 8, dropout=dropout)
         self.dec3 = _Up(f * 8, f * 4)
         self.dec2 = _Up(f * 4, f * 2)
         self.dec1 = _Up(f * 2, f)

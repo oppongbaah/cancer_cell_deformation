@@ -44,22 +44,134 @@ Binary mode: masks are saved as uint8 PNGs with values 0 (background) / 255 (cel
 
 ## `preview_masks.py` — colorized mask preview
 
-Renders saved masks overlaid on their raw frames as real color PNGs — no napari needed. Multiclass masks (label ids 0/1/2) are nearly invisible in a plain image viewer; this renders label 1 (trapped cell) as green and label 2 (other/decoy) as red. Legacy binary masks (0/255) also work — foreground renders green.
+Renders saved masks as real color PNGs, mask alone against a black background — no napari needed, and no raw frame loaded or blended in. Multiclass masks (label ids 0/1/2) are nearly invisible in a plain image viewer; this renders background as black, label 1 (trapped cell) as green, and label 2 (other/decoy) as red. Legacy binary masks (0/255) also work — foreground renders green.
 
 ```bash
 python scripts/preview_masks.py                                    # 01_annotate_pool_multiclass (default)
 python scripts/preview_masks.py --pool 01_annotate_pool            # binary masks
-python scripts/preview_masks.py --alpha 0.5 --limit 10
+python scripts/preview_masks.py --limit 10
 ```
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `--pool` | `01_annotate_pool_multiclass` | Pool folder name under `data/masks/` (raw frame pool is inferred by stripping `_multiclass`) |
-| `--image-dir` | `data/frames/<inferred pool>` | Override raw frame directory |
+| `--pool` | `01_annotate_pool_multiclass` | Pool folder name under `data/masks/` |
 | `--mask-dir` | `data/masks/<pool>` | Override mask directory |
 | `--output-dir` | `data/masks/<pool>_preview` | Override output directory |
-| `--alpha` | `0.45` | Overlay blend strength (0–1) |
 | `--limit` | none | Only preview the first N masks |
+
+---
+
+## `build_report_assets.py` — rebuild every progress-report figure and table
+
+Single entry point for the progress report's assets. It pins the arguments each figure was generated with and drives the individual plot scripts, so nothing in the report depends on remembering a command line.
+
+```bash
+python scripts/build_report_assets.py                     # build everything
+python scripts/build_report_assets.py --list              # show job names, run nothing
+python scripts/build_report_assets.py --dry-run           # print the commands, run nothing
+python scripts/build_report_assets.py --only sweep pools  # rebuild a subset
+python scripts/build_report_assets.py --report-root ../masters_thesis
+```
+
+Figures are written to `<report-root>/images/`, LaTeX tables to `<report-root>/main_work/tables/` (the report `\input{}`s those). Intermediates from the comparison-strip renderer stay in `results/_report_strips/` rather than cluttering the report repo.
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--report-root` | `../masters_thesis` | Where to write figures and tables |
+| `--only` | all | Space-separated job names (see `--list`) |
+| `--list` | off | Print job names and exit |
+| `--dry-run` | off | Print each command without running it |
+| `--compile` | off | Also run `pdflatex` the required number of times and delete the temp files |
+| `--tex` | `progress_report_9_10_26.tex` | Report to compile with `--compile` |
+
+```bash
+python scripts/build_report_assets.py --compile   # assets, then compile, then clean up
+```
+
+!!! warning "The report must be compiled at least twice"
+    Cross-references and `\captionof` numbers resolve through the `.aux` file, and the temp files are deleted after every build — so a **single** `pdflatex` pass always starts cold and renders every reference as `??` (e.g. `§??`). `--compile` runs the passes needed and then fails loudly if anything is still unresolved, rather than shipping a PDF with `??` in it.
+
+**Run it after any change to the frame pools, the masks, or `results/holdout_eval_log.jsonl`**, then recompile the report. Every number in the document comes from one of the scripts it drives, so a stale figure means this wasn't run — not that a number needs editing by hand.
+
+---
+
+## `make_report_tables.py` — emit the report's LaTeX tables from the data
+
+Generates `.tex` fragments the report `\input{}`s, so the tables can't drift from the pools the way hand-typed ones can.
+
+```bash
+python scripts/make_report_tables.py percell --output ../masters_thesis/main_work/tables/percell.tex
+python scripts/make_report_tables.py headline --output ../masters_thesis/main_work/tables/headline.tex \
+    --run multiclass_experiment_256_bf64_base_cos="No augmentation (noise only)" \
+    --run multiclass_experiment_256_bf64_scale_cos="Scale augmentation" \
+    --baseline multiclass_experiment_256_bf64_base_cos \
+    --emph multiclass_experiment_256_bf64_scale_cos
+```
+
+`percell` counts frames per cell across `01_annotate_pool`, `03_mask_factory` and `02_unet_holdout` and checks each frame for a mask. `headline` looks each run up in the eval log by (checkpoint, filter) and computes the delta column against `--baseline`; `--extra-run` adds an italic row below a rule for runs that are *not* comparable. Both write a `% GENERATED` header — edit the script, not the output.
+
+---
+
+## `plot_pool_flow.py` — frame-pool provenance diagram
+
+Replaces a pool-summary table: shows which cells go where, that `01_annotate_pool` is *drawn from* `03_mask_factory` at different frame indices, and where the evaluation firewall sits. All counts are read off disk.
+
+```bash
+python scripts/plot_pool_flow.py --output results/pool_flow.png
+```
+
+---
+
+## `plot_cell_sizes.py` — per-cell trapped-cell size
+
+Measures mean label-1 area per cell from the annotation masks and plots every cell on one axis, with the training range as a band. Makes "the development cells are smaller than the training cells" checkable rather than asserted.
+
+```bash
+python scripts/plot_cell_sizes.py --output results/cell_sizes.png
+```
+
+---
+
+## `plot_split_change.py` — train/val split before and after
+
+Two stacked bars showing the training pool growing by reclaiming an unused test split. **Counts are arguments, not derived** — the old split is historical and not reproducible from disk — and are printed on every run.
+
+```bash
+python scripts/plot_split_change.py --before 293 78 54 --after 371 54 0
+```
+
+---
+
+## `render_holdout_comparison.py` — raw/labelled/masks-only/overlay comparison strip
+
+Renders the four-figure holdout comparison used in the thesis progress reports: N evenly-spaced frames from one holdout cell, shown as (1) raw unannotated frames, (2) the multiclass ground-truth annotation (via `preview_masks.py`'s own `_colorize()`, not a re-drawn approximation), (3) ground truth vs. U-Net prediction on a black background (mask-only), and (4) the same comparison overlaid on the original frame. All four share one auto-computed crop window and panel size, so the cell renders at the same scale in every figure. Every panel carries its own frame index in a label band above the image, so a figure printed in a report can be traced back to the exact files on disk — pass `--no-frame-labels` for bare panels.
+
+```bash
+python scripts/render_holdout_comparison.py \
+    --pool 02_unet_holdout --cell high_cell9 \
+    --checkpoint checkpoints/multiclass_experiment_256_bf32_reg2_cos/unet_best.pt
+
+python scripts/render_holdout_comparison.py \
+    --pool 02_unet_holdout --cell low_cell6 \
+    --checkpoint checkpoints/multiclass_experiment_256/unet_best.pt --base-features 64
+```
+
+`unet.base_features`/`out_channels`/`in_channels` are read from the checkpoint directory's own saved `config.yaml` when present; pass `--base-features` etc. to override or when no sibling config exists. The crop auto-sizes to contain the trapped cell, nearby decoy objects (within `--decoy-radius`, default 150px — excludes far-flung debris elsewhere in the frame), and the largest predicted region across the selected frames, padded by `--pad` (default 45px); pass `--half-width`/`--half-height` to pin it explicitly instead. `--gt-color`/`--pred-color`/`--overlap-color` take `R,G,B` and only affect figures (3)/(4) — the ground-truth-annotation figure (2) always uses `preview_masks.py`'s own green/red convention.
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--pool` | `02_unet_holdout` | Pool folder under `data/frames/` and `data/preprocessed/evaluate/` |
+| `--cell` | *(required)* | Cell filename prefix, e.g. `high_cell9` |
+| `--checkpoint` | *(required)* | Path to a trained `.pt` checkpoint |
+| `--n-frames` | `5` | Evenly-spaced frames to render |
+| `--frame-indices` | none | Comma-separated 6-digit indices instead of auto-selecting |
+| `--half-width` / `--half-height` | auto | Pin the crop size instead of computing it |
+| `--pad` | `45` | Padding (px) around the auto-computed crop |
+| `--decoy-radius` | `150` | Max distance (px) from the trapped cell for a decoy to count toward the auto-crop |
+| `--alpha` | `0.55` | Overlay blend strength for figure (4) |
+| `--no-frame-labels` | off | Render bare panels, with no frame-index band above each one |
+| `--label-color` / `--label-bg` | `255,255,255` / `20,20,20` | `R,G,B` for the frame-index text and its band |
+| `--output-dir` | `results/holdout_comparisons/<pool>_<cell>` | Output directory |
 
 ---
 
@@ -106,7 +218,6 @@ Applies `PreprocessingPipeline` to frames and saves PNGs (256×256 by default). 
 python scripts/preprocess_frames.py --masks                        # train pool
 python scripts/preprocess_frames.py --masks --pool 02_unet_holdout # evaluate pool
 python scripts/preprocess_frames.py --pool 03_mask_factory          # inference pool
-python scripts/preprocess_frames.py --pool 04_clf_arena             # inference pool
 python scripts/preprocess_frames.py --masks --compare --n-compare 10
 python scripts/preprocess_frames.py --masks --target-size 128 128   # override output resolution
 ```
@@ -131,7 +242,6 @@ python scripts/preprocess_frames.py --masks --target-size 128 128   # override o
 | `01_annotate_pool` | `train` |
 | `02_unet_holdout` | `evaluate` |
 | `03_mask_factory` | `inference` |
-| `04_clf_arena` | `inference` |
 
 ---
 
@@ -173,8 +283,12 @@ python scripts/evaluate_unet.py --checkpoint checkpoints/unet_best.pt --pool 02_
 | `--pool` | `02_unet_holdout` | Pool to evaluate |
 | `--config` | `configs/default.yaml` | YAML config |
 | `--batch-size` | `8` | Inference batch size |
+| `--results-log` | `results/holdout_eval_log.jsonl` | JSONL file each run's metrics get appended to |
+| `--no-save-results` | off | Skip the append (stdout only) |
 
 **Metrics reported:** DSC, IoU, precision, recall, accuracy. When the checkpoint's config has `unet.out_channels > 1`, results are reported per class (`background`, `trapped_cell`, ...) instead of as a single flat table.
+
+**Every run is also logged to disk** (unless `--no-save-results`) as one JSON line appended to `results/holdout_eval_log.jsonl` — full-precision metrics per class, plus `timestamp`/`checkpoint`/`config`/`pool`/`n_images`/`multiclass`. Printing to stdout alone doesn't survive the terminal scrolling past it; this is the durable record to check a reported number against, or to re-derive a summary table from later (`json.loads` each line).
 
 ---
 

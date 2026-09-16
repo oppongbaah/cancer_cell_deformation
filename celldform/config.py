@@ -36,8 +36,16 @@ class DataConfig:
     masks_dir: str
     features_csv: str = "data/features.csv"
     labels_csv: str = "data/labels.csv"
-    val_split: float = 0.15     # fraction held out for validation
-    test_split: float = 0.10    # fraction held out for final evaluation (never seen during training)
+    val_split: float = 0.15     # fraction held out for checkpoint-selection/early-stopping monitoring
+                                 # during training. NOT the thesis-reportable evaluation — that's a
+                                 # separate, external pool (data/frames/02_unet_holdout/), scored via
+                                 # scripts/evaluate_unet.py. A third internal "test" split used to also
+                                 # exist here but was removed 2026-09-04: it was computed every run and
+                                 # printed in the split summary, but never actually built into a loader
+                                 # or evaluated anywhere in train_unet.py — the external holdout already
+                                 # fulfills the "held-out final score" role a test split would have, so
+                                 # keeping one was pure redundancy (and wasted training data). See
+                                 # CLAUDE.md's "Combined-recipe run" section for the full reasoning.
 
 
 @dataclass
@@ -59,6 +67,8 @@ class UNetCfg:
     in_channels: int = 1
     base_features: int = 64
     out_channels: int = 1  # 1 = binary (sigmoid); >1 = multiclass (softmax), e.g. 3 for background/trapped/other
+    dropout: float = 0.0   # spatial dropout in the 3 deepest blocks (enc4/bottleneck/dec4); 0.0 = off, no
+                            # architecture change vs. before this field existed. See UNet's dropout docstring.
 
 
 @dataclass
@@ -76,10 +86,74 @@ class TrainingCfg:
     loss_alpha: float = 0.3        # BCE weight in combined Dice+BCE loss (Dice = 1 - alpha)
     loss_pos_weight: float = 100.0 # pos_weight for BCEWithLogitsLoss; compensates cell/background imbalance
     use_amp: bool = True           # Automatic Mixed Precision — uses A100 BF16/TF32 units; auto-disabled on CPU
+    cudnn_deterministic: bool = True  # torch.backends.cudnn.deterministic — fixes cuDNN's conv-algorithm
+                                    # selection so it doesn't vary by runtime hardware state. Cheap: no
+                                    # measurable per-epoch slowdown observed.
+    cudnn_benchmark: bool = True    # torch.backends.cudnn.benchmark — auto-tunes conv algorithms by timing
+                                    # them at runtime. Alongside cudnn_deterministic=True, PyTorch restricts
+                                    # the auto-tuning search to deterministic algorithms only, so this combo
+                                    # keeps most of the speed benefit without reopening the non-determinism
+                                    # cudnn_deterministic was added to fix.
+    strict_deterministic: bool = False  # torch.use_deterministic_algorithms(True, warn_only=True) on top of
+                                    # the cudnn_* flags above — forces deterministic kernels repo-wide, not
+                                    # just cuDNN conv selection. Measured 6-7x slower per epoch on this U-Net
+                                    # (large 1024-channel bottleneck at 256x256) since some layers fall back
+                                    # to much slower deterministic implementations. Off by default. Note: even
+                                    # with this on, CrossEntropyLoss's CUDA backward (nll_loss2d, used by the
+                                    # multiclass loss) has no deterministic implementation at all — PyTorch
+                                    # only warns, it doesn't guarantee determinism for that op either, so this
+                                    # is a best-effort lever, not a hard guarantee, for multiclass configs.
     class_weights: Optional[List[float]] = None  # per-class weight for CrossEntropyLoss (multiclass only); null = uniform
     domain_oversample_weight: float = 1.0  # sampling weight for domain_-prefixed (real-cell) train frames vs.
                                             # legacy frames; 1.0 = no oversampling (uniform, default). See
                                             # scripts/train_unet.py's WeightedRandomSampler for how this is applied.
+    # Set via a nested `training.augmentation:` block in the YAML (see _parse_training) —
+    # e.g. `augmentation: {noise_std: 0.02, cutout_prob: 0.3}` — not top-level training: keys.
+    # Old flat augment_noise_std/augment_cutout_prob YAML keys are still read as a fallback.
+    augment_noise_std: float = 0.0  # std-dev of additive Gaussian noise applied to the (already-CLAHE'd)
+                                     # [0,1] train frame, on top of the existing flip/rotation augmentation;
+                                     # 0.0 = off (default). Masks are never noised. Meant to help the
+                                     # legacy-vs-real-domain gap in ways flip/rotation alone can't — see
+                                     # CellDataset in scripts/train_unet.py.
+    augment_cutout_prob: float = 0.0  # probability of erasing one random rectangular patch (8-25% of each
+                                       # side, filled with the frame's own mean intensity) from the train
+                                       # frame; 0.0 = off (default). Mask is untouched — the label still
+                                       # says "cell here" even though the evidence is occluded, which
+                                       # directly targets memorizing per-cell-identity local texture rather
+                                       # than learning boundary cues that transfer. See CellDataset.
+    augment_brightness_contrast_prob: float = 0.0  # probability of applying a random global brightness
+                                       # shift (+/-0.15) and contrast scale (0.8-1.2x) to the train frame;
+                                       # 0.0 = off (default). Mask is untouched. Added 2026-09-04: the full
+                                       # 2-cell holdout sweep showed every checkpoint is precision-bottlenecked,
+                                       # not recall-bottlenecked (the model finds the cell fine, it predicts
+                                       # too much area around it), and the over-segmentation is laser-power-
+                                       # correlated — targets the model treating a brighter/larger optical
+                                       # halo at high laser power as part of the cell. Applied post-CLAHE, on
+                                       # the already-preprocessed frame CellDataset loads — complementary to,
+                                       # not a substitute for, CLAHE's per-image local contrast normalisation;
+                                       # this instead perturbs the *global* exposure level the model sees
+                                       # during training, which CLAHE's local equalisation does not erase.
+                                       # See CellDataset. Tried once (bf64_bc, 2026-09-04): no real effect
+                                       # on the real holdout, precision unchanged — not the active hypothesis.
+    augment_scale_prob: float = 0.0  # probability of resizing the frame+mask together by a random factor
+                                      # (0.7-1.3x), then center-cropping (zoom in) or padding with the
+                                      # frame's own mean (zoom out) back to the original size; 0.0 = off
+                                      # (default). Unlike the other augmentations, this touches BOTH frame
+                                      # and mask (a real spatial transform, not a texture/intensity one).
+                                      # Added 2026-09-04: both holdout cells' true trapped-cell size
+                                      # (704/886 px^2) falls at or below every one of the 11 training
+                                      # cells (825-1549 px^2) — a real train/holdout size mismatch, found
+                                      # after ruling out a laser-power-sampling explanation. The model
+                                      # likely leans on an implicit learned "typical size" from training
+                                      # that doesn't transfer to a genuinely smaller novel cell; this
+                                      # forces scale invariance the fixed 256x256 crop alone doesn't
+                                      # provide. See CellDataset.
+    early_stopping_patience: Optional[int] = None  # stop training after this many consecutive epochs with
+                                                     # no val_dsc improvement; null = off (train the full
+                                                     # `epochs` count, current default behavior). Added to
+                                                     # counter ReduceLROnPlateau running the full epoch budget
+                                                     # even once val has plateaued — see v25 training-curve
+                                                     # analysis (train/val loss diverge from ~epoch 40).
 
 
 @dataclass
@@ -202,22 +276,14 @@ def _parse_data(d: dict) -> DataConfig:
         if key not in d:
             raise ValueError(f"Config 'data' section is missing required key: '{key}'")
     val_split = float(d.get("val_split", 0.15))
-    test_split = float(d.get("test_split", 0.10))
     if not (0 < val_split < 1):
         raise ValueError(f"data.val_split must be in (0, 1), got {val_split}")
-    if not (0 <= test_split < 1):
-        raise ValueError(f"data.test_split must be in [0, 1), got {test_split}")
-    if val_split + test_split >= 1.0:
-        raise ValueError(
-            f"val_split ({val_split}) + test_split ({test_split}) must be < 1.0"
-        )
     return DataConfig(
         frames_dir=d["frames_dir"],
         masks_dir=d["masks_dir"],
         features_csv=d.get("features_csv", "data/features.csv"),
         labels_csv=d.get("labels_csv", "data/labels.csv"),
         val_split=val_split,
-        test_split=test_split,
     )
 
 
@@ -244,6 +310,7 @@ def _parse_unet(u: dict) -> UNetCfg:
         in_channels=int(u.get("in_channels", 1)),
         base_features=int(u.get("base_features", 64)),
         out_channels=int(u.get("out_channels", 1)),
+        dropout=float(u.get("dropout", 0.0)),
     )
 
 
@@ -262,6 +329,16 @@ def _parse_training(t: dict) -> TrainingCfg:
     class_weights = t.get("class_weights", None)
     if class_weights is not None:
         class_weights = [float(w) for w in class_weights]
+    # Augmentation settings live under their own training.augmentation: block in the YAML
+    # (e.g. augmentation: {noise_std: 0.02, cutout_prob: 0.3}) — old flat augment_noise_std /
+    # augment_cutout_prob keys are still read as a fallback so existing configs don't break.
+    augmentation = t.get("augmentation", {})
+    noise_std = augmentation.get("noise_std", t.get("augment_noise_std", 0.0))
+    cutout_prob = augmentation.get("cutout_prob", t.get("augment_cutout_prob", 0.0))
+    brightness_contrast_prob = augmentation.get(
+        "brightness_contrast_prob", t.get("augment_brightness_contrast_prob", 0.0)
+    )
+    scale_prob = augmentation.get("scale_prob", t.get("augment_scale_prob", 0.0))
     return TrainingCfg(
         epochs=int(t.get("epochs", 50)),
         batch_size=int(t.get("batch_size", 16)),
@@ -276,8 +353,18 @@ def _parse_training(t: dict) -> TrainingCfg:
         loss_alpha=float(t.get("loss_alpha", 0.3)),
         loss_pos_weight=float(t.get("loss_pos_weight", 100.0)),
         use_amp=bool(t.get("use_amp", True)),
+        cudnn_deterministic=bool(t.get("cudnn_deterministic", True)),
+        cudnn_benchmark=bool(t.get("cudnn_benchmark", True)),
+        strict_deterministic=bool(t.get("strict_deterministic", False)),
         class_weights=class_weights,
         domain_oversample_weight=float(t.get("domain_oversample_weight", 1.0)),
+        augment_noise_std=float(noise_std),
+        augment_cutout_prob=float(cutout_prob),
+        augment_brightness_contrast_prob=float(brightness_contrast_prob),
+        augment_scale_prob=float(scale_prob),
+        early_stopping_patience=(
+            int(t["early_stopping_patience"]) if t.get("early_stopping_patience") is not None else None
+        ),
     )
 
 

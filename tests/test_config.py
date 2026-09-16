@@ -57,7 +57,6 @@ class TestLoadConfig:
         assert conf.training.scheduler == "reduce_on_plateau"
         assert conf.training.seed == 42
         assert conf.data.val_split == 0.15
-        assert conf.data.test_split == 0.10
         assert conf.resume.checkpoint is None
         assert conf.device is None
 
@@ -127,11 +126,23 @@ class TestConfigValidation:
         with pytest.raises(ValueError, match="scheduler"):
             load(p)
 
-    def test_split_sum_exceeds_one_raises(self, tmp_path):
+    def test_val_split_out_of_range_raises(self, tmp_path):
+        # val_split >= 1.0 leaves nothing for train — same class of error the
+        # old val_split + test_split >= 1.0 check caught before test_split was
+        # removed (2026-09-04, redundant with the external 02_unet_holdout eval).
         p = tmp_path / "cfg.yaml"
-        _write_minimal(p, {"data": {"val_split": 0.7, "test_split": 0.4}})
+        _write_minimal(p, {"data": {"val_split": 1.0}})
         with pytest.raises(ValueError, match="val_split"):
             load(p)
+
+    def test_split_key_is_silently_ignored(self, tmp_path):
+        # Old configs may still carry a leftover test_split: key from before
+        # 2026-09-04 — confirm it's harmlessly ignored, not an error, so
+        # existing YAML files don't need to be edited to keep loading.
+        p = tmp_path / "cfg.yaml"
+        _write_minimal(p, {"data": {"test_split": 0.10}})
+        conf = load(p)
+        assert not hasattr(conf.data, "test_split")
 
     def test_nonexistent_resume_checkpoint_raises(self, tmp_path):
         p = tmp_path / "cfg.yaml"

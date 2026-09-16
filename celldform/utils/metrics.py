@@ -115,13 +115,20 @@ class SegmentationMetrics:
         pred: Union[torch.Tensor, np.ndarray],
         target: Union[torch.Tensor, np.ndarray],
     ) -> Dict[str, float]:
-        """Compute all metrics and return as a dict."""
+        """Compute all metrics and return as a dict.
+
+        Excludes accuracy — with the ~99%+ background-pixel imbalance in
+        these frames, per-class accuracy stays trivially near 1.0 even for a
+        mediocre segmentation (dominated by correctly-classified background
+        pixels), so it doesn't discriminate model quality here the way DSC/
+        IoU/precision/recall do. ``accuracy()`` is still available to call
+        directly if ever needed.
+        """
         return {
             "dsc": self.dice(pred, target),
             "iou": self.iou(pred, target),
             "precision": self.precision(pred, target),
             "recall": self.recall(pred, target),
-            "accuracy": self.accuracy(pred, target),
         }
 
     # ------------------------------------------------------------------
@@ -133,6 +140,7 @@ class SegmentationMetrics:
         pred: Union[torch.Tensor, np.ndarray],
         target: Union[torch.Tensor, np.ndarray],
         num_classes: int,
+        exclude_from_mean: tuple = (0,),
     ) -> Dict[Union[int, str], Dict[str, float]]:
         """Compute all metrics per class for integer-labeled masks.
 
@@ -143,14 +151,24 @@ class SegmentationMetrics:
             values in ``[0, num_classes)``.
         num_classes:
             Total number of classes, including background (class 0).
+        exclude_from_mean:
+            Class ids left out of the ``"mean"`` entry. Defaults to
+            ``(0,)`` — background is, by convention throughout this
+            codebase, class 0, and its metrics are trivially near-1.0 from
+            pixel-count imbalance alone (background is the vast majority of
+            pixels in every frame), which would otherwise inflate "mean"
+            without saying anything about segmentation quality. Its own
+            per-class entry is still computed and returned (callers wanting
+            it can read ``result[0]``), just not folded into "mean".
 
         Returns
         -------
         Dict keyed by class id (each a binary-metrics dict from
         :meth:`compute_all`), plus a ``"mean"`` entry averaging across
-        classes. One-hots each class and reuses the existing binary metric
-        implementations, so results for class ``c`` match what a binary
-        model trained on class ``c`` alone would report.
+        classes not in ``exclude_from_mean``. One-hots each class and
+        reuses the existing binary metric implementations, so results for
+        class ``c`` match what a binary model trained on class ``c`` alone
+        would report.
         """
         pred_np = _to_flat_numpy(pred).astype(np.int64)
         target_np = _to_flat_numpy(target).astype(np.int64)
@@ -161,9 +179,10 @@ class SegmentationMetrics:
             target_c = (target_np == c).astype(np.float32)
             per_class_results[c] = self.compute_all(pred_c, target_c)
 
+        mean_classes = [c for c in range(num_classes) if c not in exclude_from_mean]
         mean_result = {
-            key: float(np.mean([per_class_results[c][key] for c in range(num_classes)]))
-            for key in ("dsc", "iou", "precision", "recall", "accuracy")
+            key: float(np.mean([per_class_results[c][key] for c in mean_classes]))
+            for key in ("dsc", "iou", "precision", "recall")
         }
         per_class_results["mean"] = mean_result
         return per_class_results

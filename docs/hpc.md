@@ -107,6 +107,9 @@ training:
   use_amp: true    # enables A100 BF16/TF32 — ~2–4× throughput gain
 ```
 
+!!! warning "Reproducibility across runs"
+    `training.cudnn_benchmark` (default `true`, matching PyTorch's own default) trades reproducibility for speed by re-timing convolution kernels against runtime hardware state — verified locally to make same-`seed` reruns land on different results even with `cudnn_deterministic: true` also set (see `CLAUDE.md`'s "Training non-determinism found" note). Not yet re-verified on Anvil's A100s specifically — if you need a run to be reproducible, set `cudnn_benchmark: false` explicitly rather than assuming the local finding carries over untested.
+
 ---
 
 ## Step 6 — Verify GPU and Train
@@ -134,34 +137,28 @@ Expected throughput: **~0.3 s/epoch** on a single A100.
 
 ## SLURM Batch Jobs (Optional)
 
-For unattended overnight runs instead of an interactive session:
+For unattended overnight runs instead of an interactive session, use `celldform-hpc-submit` — it generates the SLURM script and submits it in one step (there is no checked-in `scripts/hpc_train_unet.sh`; the script is written fresh each time from `celldform/cli.py:hpc_submit()`):
 
 ```bash
-#!/bin/bash
-#SBATCH --job-name=celldform-unet
-#SBATCH --partition=gpu
-#SBATCH --nodes=1
-#SBATCH --ntasks=1
-#SBATCH --cpus-per-task=8
-#SBATCH --gpus-per-node=1
-#SBATCH --mem=32G
-#SBATCH --time=04:00:00
-#SBATCH --account=YOUR_ALLOCATION
-#SBATCH --output=logs/unet_%j.out
-
-module load anaconda
-conda activate celldform
-
-celldform-train-unet --config configs/default.yaml
+celldform-hpc-submit --account YOUR_ALLOCATION --config configs/default.yaml
+# --dry-run prints the generated script without submitting, e.g. to sanity-check it first
 ```
 
-```bash
-mkdir -p logs
-sbatch scripts/hpc_train_unet.sh
+Defaults: `--partition ai --qos ai --time 01:00:00 --cpus 8 --gpus 1 --mem 32G` — override any of these as flags. The generated job writes:
 
-squeue -u $USER                  # monitor job status
-tail -f logs/unet_<jobid>.out    # stream live output
-scancel <jobid>                  # cancel if needed
+```
+#SBATCH --output=logs/unet_%j.out
+#SBATCH --error=logs/unet_%j.err
+```
+
+relative to wherever you run the command from (the cloned repo root on Anvil), so `logs/` is created automatically.
+
+```bash
+squeue -u $USER                                  # monitor queued/running status
+squeue -u $USER --start                           # estimated start time, if SLURM has computed one yet
+sacct -u $USER -j <jobid> --format=State,ExitCode # did it COMPLETE, FAIL, TIMEOUT, OOM, ...? after it leaves the queue
+tail -f logs/unet_<jobid>.out                     # stream live output (bookended by "Job started"/"Job finished" lines)
+scancel <jobid>                                   # cancel if needed
 ```
 
 ---

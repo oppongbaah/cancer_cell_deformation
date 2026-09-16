@@ -23,7 +23,6 @@ data:
   features_csv: "data/features.csv"
   labels_csv: "data/labels.csv"
   val_split: 0.15
-  test_split: 0.10
 
 # ─── Preprocessing ───────────────────────────────────────────────────────────
 # Record-of-what-was-used only — preprocess_frames.py does not read this file;

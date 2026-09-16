@@ -1,18 +1,26 @@
 """
 Dataset organisation for optical-tweezer cancer cell experiments.
 
-Reads from data/raw/ and writes four pipeline-ready folders under data/frames/:
+Reads from data/raw/ and writes three pipeline-ready folders under data/frames/ (a fourth,
+04_clf_arena, existed through 2026-09-02 and was collapsed into 03_mask_factory on 2026-09-03 — see
+below):
 
   01_annotate_pool/   Legacy images + 2025-camera domain-adapt samples → annotate
-  02_unet_holdout/    Held-out cells for U-Net evaluation
-  03_mask_factory/    Bulk labeled frames → U-Net inference → classifier features
-  04_clf_arena/       Held-out cells for final classifier evaluation
+  02_unet_holdout/    Held-out cells — evaluates BOTH U-Net segmentation AND, since 2026-09-03, the
+                      classifier (frozen pipeline, known high/low label as ground truth; merges the
+                      roles 02_unet_holdout and 04_clf_arena used to split)
+  03_mask_factory/    Bulk labeled frames → U-Net inference → classifier features. Absorbed
+                      04_clf_arena's cells (high-10, low-5) on 2026-09-03 once they also became
+                      domain_adapt training identities — same role as the other 11 cells, which were
+                      always simultaneously in both `inference` and `domain_adapt` below. (high-10 was
+                      later moved out of domain_adapt into unet_test, 2026-09-04 — see below — but its
+                      frames here were left as-is; classifier work hadn't started yet.)
 
-Video cell assignments
+Video cell assignments (updated 2026-09-04: high-10 moved from domain_adapt/inference into unet_test —
+training's annotated cells were imbalanced, 7 high vs. 4 low, so low-5 stayed training instead)
 ──────────────────────
-  U-Net test    : high-9,  low-6
-  Classifier test: high-10, low-5
-  Inference / clf-train: high 1–4,6–8  +  low 1–4
+  U-Net + classifier test (holdout): high-9, high-10, low-6
+  Inference / clf-train / domain-adapt: high 1–4,6–8  +  low 1–4,5
 """
 
 from __future__ import annotations
@@ -45,10 +53,12 @@ def _video_lists(raw: Path) -> dict[str, List[Tuple[Path, str, str]]]:
         "unet_test": [
             (high / "cell 9 high 50 increments.mp4",  "high", "cell9"),
             (low  / "cell 6 low 50 increments.mp4",   "low",  "cell6"),
-        ],
-        "clf_test": [
+            # 2026-09-04: added cell10 — high training cells (7) outnumbered low (4) by a real margin,
+            # so cell5 (low) stayed a training identity while cell10 (high) moved here instead, to grow
+            # the holdout without touching the scarcer category. Also gives the holdout a second high
+            # cell, useful on its own: it'll show whether high_cell9's over-segmentation/laser-power
+            # finding is cell9-specific or a general high-power pattern. See CLAUDE.md.
             (high / "cell 10 high 50 increments.mp4", "high", "cell10"),
-            (low  / "cell 5 low 50 increments.mp4",   "low",  "cell5"),
         ],
         "inference": [
             (high / "cell 1 high 50 increments.mp4",  "high", "cell1"),
@@ -62,6 +72,11 @@ def _video_lists(raw: Path) -> dict[str, List[Tuple[Path, str, str]]]:
             (low  / "cell 2 low 50 increments.mp4",   "low",  "cell2"),
             (low  / "cell 3 low 50 increments.mp4",   "low",  "cell3"),
             (low  / "cell 4 low 50 increments.mp4",   "low",  "cell4"),
+            # 2026-09-03: added cell5 — 03_mask_factory absorbed 04_clf_arena's role (collapsed, see
+            # below) once it also became a domain_adapt training identity. See CLAUDE.md. cell10 was
+            # here too as of 2026-09-03 but moved to unet_test above on 2026-09-04 — not duplicated here,
+            # matching how cell9/cell6 (the original holdout cells) were never in this list either.
+            (low  / "cell 5 low 50 increments.mp4",   "low",  "cell5"),
         ],
         "domain_adapt": [
             (high / "cell 1 high 50 increments.mp4",  "high", "cell1"),
@@ -75,6 +90,13 @@ def _video_lists(raw: Path) -> dict[str, List[Tuple[Path, str, str]]]:
             (low  / "cell 2 low 50 increments.mp4",   "low",  "cell2"),
             (low  / "cell 3 low 50 increments.mp4",   "low",  "cell3"),
             (low  / "cell 4 low 50 increments.mp4",   "low",  "cell4"),
+            # 2026-09-03: added cell5 (previously clf_test-only) — merging the U-Net-holdout and
+            # classifier-holdout roles into 02_unet_holdout freed it up as a genuinely new cell identity
+            # for training, rather than more frames of the cells already represented. See CLAUDE.md.
+            # cell10 was here too as of 2026-09-03 but moved to unet_test on 2026-09-04 (see above) —
+            # low training cells (4) were outnumbered by high (7), so cell5 stayed here to grow the
+            # scarcer category instead.
+            (low  / "cell 5 low 50 increments.mp4",   "low",  "cell5"),
         ],
     }
 
@@ -210,7 +232,7 @@ def organise(
     domain_adapt_n: int = DEFAULT_DA_N,
     clean: bool = True,
 ) -> None:
-    """Organise raw data into the four pipeline-ready frame folders."""
+    """Organise raw data into the three pipeline-ready frame folders."""
     t0     = time.time()
     videos = _video_lists(raw_dir)
 
@@ -218,7 +240,6 @@ def organise(
         "annotate":  frames_dir / "01_annotate_pool",
         "unet_test": frames_dir / "02_unet_holdout",
         "inference": frames_dir / "03_mask_factory",
-        "clf_test":  frames_dir / "04_clf_arena",
     }
 
     if clean and frames_dir.exists():
@@ -268,14 +289,9 @@ def organise(
     rows = _extract_group(videos["unet_test"], folders["unet_test"], every_n, TARGET_SIZE)
     print(f"  → {len(rows)} frames total", flush=True)
 
-    # Mask factory
+    # Mask factory (absorbed 04_clf_arena's cells 2026-09-03 — see module docstring)
     print(f"\n[mask_factory] → {folders['inference'].name}", flush=True)
     rows = _extract_group(videos["inference"], folders["inference"], every_n, TARGET_SIZE)
-    print(f"  → {len(rows)} frames total", flush=True)
-
-    # Classifier arena
-    print(f"\n[clf_arena] → {folders['clf_test'].name}", flush=True)
-    rows = _extract_group(videos["clf_test"], folders["clf_test"], every_n, TARGET_SIZE)
     print(f"  → {len(rows)} frames total", flush=True)
 
     # Summary

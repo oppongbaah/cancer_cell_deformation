@@ -17,20 +17,23 @@ raw videos       frames         masks          (manual)          + Classify     
 
 ## Step 0 — Organise raw data
 
-Build the four pipeline-ready frame folders from `data/raw/`.
+Build the three pipeline-ready frame folders from `data/raw/`. (There used to be a fourth, `04_clf_arena` — collapsed into `03_mask_factory` on 2026-09-03; see [Data Layout](data.md) if you run across a reference to it elsewhere.)
 
 ```bash
 celldform-organize-dataset
 ```
 
-Outputs:
+Outputs — see [Data Layout](data.md) for the full breakdown, including the development-set/blind-test split inside `02_unet_holdout`:
 
 | Folder | Images | Purpose |
 |--------|--------|---------|
-| `data/frames/01_annotate_pool/` | 428 | U-Net training source — annotate these. 220 fully annotated as of 2026-08-10 (multiclass scheme frozen); grown by 208 domain-adapt frames on 2026-08-19 to close the domain gap (see [Training Results](training.md#domain-gap)) — those 208 are the current annotation priority |
-| `data/frames/02_unet_holdout/` | 101 | U-Net test — annotate **after** training |
-| `data/frames/03_mask_factory/` | 557 | U-Net inference → classifier training |
-| `data/frames/04_clf_arena/` | 101 | Final classifier evaluation only |
+| `data/frames/01_annotate_pool/` | 445 | U-Net training source — **fully annotated as of 2026-09-10** (445/445; `low_cell5` was the last outstanding cell) |
+| `data/frames/02_unet_holdout/` | 101 | Development set (`high_cell9` + `low_cell6`) — evaluated repeatedly to guide tuning, fully annotated |
+| `data/frames/02_unet_holdout/final_test/` | 50 | Blind test (`high_cell10`) — reserved, deliberately unannotated, see [Data Layout — Cell roles](data.md#cell-roles) |
+| `data/frames/03_mask_factory/` | 608 | U-Net inference → classifier training (12 cells; `high_cell10` removed 2026-09-10 — it is the blind test and must not reach classifier training) |
+
+!!! warning "The current data on disk doesn't exactly match what a fresh `celldform-organize-dataset` run produces"
+    The 2026-09-04 cell reallocation (`high_cell10` → blind test, `low_cell5` stays training) was done by moving files by hand, not by rerunning the organiser — see [Data Layout](data.md#regenerating-frames) before running `--no-clean` against the current pool.
 
 ---
 
@@ -115,7 +118,7 @@ python scripts/train_unet.py --config configs/default.yaml
 celldform-train-unet --config configs/default.yaml
 ```
 
-Training reads from `data/preprocessed/train/01_annotate_pool/`. The dataset is automatically split into train / val / test (75 % / 15 % / 10 %).
+Training reads from `data/preprocessed/train/01_annotate_pool/`. The dataset is automatically split into train / val (85 % / 15 % by default, `data.val_split` in the config) — val is a monitoring split only (checkpoint selection, early stopping), not the thesis-reportable score. That comes from `scripts/evaluate_unet.py` against the external `02_unet_holdout` pool, which is why there's no third "test" split here — it would be redundant with that external evaluation (removed 2026-09-04).
 
 Checkpoints are saved to `checkpoints/`:
 
@@ -130,51 +133,59 @@ Checkpoints are saved to `checkpoints/`:
 
 ---
 
-## Step 5 — Evaluate on holdout set
+## Step 5 — Evaluate on the development set
 
-!!! warning
-    Complete Steps 1–4 before annotating `02_unet_holdout`. Annotating earlier risks biasing the reported DSC.
-
-!!! danger "Deferred until the domain-adapt retrain looks solid (as of 2026-08-19)"
-    `02_unet_holdout` is the one-shot, thesis-reportable number, so it's deliberately **not** the next step right now. The current priority is annotating the 208 new domain-adapt frames in `01_annotate_pool` (Steps 1–4 above, `--multiclass`) and checking the legacy-vs-domain-adapt DSC split on the internal validation/test data — the same breakdown used in [Domain Gap](training.md#domain-gap) — to see whether growing the pool closed the gap. Only come back to this step once that number looks solid; see [Training Results — Next Steps](training.md#next-steps).
+`02_unet_holdout`'s top level (`high_cell9` + `low_cell6`) is fully annotated as of 2026-09-03 and safe to evaluate against freely — see [Data Layout](data.md#three-tier-evaluation-terminology) for why this is called the **development set**, not a test set: every score from it is expected to shape a tuning decision, unlike the reserved blind test.
 
 ```bash
-# 5a — annotate holdout images
-python scripts/annotate.py --pool 02_unet_holdout
+# 5a — validate development-set masks (already annotated — this just confirms nothing's broken)
+python scripts/validate_masks.py --pool 02_unet_holdout --multiclass
 
-# 5b — validate holdout masks
-python scripts/validate_masks.py --pool 02_unet_holdout
+# 5b — preprocess development-set data
+python scripts/preprocess_frames.py --masks --pool 02_unet_holdout \
+    --mask-dir data/masks/02_unet_holdout_multiclass \
+    --output-dir data/preprocessed/evaluate/02_unet_holdout/inputs \
+    --mask-output-dir data/preprocessed/evaluate/02_unet_holdout/labels
 
-# 5c — preprocess holdout data
-python scripts/preprocess_frames.py --masks --pool 02_unet_holdout
-
-# 5d — evaluate and report DSC (--config must match the checkpoint's architecture —
-#      multiclass_experiment_256.yaml is the frozen scheme, out_channels=3)
-python scripts/evaluate_unet.py --checkpoint checkpoints/multiclass_experiment_256/unet_best.pt \
-    --config configs/multiclass_experiment_256.yaml
+# 5c — evaluate: pooled, and per-cell (always check both — see the warning below)
+python scripts/evaluate_unet.py --checkpoint checkpoints/multiclass_experiment_256_bf64_scale_cos/unet_best.pt \
+    --config checkpoints/multiclass_experiment_256_bf64_scale_cos/config.yaml
+python scripts/evaluate_unet.py --checkpoint checkpoints/multiclass_experiment_256_bf64_scale_cos/unet_best.pt \
+    --config checkpoints/multiclass_experiment_256_bf64_scale_cos/config.yaml --filter high_cell9
+python scripts/evaluate_unet.py --checkpoint checkpoints/multiclass_experiment_256_bf64_scale_cos/unet_best.pt \
+    --config checkpoints/multiclass_experiment_256_bf64_scale_cos/config.yaml --filter low_cell6
 ```
 
-The DSC reported by `evaluate_unet.py` is the **thesis-reportable segmentation score** — these cells were never seen during training or hyperparameter tuning.
+Every run appends its full-precision metrics to `results/holdout_eval_log.jsonl` (`--no-save-results` to skip, `--results-log` to redirect) — that file, not a number copied into a doc or terminal scrollback, is the durable record.
 
-!!! warning "Expect a lower number than the 0.943 training-time DSC"
-    Training validation was measured on a legacy-dominated split; on the 5 held-out real-cell frames available so far, DSC drops to 0.538 (recall 0.386). This step's result — on the full 101-frame real-cell holdout — is expected to land well below 0.943 and is the number that should actually drive whether the U-Net gets frozen. See [Domain Gap](training.md#domain-gap) for the full finding.
+!!! danger "Always check the per-cell breakdown, never trust the pooled number alone"
+    With only two development cells, the pooled score is a frame-weighted blend, not an average, and it has hidden a real regression before: `bf64_scale` looked like a win pooled (0.525→0.541) but actually made `high_cell9` *worse* (0.428→0.368) while making `low_cell6` much better — the `--filter` flags above exist specifically so this doesn't get missed again. See [Training Results](training.md#the-2026-09-full-evaluation-sweep) for the full story.
+
+!!! note "This is not the thesis-reportable blind-test number"
+    The development set is evaluated repeatedly to guide tuning — that's the opposite of what a blind test needs. The one honest, one-shot generalization number comes from `02_unet_holdout/final_test/` (`high_cell10`), reserved and deliberately unannotated until the recipe is settled — see [Data Layout — Cell roles](data.md#cell-roles) for the full protocol.
 
 !!! note "Optional — legacy-domain diagnostic"
-    `data/frames/02_unet_holdout/legacy_holdout/` holds 20 legacy frames reserved separately for a second, independent DSC — it isolates "the segmentation is weak" from "there's a domain gap between legacy microscope images and the real optical-tweezer setup." Repeat 5a–5d with `--image-dir data/frames/02_unet_holdout/legacy_holdout --mask-dir data/masks/02_unet_holdout/legacy_holdout` and separate `--output-dir`/`--mask-output-dir` for preprocessing. Report it as its own number — do not merge it with the DSC above.
+    `data/frames/02_unet_holdout/legacy_holdout/` holds 20 legacy frames reserved separately for a second, independent DSC — it isolates "the segmentation is weak" from "there's a domain gap between legacy microscope images and the real optical-tweezer setup." Repeat 5a–5c with `--image-dir data/frames/02_unet_holdout/legacy_holdout --mask-dir data/masks/02_unet_holdout/legacy_holdout` and separate `--output-dir`/`--mask-output-dir` for preprocessing. Report it as its own number — do not merge it with the DSC above.
 
 ---
 
 ## Step 6 — Run U-Net inference on mask factory
 
-Generate predicted masks for the classifier training pool.
+Not yet started as of 2026-09-04 — the U-Net recipe is still being tuned (see [Training Results — Next Steps](training.md#next-steps)). This step generates predicted masks for the classifier training pool once it is.
 
 ```bash
 python scripts/preprocess_frames.py --pool 03_mask_factory
 
 celldform-infer data/preprocessed/inference/03_mask_factory/inputs \
-    --unet-ckpt checkpoints/unet_best.pt \
+    --unet-ckpt checkpoints/multiclass_experiment_256_bf64_scale_cos/unet_best.pt \
     --output-dir data/predicted_masks/03_mask_factory
 ```
+
+!!! warning "`checkpoints/unet_best.pt` is not the right path"
+    That default path belongs to `configs/default.yaml` (binary, 256×256) — not the frozen multiclass pipeline actually being trained. Use whatever checkpoint [Training Results](training.md) currently names as best (`checkpoints/multiclass_experiment_256_bf64_scale_cos/unet_best.pt` as of 2026-09-10), and update this doc when that changes.
+
+!!! note "`high_cell10` is not in this pool"
+    It was removed on 2026-09-10 — as the U-Net's blind test it must not also feed classifier training. The pool is 608 frames across 12 cells.
 
 ---
 
@@ -184,7 +195,7 @@ Feature extraction and classifier training (SVM / RF / DT) using the predicted m
 
 ```bash
 python scripts/infer.py \
-    --unet-ckpt checkpoints/unet_best.pt \
+    --unet-ckpt checkpoints/multiclass_experiment_256_bf64_scale_cos/unet_best.pt \
     --classifier-ckpt checkpoints/svm.pkl
 ```
 
@@ -195,14 +206,14 @@ python scripts/infer.py \
 
 ## Step 8 — Final classifier evaluation
 
-!!! danger "04_clf_arena firewall"
-    Do not preprocess or touch `04_clf_arena` until the classifier is fully trained and frozen.
+There is no separate classifier-only firewall pool anymore — `04_clf_arena` was retired 2026-09-03 when its role merged into `02_unet_holdout` (see [Data Layout](data.md)). The same three-tier discipline from Step 5 applies here too: use the development set (`high_cell9`/`low_cell6`) freely while building the classifier, and evaluate on the blind test (`high_cell10`) exactly once, at the same moment the U-Net's own blind test happens — not before.
 
 ```bash
-python scripts/preprocess_frames.py --pool 04_clf_arena
+python scripts/preprocess_frames.py --image-dir data/frames/02_unet_holdout/final_test \
+    --output-dir data/preprocessed/inference/final_test/inputs
 
-celldform-infer data/preprocessed/inference/04_clf_arena/inputs \
-    --unet-ckpt checkpoints/unet_best.pt \
+celldform-infer data/preprocessed/inference/final_test/inputs \
+    --unet-ckpt checkpoints/multiclass_experiment_256_bf64_scale_cos/unet_best.pt \
     --classifier-ckpt checkpoints/svm.pkl \
-    --output-dir results/clf_arena
+    --output-dir results/final_test
 ```

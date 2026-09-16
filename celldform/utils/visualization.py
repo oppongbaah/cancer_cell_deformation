@@ -35,7 +35,7 @@ class Visualizer:
         Matplotlib style sheet name (e.g. ``"seaborn-v0_8-whitegrid"``).
     """
 
-    _METRIC_ORDER = ["dsc", "iou", "precision", "recall", "accuracy"]
+    _METRIC_ORDER = ["dsc", "iou", "precision", "recall"]  # accuracy excluded — see SegmentationMetrics.compute_all
     _CLASS_NAMES = {0: "background", 1: "trapped_cell", 2: "other/decoy"}
 
     def __init__(
@@ -85,7 +85,7 @@ class Visualizer:
             Optional dict from :meth:`SegmentationTrainer.evaluate` — ideally
             evaluated on the *best* checkpoint (see ``best_epoch``), not
             whatever epoch training happened to stop at. Binary mode: flat
-            dict (dsc, iou, precision, recall, accuracy). Multiclass mode:
+            dict (dsc, iou, precision, recall). Multiclass mode:
             dict keyed by class id (+ ``"mean"``), each a flat metrics dict.
             When given, a heatmap table of every metric is added below the
             curves — the same numbers printed to the console, laid out
@@ -119,19 +119,23 @@ class Visualizer:
         ax1.legend()
 
         if "train_dsc" in history:
-            ax2.plot(epochs, history["train_dsc"], color="steelblue", alpha=0.8,
-                     label="Train DSC (primary cell class)")
-        ax2.plot(epochs, history["val_dsc"], color="green", label="Val DSC (primary cell class)")
+            ax2.plot(epochs, history["train_dsc"], color="steelblue", alpha=0.8, label="Train DSC")
+        ax2.plot(epochs, history["val_dsc"], color="green", label="Val DSC")
         if best_epoch is not None and 1 <= best_epoch <= len(history["val_dsc"]):
+            # DSC value intentionally omitted from this label — history["val_dsc"] is the per-epoch
+            # curve's batch-pooled-then-averaged DSC (see SegmentationTrainer._validate), which differs
+            # numerically from the globally-pooled DSC in the metrics table below (SegmentationTrainer
+            # .evaluate). Showing both DSC figures side by side reads as a discrepancy/bug rather than
+            # two intentionally different aggregations, so only the table (the one worth quoting) shows it.
             best_val = history["val_dsc"][best_epoch - 1]
             ax2.axvline(best_epoch, color="red", linestyle="--", linewidth=1, alpha=0.6)
             ax2.scatter(
-                [best_epoch], [best_val], color="red", zorder=5, marker="*", s=160,
-                label=f"Best epoch {best_epoch}  (DSC={best_val:.3f})",
+                [best_epoch], [best_val], color="red", zorder=5, marker="*", s=70,
+                label=f"Best epoch {best_epoch}",
             )
         ax2.set_xlabel("Epoch")
         ax2.set_ylabel("DSC")
-        ax2.set_title("Dice Score" if "train_dsc" in history else "Validation Dice Score")
+        ax2.set_title("Trapped Cell Dice Score" if "train_dsc" in history else "Trapped Cell Validation Dice Score")
         ax2.legend(loc="lower right", fontsize=8)
 
         if has_table:
@@ -155,7 +159,10 @@ class Visualizer:
         is_multiclass = any(isinstance(v, dict) for v in metrics.values())
 
         if is_multiclass:
-            class_rows = sorted(k for k in metrics if isinstance(k, int))
+            # Background (class 0) excluded — trivially near-1.0 from pixel-count imbalance alone,
+            # not informative about segmentation quality; "mean" (SegmentationMetrics.per_class)
+            # already excludes it too, so the displayed MEAN row matches what's shown above it.
+            class_rows = sorted(k for k in metrics if isinstance(k, int) and k != 0)
             row_keys = class_rows + ["mean"]
             row_labels = [self._CLASS_NAMES.get(k, f"class_{k}") for k in class_rows] + ["MEAN"]
             data = np.array([[metrics[k][m] for m in self._METRIC_ORDER] for k in row_keys])

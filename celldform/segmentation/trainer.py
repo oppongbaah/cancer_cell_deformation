@@ -167,7 +167,19 @@ class SegmentationTrainer:
         self.use_amp = conf.training.use_amp and on_cuda
         self.scaler = torch.amp.GradScaler(self.device_type, enabled=self.use_amp)
         if on_cuda:
-            torch.backends.cudnn.benchmark = True  # fixed 256×256 input → cuDNN picks optimal kernel once
+            # cudnn.benchmark=True auto-tunes convolution kernels by timing them
+            # against runtime hardware state — faster, but a source of run-to-run
+            # non-determinism that `torch.manual_seed` alone does not suppress.
+            # See training.cudnn_deterministic / cudnn_benchmark in config.py.
+            torch.backends.cudnn.deterministic = conf.training.cudnn_deterministic
+            torch.backends.cudnn.benchmark = conf.training.cudnn_benchmark
+        if conf.training.strict_deterministic:
+            # warn_only=True: enforce deterministic ops where a deterministic
+            # implementation exists, but don't hard-crash training on the rare op
+            # (e.g. certain interpolate/upsample backward paths) that has none.
+            # Measured 6-7x slower per epoch on this architecture — see
+            # training.strict_deterministic docstring in config.py.
+            torch.use_deterministic_algorithms(True, warn_only=True)
 
         self.out_channels = conf.unet.out_channels
         if self.out_channels == 1:
@@ -205,7 +217,8 @@ class SegmentationTrainer:
 
         Returns
         -------
-        History dict with keys ``train_loss``, ``train_dsc``, ``val_loss``,
+
+                History dict with keys ``train_loss``, ``train_dsc``, ``val_loss``,
         ``val_dsc``.
         """
         n_epochs = epochs if epochs is not None else self.conf.training.epochs
@@ -213,6 +226,13 @@ class SegmentationTrainer:
             "train_loss": [], "train_dsc": [], "val_loss": [], "val_dsc": [],
         }
         best_dsc = 0.0
+        best_epoch = 0
+        patience = self.conf.training.early_stopping_patience
+        epochs_since_improvement = 0
+        best_patience_dsc = 0.0  # separate from best_dsc: requires min_delta improvement to reset the
+                                  # patience counter, so noise-level upticks don't stall early stopping
+                                  # forever, while unet_best.pt still saves on any improvement as before
+        min_delta = 1e-3
 
         # Snapshot the config so the checkpoint folder is self-contained.
         _save_config_snapshot(self.conf, self.checkpoint_dir)
@@ -239,7 +259,19 @@ class SegmentationTrainer:
 
             if val_dsc > best_dsc:
                 best_dsc = val_dsc
+                best_epoch = epoch
                 self._save_checkpoint("unet_best.pt", epoch, val_dsc)
+
+            if val_dsc > best_patience_dsc + min_delta:
+                best_patience_dsc = val_dsc
+                epochs_since_improvement = 0
+            else:
+                epochs_since_improvement += 1
+
+            if patience is not None and epochs_since_improvement >= patience:
+                print(f"Early stopping: no val_DSC improvement > {min_delta} for {patience} epochs "
+                      f"(best={best_dsc:.4f} at epoch {best_epoch}). Stopping at epoch {epoch}/{n_epochs}.")
+                break
 
         # _print_platform_info(self.device, "after training")
 
@@ -357,12 +389,12 @@ class SegmentationTrainer:
         else:
             self.scheduler.step()
 
-    def _save_checkpoint(self, filename: str, epoch: int, val_dsc: float) -> None:
+    def _save_checkpoint(self, filename: str, epoch: int, val_dsc: float, model: Optional[nn.Module] = None) -> None:
         path = self.checkpoint_dir / filename
         ckpt: Dict = {
             "epoch": epoch,
             "val_dsc": val_dsc,
-            "model_state_dict": self.model.state_dict(),
+            "model_state_dict": (model or self.model).state_dict(),
             "optimizer_state_dict": self.optimizer.state_dict(),
         }
         if self.scheduler is not None:
@@ -434,10 +466,28 @@ def _build_scheduler(
 # Config snapshot
 # ---------------------------------------------------------------------------
 
+def _yaml_safe(obj):
+    """Recursively convert tuples to lists so the result round-trips through
+    yaml.safe_load (used by celldform.config.load and most consumers of this
+    snapshot). dataclasses.asdict() preserves tuple-typed fields (e.g.
+    preprocessing.target_size) as tuples, and plain yaml.dump serializes
+    those with a !!python/tuple tag that yaml.safe_load cannot parse —
+    silently making the "written for reproducibility" snapshot unloadable
+    by anything using the standard config loader. Found 2026-09-04 when 17
+    existing checkpoint dirs' snapshots all had this problem."""
+    if isinstance(obj, tuple):
+        return [_yaml_safe(v) for v in obj]
+    if isinstance(obj, dict):
+        return {k: _yaml_safe(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_yaml_safe(v) for v in obj]
+    return obj
+
+
 def _save_config_snapshot(conf: CelldformConfig, checkpoint_dir: Path) -> None:
     """Write the active config to the checkpoint directory for reproducibility."""
-    snapshot = dataclasses.asdict(conf)
+    snapshot = _yaml_safe(dataclasses.asdict(conf))
     path = checkpoint_dir / "config.yaml"
     with open(path, "w") as fh:
-        yaml.dump(snapshot, fh, default_flow_style=False, sort_keys=False)
+        yaml.safe_dump(snapshot, fh, default_flow_style=False, sort_keys=False)
     print(f"[celldform] Config snapshot → {path}")

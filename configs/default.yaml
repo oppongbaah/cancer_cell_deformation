@@ -8,8 +8,10 @@ data:
   masks_dir:  "data/preprocessed/train/01_annotate_pool/labels"
   features_csv: "data/features.csv"
   labels_csv: "data/labels.csv"
-  val_split: 0.15    # fraction held out for validation during training
-  test_split: 0.10   # fraction held out for final evaluation (never seen during training)
+  val_split: 0.15    # fraction held out for checkpoint-selection/early-stopping monitoring. Not the
+                      # thesis-reportable score — that's the external data/frames/02_unet_holdout/ pool,
+                      # scored via scripts/evaluate_unet.py. A third internal "test" split used to also
+                      # exist here but was removed 2026-09-04 as redundant with that external evaluation.
 
 # ─── Preprocessing ───────────────────────────────────────────────────────────
 preprocessing:

@@ -210,8 +210,8 @@ def hpc_submit() -> None:
                         help="SLURM partition (default: ai).")
     parser.add_argument("--qos", default="ai",
                         help="SLURM QOS (default: same as --partition).")
-    parser.add_argument("--time", default="04:00:00",
-                        help="Wall-clock time limit HH:MM:SS (default: 04:00:00).")
+    parser.add_argument("--time", default="01:00:00",
+                        help="Wall-clock time limit HH:MM:SS (default: 01:00:00).")
     parser.add_argument("--cpus", type=int, default=8,
                         help="CPUs per task (default: 8).")
     parser.add_argument("--gpus", type=int, default=1,

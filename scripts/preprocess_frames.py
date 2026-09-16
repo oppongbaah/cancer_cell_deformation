@@ -117,11 +117,11 @@ def _save_comparison(
 
 
 # Maps each pool folder to its pipeline stage name
+# 04_clf_arena removed 2026-09-03 — collapsed into 03_mask_factory, see celldform/acquisition/organiser.py
 _POOL_STAGE = {
     "01_annotate_pool": "train",
     "02_unet_holdout":  "evaluate",
     "03_mask_factory":  "inference",
-    "04_clf_arena":     "inference",
 }
 
 
