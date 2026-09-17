@@ -1,7 +1,8 @@
 """
 Training, validation, and evaluation loop for the U-Net segmentation model.
 
-Loss function: combined Binary Cross-Entropy + Dice loss, which penalises both
+Loss function: combined Cross-Entropy + region loss (Dice, or Focal-Tversky
+via training.loss_type), which penalises both
 pixel-level and region-level errors.  This combination is standard for
 biomedical image segmentation with small, imbalanced foreground regions.
 
@@ -92,7 +93,9 @@ class _DiceCELoss(nn.Module):
     """Weighted sum of multiclass Dice loss and Cross-Entropy loss.
 
     Multiclass counterpart to :class:`_DiceBCELoss`: loss = alpha * CE +
-    (1 - alpha) * Dice, averaged over classes (including background).
+    (1 - alpha) * Dice. The Dice term averages over all classes including
+    background by default; pass exclude_background=True to average over the
+    foreground classes only.
     """
 
     def __init__(
@@ -101,11 +104,13 @@ class _DiceCELoss(nn.Module):
         alpha: float = 0.3,
         smooth: float = 1.0,
         class_weights: Optional[list] = None,
+        exclude_background: bool = False,
     ) -> None:
         super().__init__()
         self.alpha = alpha
         self.smooth = smooth
         self.num_classes = num_classes
+        self.exclude_background = exclude_background
         weight = torch.tensor(class_weights) if class_weights is not None else None
         self.ce = nn.CrossEntropyLoss(weight=weight)
 
@@ -123,9 +128,79 @@ class _DiceCELoss(nn.Module):
         dice_per_class = (2.0 * intersection + self.smooth) / (
             p.sum(dim=2) + t.sum(dim=2) + self.smooth
         )
+        # Background (class 0) is ~99.96% correct from pixel imbalance alone and barely
+        # moves, so including it in this mean spends ~1/3 of the Dice term on a constant.
+        if self.exclude_background:
+            dice_per_class = dice_per_class[:, 1:]
         dice_loss = 1.0 - dice_per_class.mean()
 
         return self.alpha * ce_loss + (1.0 - self.alpha) * dice_loss
+
+
+class _FocalTverskyCELoss(nn.Module):
+    """Weighted sum of Cross-Entropy and a Focal-Tversky region term.
+
+    Same structure as :class:`_DiceCELoss` -- ``loss = alpha * CE + (1 - alpha) * region``
+    -- with the Dice region term replaced by Focal-Tversky::
+
+        TI_c = (TP_c + s) / (TP_c + tversky_alpha * FP_c + tversky_beta * FN_c + s)
+        FTL  = mean_c (1 - TI_c) ** focal_gamma
+
+    The Tversky index generalises Dice, which is the special case
+    ``tversky_alpha == tversky_beta == 0.5``. Setting ``tversky_alpha > tversky_beta``
+    makes a false positive cost more than a false negative, directly targeting
+    over-segmentation. ``focal_gamma == 1.0`` reduces this to plain Tversky.
+
+    Note ``class_weights`` applies to the CE term only, exactly as in _DiceCELoss --
+    the region term is weighted through tversky_alpha/beta instead.
+    """
+
+    def __init__(
+        self,
+        num_classes: int,
+        alpha: float = 0.3,
+        smooth: float = 1.0,
+        class_weights: Optional[list] = None,
+        exclude_background: bool = False,
+        tversky_alpha: float = 0.7,
+        tversky_beta: float = 0.3,
+        focal_gamma: float = 0.75,
+    ) -> None:
+        super().__init__()
+        self.alpha = alpha
+        self.smooth = smooth
+        self.num_classes = num_classes
+        self.exclude_background = exclude_background
+        self.tversky_alpha = tversky_alpha
+        self.tversky_beta = tversky_beta
+        self.focal_gamma = focal_gamma
+        weight = torch.tensor(class_weights) if class_weights is not None else None
+        self.ce = nn.CrossEntropyLoss(weight=weight)
+
+    def forward(
+        self, logits: torch.Tensor, targets: torch.Tensor
+    ) -> torch.Tensor:
+        ce_loss = self.ce(logits, targets)
+
+        probs = torch.softmax(logits, dim=1)
+        target_onehot = F.one_hot(targets, num_classes=self.num_classes).permute(0, 3, 1, 2).float()
+        p = probs.reshape(probs.size(0), self.num_classes, -1)
+        t = target_onehot.reshape(target_onehot.size(0), self.num_classes, -1)
+
+        tp = (p * t).sum(dim=2)
+        fp = (p * (1.0 - t)).sum(dim=2)
+        fn = ((1.0 - p) * t).sum(dim=2)
+
+        ti = (tp + self.smooth) / (
+            tp + self.tversky_alpha * fp + self.tversky_beta * fn + self.smooth
+        )
+        if self.exclude_background:
+            ti = ti[:, 1:]
+        # clamp keeps the fractional power away from a zero base, whose gradient is
+        # unbounded and produces NaNs under AMP once a class is segmented near-perfectly.
+        ftl = ((1.0 - ti).clamp(min=1e-6) ** self.focal_gamma).mean()
+
+        return self.alpha * ce_loss + (1.0 - self.alpha) * ftl
 
 
 class SegmentationTrainer:
@@ -187,11 +262,22 @@ class SegmentationTrainer:
                 alpha=conf.training.loss_alpha,
                 pos_weight=conf.training.loss_pos_weight,
             ).to(self.device)
+        elif conf.training.loss_type == "focal_tversky":
+            self.criterion = _FocalTverskyCELoss(
+                num_classes=self.out_channels,
+                alpha=conf.training.loss_alpha,
+                class_weights=conf.training.class_weights,
+                exclude_background=conf.training.dice_exclude_background,
+                tversky_alpha=conf.training.tversky_alpha,
+                tversky_beta=conf.training.tversky_beta,
+                focal_gamma=conf.training.focal_gamma,
+            ).to(self.device)
         else:
             self.criterion = _DiceCELoss(
                 num_classes=self.out_channels,
                 alpha=conf.training.loss_alpha,
                 class_weights=conf.training.class_weights,
+                exclude_background=conf.training.dice_exclude_background,
             ).to(self.device)
         self.optimizer = _build_optimizer(model, conf.training)
         self.scheduler = _build_scheduler(self.optimizer, conf.training)
