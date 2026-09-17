@@ -15,8 +15,8 @@ told.
 
 Usage
 -----
-python scripts/plot_split_change.py --output results/split_change.png
-python scripts/plot_split_change.py --before 293 78 54 --after 371 54 0
+python scripts/report/plot_split_change.py --output results/split_change.png
+python scripts/report/plot_split_change.py --before 293 78 54 --after 371 54 0
 """
 
 from __future__ import annotations

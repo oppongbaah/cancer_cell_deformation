@@ -16,8 +16,8 @@ change and the numbers follow.
 
 Usage
 -----
-python scripts/plot_pool_flow.py --output results/pool_flow.png
-python scripts/plot_pool_flow.py --data-root data --output results/pool_flow.png
+python scripts/report/plot_pool_flow.py --output results/pool_flow.png
+python scripts/report/plot_pool_flow.py --data-root data --output results/pool_flow.png
 """
 
 from __future__ import annotations

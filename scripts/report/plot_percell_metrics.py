@@ -18,7 +18,7 @@ later ones are compared against.
 
 Usage
 -----
-python scripts/plot_percell_metrics.py \\
+python scripts/report/plot_percell_metrics.py \\
     --checkpoint multiclass_experiment_256=Original \\
     --checkpoint multiclass_experiment_256_bf64_scale="Scale only" \\
     --checkpoint multiclass_experiment_256_bf64_allaug=Combined \\

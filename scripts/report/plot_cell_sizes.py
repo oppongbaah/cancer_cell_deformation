@@ -13,7 +13,7 @@ resolution, so the numbers are re-derived rather than transcribed.
 
 Usage
 -----
-python scripts/plot_cell_sizes.py --output results/cell_sizes.png
+python scripts/report/plot_cell_sizes.py --output results/cell_sizes.png
 """
 
 from __future__ import annotations
