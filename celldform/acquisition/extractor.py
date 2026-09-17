@@ -310,7 +310,7 @@ class FrameExtractor:
     def _write_manifest(self, rows: List[dict]) -> None:
         if not rows:
             return
-        manifest_path = self.output_dir / f"{self.video_path.stem}_manifest.csv"
+        manifest_path = self.output_dir / f"00_{self.video_path.stem}_manifest.csv"
         with manifest_path.open("w", newline="") as fh:
             writer = csv.DictWriter(fh, fieldnames=list(rows[0].keys()))
             writer.writeheader()

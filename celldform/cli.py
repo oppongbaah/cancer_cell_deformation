@@ -128,7 +128,7 @@ def extract_frames() -> None:
     )
 
     print(f"[celldform] Extracted {len(frames)} frames → {output_dir}")
-    print(f"[celldform] Manifest  → {Path(output_dir) / (video_path.stem + '_manifest.csv')}")
+    print(f"[celldform] Manifest  → {Path(output_dir) / ('00_' + video_path.stem + '_manifest.csv')}")
 
 
 # ---------------------------------------------------------------------------
