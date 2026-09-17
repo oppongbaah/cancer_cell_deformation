@@ -1,4 +1,5 @@
 source,frame_index,saved_index,timestamp_s,output_path,width,height
+data/raw/high/cell 8 high 50 increments.mp4,0,0,0.0,data/frames/01_annotate_pool/domain_high_cell8_000000.jpg,1228,922
 data/raw/high/cell 8 high 50 increments.mp4,501,1,22.772727,data/frames/01_annotate_pool/domain_high_cell8_000501.jpg,1228,922
 data/raw/high/cell 8 high 50 increments.mp4,1002,2,45.545455,data/frames/01_annotate_pool/domain_high_cell8_001002.jpg,1228,922
 data/raw/high/cell 8 high 50 increments.mp4,1503,3,68.318182,data/frames/01_annotate_pool/domain_high_cell8_001503.jpg,1228,922

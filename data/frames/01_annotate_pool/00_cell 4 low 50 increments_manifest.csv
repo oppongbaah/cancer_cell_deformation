@@ -1,4 +1,5 @@
 source,frame_index,saved_index,timestamp_s,output_path,width,height
+data/raw/low/cell 4 low 50 increments.mp4,0,0,0.0,data/frames/01_annotate_pool/domain_low_cell4_000000.jpg,1228,922
 data/raw/low/cell 4 low 50 increments.mp4,508,1,23.090909,data/frames/01_annotate_pool/domain_low_cell4_000508.jpg,1228,922
 data/raw/low/cell 4 low 50 increments.mp4,1016,2,46.181818,data/frames/01_annotate_pool/domain_low_cell4_001016.jpg,1228,922
 data/raw/low/cell 4 low 50 increments.mp4,1524,3,69.272727,data/frames/01_annotate_pool/domain_low_cell4_001524.jpg,1228,922

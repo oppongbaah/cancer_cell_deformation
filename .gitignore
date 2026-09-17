@@ -55,4 +55,11 @@ runs/
 supporting_docs/
 CLAUDE.md
 .claude
-results/
+results/**
+!results/**/
+# ...except the evaluation logs. These are the experimental record: every report table
+# and figure is generated from them (see scripts/build_report_assets.py), never from
+# hand-typed numbers. Small, append-only, and diffable. The training-curve and figure
+# PNGs stay out - they are derived data, regenerable from these logs, and git stores a
+# full new blob for every regenerated binary.
+!results/**/*.jsonl

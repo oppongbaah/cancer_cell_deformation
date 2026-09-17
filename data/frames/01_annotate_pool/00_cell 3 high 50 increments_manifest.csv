@@ -1,0 +1,21 @@
+source,frame_index,saved_index,timestamp_s,output_path,width,height
+data/raw/high/cell 3 high 50 increments.mp4,0,0,0.0,data/frames/01_annotate_pool/domain_high_cell3_000000.jpg,1228,922
+data/raw/high/cell 3 high 50 increments.mp4,496,1,22.545455,data/frames/01_annotate_pool/domain_high_cell3_000496.jpg,1228,922
+data/raw/high/cell 3 high 50 increments.mp4,992,2,45.090909,data/frames/01_annotate_pool/domain_high_cell3_000992.jpg,1228,922
+data/raw/high/cell 3 high 50 increments.mp4,1488,3,67.636364,data/frames/01_annotate_pool/domain_high_cell3_001488.jpg,1228,922
+data/raw/high/cell 3 high 50 increments.mp4,1984,4,90.181818,data/frames/01_annotate_pool/domain_high_cell3_001984.jpg,1228,922
+data/raw/high/cell 3 high 50 increments.mp4,2480,5,112.727273,data/frames/01_annotate_pool/domain_high_cell3_002480.jpg,1228,922
+data/raw/high/cell 3 high 50 increments.mp4,2976,6,135.272727,data/frames/01_annotate_pool/domain_high_cell3_002976.jpg,1228,922
+data/raw/high/cell 3 high 50 increments.mp4,3472,7,157.818182,data/frames/01_annotate_pool/domain_high_cell3_003472.jpg,1228,922
+data/raw/high/cell 3 high 50 increments.mp4,3968,8,180.363636,data/frames/01_annotate_pool/domain_high_cell3_003968.jpg,1228,922
+data/raw/high/cell 3 high 50 increments.mp4,4464,9,202.909091,data/frames/01_annotate_pool/domain_high_cell3_004464.jpg,1228,922
+data/raw/high/cell 3 high 50 increments.mp4,4960,10,225.454545,data/frames/01_annotate_pool/domain_high_cell3_004960.jpg,1228,922
+data/raw/high/cell 3 high 50 increments.mp4,5456,11,248.0,data/frames/01_annotate_pool/domain_high_cell3_005456.jpg,1228,922
+data/raw/high/cell 3 high 50 increments.mp4,5952,12,270.545455,data/frames/01_annotate_pool/domain_high_cell3_005952.jpg,1228,922
+data/raw/high/cell 3 high 50 increments.mp4,6448,13,293.090909,data/frames/01_annotate_pool/domain_high_cell3_006448.jpg,1228,922
+data/raw/high/cell 3 high 50 increments.mp4,6944,14,315.636364,data/frames/01_annotate_pool/domain_high_cell3_006944.jpg,1228,922
+data/raw/high/cell 3 high 50 increments.mp4,7440,15,338.181818,data/frames/01_annotate_pool/domain_high_cell3_007440.jpg,1228,922
+data/raw/high/cell 3 high 50 increments.mp4,7936,16,360.727273,data/frames/01_annotate_pool/domain_high_cell3_007936.jpg,1228,922
+data/raw/high/cell 3 high 50 increments.mp4,8432,17,383.272727,data/frames/01_annotate_pool/domain_high_cell3_008432.jpg,1228,922
+data/raw/high/cell 3 high 50 increments.mp4,8928,18,405.818182,data/frames/01_annotate_pool/domain_high_cell3_008928.jpg,1228,922
+data/raw/high/cell 3 high 50 increments.mp4,9424,19,428.363636,data/frames/01_annotate_pool/domain_high_cell3_009424.jpg,1228,922
