@@ -93,7 +93,7 @@ class TestFrameExtractor:
         )
         frames = fe.extract(every_n=1)
         assert len(frames) == 5
-        assert (tmp_path / "frames" / "test_video_manifest.csv").exists()
+        assert (tmp_path / "frames" / "00_test_video_manifest.csv").exists()
         assert frames[0].shape == (32, 32)
 
     def test_frames_named_with_video_stem(self, dummy_video, tmp_path):
@@ -170,7 +170,7 @@ class TestFrameExtractor:
             **_DETECT_KWARGS,
         )
         fe.extract(every_n=1)
-        manifest_path = tmp_path / "frames" / "moving_cell_manifest.csv"
+        manifest_path = tmp_path / "frames" / "00_moving_cell_manifest.csv"
         with open(manifest_path) as fh:
             rows = list(csv.DictReader(fh))
         assert "centroid_x" in rows[0]
