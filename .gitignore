@@ -12,7 +12,24 @@ venv/
 *.pth
 
 # Data and checkpoints (large files)
-data/
+# NOTE on the `data/**` + `!data/**/` form below: git cannot re-include a file if a
+# PARENT DIRECTORY is excluded, so a plain `data/` would make the `!` exception below
+# dead. `data/**` excludes the contents rather than the directory itself, and
+# `!data/**/` re-admits the directories so git will descend into them; only files
+# matching a later `!` rule are actually tracked.
+data/**
+!data/**/
+# ...except the manifests: small plain-text provenance records saying which frame came
+# from which video, at which index, into which pool. They make the dataset's structure
+# reviewable in git without committing a single pixel. Frames, masks and preprocessed
+# arrays stay out. `.bak` copies stay out too (they do not match the `00_` prefix).
+!data/**/00_*manifest*.csv
+# ...and the prose that explains the dataset, plus any undo manifest recording a
+# reorganisation. data/ is NOT recoverable through git (the bulk is ignored), so an
+# undo manifest is the only record of what a pool restructure actually moved -- it is
+# exactly the file you want in history rather than on one machine.
+!data/**/README.md
+!data/**/*_UNDO_*.json
 checkpoints/
 *.pt
 *.pth
