@@ -162,7 +162,7 @@ def _extract_group(
                 })
         print(f"  {her2}/{cell_id}: {len(targets)} frames", flush=True)
 
-    _write_csv(out_dir / "manifest.csv", all_rows)
+    _write_csv(out_dir / "00_manifest.csv", all_rows)  # 00_ prefix sorts it above the frames
     return all_rows
 
 
@@ -281,7 +281,7 @@ def organise(
     print("\n[annotate_pool] Adding 2025-camera domain samples ...", flush=True)
     da_rows = _domain_adapt(videos["domain_adapt"], ann_dir, domain_adapt_n, TARGET_SIZE)
     ann_rows.extend(da_rows)
-    _write_csv(ann_dir / "manifest.csv", ann_rows)
+    _write_csv(ann_dir / "00_manifest.csv", ann_rows)  # 00_ prefix sorts it above the frames
     print(f"  → {len(da_rows)} domain frames  ({len(ann_rows)} total in pool)", flush=True)
 
     # U-Net test hold-out
