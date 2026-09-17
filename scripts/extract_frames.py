@@ -19,7 +19,7 @@ Usage:
 
 Outputs (written to output_dir):
     frame_000000.png, frame_000001.png, ...   — extracted grayscale frames
-    manifest.csv                               — index, timestamp, and path per frame
+    00_manifest.csv                            — index, timestamp, and path per frame
 """
 
 from __future__ import annotations
@@ -160,7 +160,7 @@ def main() -> None:
     )
 
     print(f"[celldform] Extracted {len(frames)} frames → {output_dir}")
-    print(f"[celldform] Manifest  → {Path(output_dir) / (video_path.stem + '_manifest.csv')}")
+    print(f"[celldform] Manifest  → {Path(output_dir) / ('00_' + video_path.stem + '_manifest.csv')}")
 
 
 if __name__ == "__main__":
