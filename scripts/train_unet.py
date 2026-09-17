@@ -279,7 +279,8 @@ def _build_groups(pairs: list[tuple[Path, Path]]) -> list[str]:
 
 
 def _group_split(
-    pairs: list[tuple[Path, Path]], groups: list[str], n_val: int
+    pairs: list[tuple[Path, Path]], groups: list[str], n_val: int,
+    split_seed: int | None = None
 ) -> tuple[list, list]:
     """Split pairs into train/val by whole group, never splitting a group
     across sets. Group order is shuffled (uses the already-seeded `random`
@@ -290,13 +291,21 @@ def _group_split(
     Two-way only (no test split) since 2026-09-04 — a third internal split
     was redundant with the external 02_unet_holdout evaluation (see
     train_unet.py's module docstring and celldform.config.DataConfig).
+
+    `split_seed` (2026-09-17) shuffles through a dedicated random.Random rather
+    than the global module, so the split can be held fixed while `seed` varies
+    weight initialisation. Passing the same value the global RNG was seeded with
+    reproduces the historical split exactly — random.Random(x) and
+    random.seed(x) yield the same Mersenne Twister stream — so the default
+    (split_seed = seed) changes nothing about any existing run.
     """
     by_group: dict[str, list] = defaultdict(list)
     for pair, g in zip(pairs, groups):
         by_group[g].append(pair)
 
     group_ids = list(by_group.keys())
-    random.shuffle(group_ids)
+    rng = random.Random(split_seed) if split_seed is not None else random
+    rng.shuffle(group_ids)
 
     val_pairs, train_pairs = [], []
     for g in group_ids:
@@ -307,6 +316,56 @@ def _group_split(
             train_pairs.extend(items)
 
     return train_pairs, val_pairs
+
+
+def _log_split(pairs, groups, train_pairs, val_pairs, seed: int, split_seed: int) -> None:
+    """Print which groups landed in train vs. validation, and flag oversized ones.
+
+    Added 2026-09-17. Until now the split was reported as two integers, so a run
+    that happened to draw a large cell into validation was indistinguishable in the
+    log from one that did not — and with 22 groups the draw varies a lot. Any group
+    holding a sizeable share of the pool can, on an unlucky shuffle, take over the
+    validation set and simultaneously vanish from training; `high_cell10` (50 frames
+    against a ~45-frame validation target) is the live example. Printing the
+    assignment makes that visible at a glance instead of being inferred later from
+    an unexplained score.
+    """
+    val_set = set(val_pairs)
+    by_group: dict[str, list] = defaultdict(list)
+    for pair, g in zip(pairs, groups):
+        by_group[g].append(pair)
+
+    val_groups, train_groups = [], []
+    for g, items in by_group.items():
+        (val_groups if items[0] in val_set else train_groups).append((g, len(items)))
+    val_groups.sort(key=lambda kv: -kv[1])
+    train_groups.sort(key=lambda kv: -kv[1])
+
+    seed_note = f"seed={seed}" + ("" if split_seed == seed else f", split_seed={split_seed}")
+    print(f"[celldform]   split assignment ({seed_note})")
+    print("[celldform]     val  : " + ", ".join(f"{g}({n})" for g, n in val_groups))
+    cells = [(g, n) for g, n in train_groups if "cell" in g]
+    legacy_n = sum(n for g, n in train_groups if "cell" not in g)
+    print("[celldform]     train: " + ", ".join(f"{g}({n})" for g, n in cells)
+          + (f", legacy({legacy_n})" if legacy_n else ""))
+
+    # A group big enough to dominate validation distorts both sides of the split.
+    n_val_target = len(val_pairs)
+    for g, n in val_groups:
+        # 0.5, not a higher bar: once one group is the majority of validation, the
+        # monitoring signal is mostly about that one cell, and checkpoint selection
+        # and early stopping are steered by it. Calibrated against the live case —
+        # high_cell10 lands at 72% of validation on an unlucky draw, which a 0.8
+        # threshold would have let through silently.
+        if n_val_target and n / n_val_target >= 0.5:
+            print(f"[celldform]   WARNING: '{g}' is {n} of {n_val_target} validation frames "
+                  f"({100 * n / n_val_target:.0f}%) — validation is mostly one group, so "
+                  f"checkpoint selection and early stopping are steered by that single cell, "
+                  f"and it is absent from training.")
+    missing = [g for g, n in val_groups if "cell" in g]
+    if missing:
+        print(f"[celldform]   note: cell group(s) held out of training this run: "
+              f"{', '.join(missing)}")
 
 
 # ---------------------------------------------------------------------------
@@ -367,13 +426,15 @@ def main():
     n_val = int(n * conf.data.val_split)
 
     groups = _build_groups(pairs)
-    train_pairs, val_pairs = _group_split(pairs, groups, n_val)
+    split_seed = conf.training.split_seed if conf.training.split_seed is not None else seed
+    train_pairs, val_pairs = _group_split(pairs, groups, n_val, split_seed=split_seed)
 
     n_groups = len(set(groups))
     print(
         f"[celldform] Dataset split (group-aware, {n_groups} groups) — "
         f"train: {len(train_pairs)}  val: {len(val_pairs)}"
     )
+    _log_split(pairs, groups, train_pairs, val_pairs, seed, split_seed)
 
     on_cuda = torch.cuda.is_available()
     n_workers = conf.training.num_workers
@@ -485,7 +546,8 @@ def main():
 
     viz = Visualizer()
     viz.plot_training_curves(
-        history, final_metrics=metrics, best_epoch=best_epoch, save_path=str(curve_path)
+        history, final_metrics=metrics, best_epoch=best_epoch, save_path=str(curve_path),
+        n_classes=conf.unet.out_channels,
     )
     print(f"Training curves saved to {curve_path}")
 
