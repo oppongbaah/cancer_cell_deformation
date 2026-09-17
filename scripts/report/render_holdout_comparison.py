@@ -27,16 +27,16 @@ another one-off script.
 
 Usage
 -----
-python scripts/render_holdout_comparison.py \\
+python scripts/report/render_holdout_comparison.py \\
     --pool 02_unet_holdout --cell high_cell9 \\
     --checkpoint checkpoints/multiclass_experiment_256_bf32_reg2_cos/unet_best.pt
 
-python scripts/render_holdout_comparison.py \\
+python scripts/report/render_holdout_comparison.py \\
     --pool 02_unet_holdout --cell low_cell6 \\
     --checkpoint checkpoints/multiclass_experiment_256/unet_best.pt \\
     --base-features 64 --n-frames 5 --output-dir results/holdout_comparisons/low_cell6
 
-python scripts/render_holdout_comparison.py --pool 02_unet_holdout --cell high_cell9 \\
+python scripts/report/render_holdout_comparison.py --pool 02_unet_holdout --cell high_cell9 \\
     --checkpoint checkpoints/multiclass_experiment_256_bf32_reg2_cos/unet_best.pt \\
     --gt-color 0,60,255 --half-width 140 --half-height 140   # pin crop + palette explicitly
 """
@@ -51,10 +51,10 @@ import cv2
 import numpy as np
 import yaml
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))  # repo root
 from celldform.segmentation.unet import UNet
 
-sys.path.insert(0, str(Path(__file__).parent))
+sys.path.insert(0, str(Path(__file__).parent.parent))  # scripts/, for preview_masks
 from preview_masks import _colorize  # the real color convention, not a re-implementation
 
 _EXTS = (".jpg", ".jpeg", ".png")

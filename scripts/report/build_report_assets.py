@@ -7,10 +7,10 @@ disk. Each job below records the exact arguments a figure was made with, so
 nothing about the report depends on remembering a command line — which is what
 this script exists to fix.
 
-    python scripts/build_report_assets.py                    # build everything
-    python scripts/build_report_assets.py --list             # show jobs, run nothing
-    python scripts/build_report_assets.py --only sweep pools # build a subset
-    python scripts/build_report_assets.py --dry-run          # print commands only
+    python scripts/report/build_report_assets.py                    # build everything
+    python scripts/report/build_report_assets.py --list             # show jobs, run nothing
+    python scripts/report/build_report_assets.py --only sweep pools # build a subset
+    python scripts/report/build_report_assets.py --dry-run          # print commands only
 
 Outputs land in the report repo, not here:
     <report-root>/images/*.png              figures
@@ -32,7 +32,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-REPO = Path(__file__).resolve().parent.parent
+REPO = Path(__file__).resolve().parent.parent.parent
 DEFAULT_REPORT_ROOT = REPO.parent / "masters_thesis"
 
 # Checkpoints the report's figures compare. Change these in one place.
@@ -41,6 +41,12 @@ SCALE = "multiclass_experiment_256_bf64_scale_cos"
 ALLAUG = "multiclass_experiment_256_bf64_allaug"
 ORIGINAL = "multiclass_experiment_256"
 RETIRED = "multiclass_experiment_256_bf64_scale"      # weights deleted 2026-09-10
+
+# Experiment 1 (2026-09-17): three loss interventions + a seed repeat of the best one.
+CW133 = "multiclass_experiment_256_bf64_scale_cos_cw133"   # class_weights [1,4,2] -> [1,3,3]
+NOBG  = "multiclass_experiment_256_bf64_scale_cos_nobg"    # Dice term excludes background
+FTL   = "multiclass_experiment_256_bf64_scale_cos_ftl"     # Dice -> Focal-Tversky
+FTL43 = "multiclass_experiment_256_bf64_scale_cos_ftl_seed43"  # FTL, seed 43 (variance probe)
 
 # render_holdout_comparison.py emits four variants per run; only two reach the
 # report, so the rest are intermediates and stay out of the report repo.
@@ -81,26 +87,57 @@ def jobs(img: Path, tab: Path) -> dict[str, list[str]]:
     rebuilt here. Jobs are added to this dict as each experiment in that report
     produces a result.
     """
-    CELLS = ["high_cell9=high-9", "low_cell6=low-6", "low_cell5=low-5"]
+    CELLS = ["high_cell9=high-9", "high_cell10=high-10", "low_cell6=low-6", "low_cell5=low-5"]
     return {
         # ── Dataset Organization ────────────────────────────────────────────
-        "pools": ["scripts/plot_pool_flow.py", "--output", str(img / "pool_flow_9_17.png")],
-        "table-percell": ["scripts/make_report_tables.py", "percell",
+        "pools": ["scripts/report/plot_pool_flow.py", "--output", str(img / "pool_flow_9_17.png")],
+        "table-percell": ["scripts/report/make_report_tables.py", "percell",
                           "--output", str(tab / "percell.tex")],
 
         # ── Baseline on the restructured four-cell development set ──────────
-        "table-baseline": ["scripts/make_report_tables.py", "baseline",
+        "table-baseline": ["scripts/report/make_report_tables.py", "baseline",
                            "--checkpoint", SCALE,
                            "--cell", "high_cell9=high-9", "--cell", "low_cell6=low-6",
-                           "--cell", "low_cell5=low-5 (20 of 51 annotated)",
-                           "--cell", "high_cell10=high-10 (not yet annotated)",
+                           "--cell", "low_cell5=low-5", "--cell", "high_cell10=high-10",
                            "--output", str(tab / "baseline.tex")],
 
         # ── high-9 false-positive diagnosis ─────────────────────────────────
-        "fp-diagnosis": ["scripts/diagnose_false_positives.py", "--cell", "high_cell9",
+        "fp-diagnosis": ["scripts/report/diagnose_false_positives.py", "--cell", "high_cell9",
                          "--checkpoint", f"checkpoints/{SCALE}/unet_best.pt",
                          "--output", str(img / "fp_diagnosis_9_17.png")],
-        "table-decoy": ["scripts/make_report_tables.py", "decoy", "--checkpoint", SCALE,
+        # ── Experiment 1: the three loss interventions, + the seed repeat ───
+        "table-loss": ["scripts/report/make_report_tables.py", "headline",
+                       "--run", f"{SCALE}=Baseline — Dice+CE, class weights [1,4,2]",
+                       "--run", f"{CW133}=1a  class weights [1,3,3]",
+                       "--run", f"{NOBG}=1b  Dice excludes background",
+                       "--run", f"{FTL}=1c  Focal-Tversky (a=0.7, b=0.3, g=0.75)",
+                       "--run", f"{FTL43}=1c repeated, seed 43",
+                       "--baseline", SCALE, "--emph", FTL,
+                       "--label", "loss", "--delta-header", r"vs.\ baseline",
+                       "--caption", ("Experiment 1: three interventions on the loss, all measured on the "
+                                     "four-cell development set as it stood before the 17 September "
+                                     "reshuffle. Every run is identical to the baseline except the field "
+                                     "named. The final row repeats run 1c changing nothing but the random "
+                                     "seed, and is the error bar for the whole column."),
+                       "--output", str(tab / "loss.tex")],
+
+        # ── high-9 FP diagnosis, rendered as masks on a black background ────
+        # Same renderer and visual convention as the 2026-09-10 report's comparison
+        # strips, so the figure reads consistently across the report series.
+        # Colours are NOT the script defaults: ground truth is green and prediction
+        # brown, deliberately swapped so ground truth matches the trapped-cell green
+        # of the labelled-mask convention. These must stay in step with \masklegend's
+        # swatches in the report preamble (gtgreen 0,200,0 / predbrown 170,95,40) —
+        # rendering with the defaults silently mislabels every colour in the caption.
+        "strip-fp": ["scripts/report/render_holdout_comparison.py",
+                     "--pool", "02_unet_holdout", "--cell", "high_cell9",
+                     "--checkpoint", f"checkpoints/{SCALE}/unet_best.pt",
+                     "--base-features", "64", "--n-frames", "6",
+                     "--gt-color", "0,200,0", "--pred-color", "170,95,40",
+                     "--output-dir", str(STRIP_BUILD / "high_cell9_fp"),
+                     "--output-prefix", "high_cell9_fp"],
+
+        "table-decoy": ["scripts/report/make_report_tables.py", "decoy", "--checkpoint", SCALE,
                         *sum([["--cell", c] for c in CELLS], []),
                         "--output", str(tab / "decoy.tex")],
     }
@@ -166,6 +203,9 @@ def main() -> None:
                 (img / f"cmp_{short}_raw.png").write_bytes(src.read_bytes())
             if gt.exists():
                 (img / f"cmp_{short}_gt.png").write_bytes(gt.read_bytes())
+        fp = STRIP_BUILD / "high_cell9_fp" / "high_cell9_fp_masks_only.png"
+        if fp.exists():
+            (img / "fp_masks_9_17.png").write_bytes(fp.read_bytes())
         print("\n  comparison strips copied to their report filenames")
 
     print(f"\n{'DRY RUN — nothing written' if args.dry_run else 'Done'}: "

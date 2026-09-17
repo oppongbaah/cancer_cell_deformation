@@ -20,7 +20,7 @@ region vs. true cell vs. background — and their trend against laser power
 
 Usage
 -----
-python scripts/diagnose_false_positives.py --cell high_cell9 \\
+python scripts/report/diagnose_false_positives.py --cell high_cell9 \\
     --checkpoint checkpoints/multiclass_experiment_256_bf64_scale_cos/unet_best.pt \\
     --output results/fp_diagnosis_high_cell9.png
 """
@@ -34,7 +34,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))  # repo root
 from celldform.segmentation.unet import UNet
 
 GT_GREEN = (0, 200, 0)      # BGR — ground-truth trapped cell

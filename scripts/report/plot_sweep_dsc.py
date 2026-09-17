@@ -3,7 +3,7 @@
 Horizontal bar chart ranking every checkpoint in results/holdout_eval_log.jsonl
 by its pooled trapped-cell DSC on the development set.
 
-Companion to scripts/plot_percell_metrics.py: that one compares a handful of
+Companion to scripts/report/plot_percell_metrics.py: that one compares a handful of
 runs in detail, this one places all of them on a single scale so a new result
 can be read against the whole history at once.
 
@@ -13,7 +13,7 @@ reflects the runs that actually happened. Checkpoints with no pooled entry
 
 Usage
 -----
-python scripts/plot_sweep_dsc.py --output results/sweep_dsc.png \\
+python scripts/report/plot_sweep_dsc.py --output results/sweep_dsc.png \\
     --highlight multiclass_experiment_256_bf64_scale_cos \\
     --warn multiclass_experiment_256_bf64_reg \\
     --label multiclass_experiment_256_bf64_scale_cos="Scale augmentation"
