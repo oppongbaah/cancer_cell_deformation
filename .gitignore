@@ -12,7 +12,18 @@ venv/
 *.pth
 
 # Data and checkpoints (large files)
-data/
+# NOTE on the `data/**` + `!data/**/` form below: git cannot re-include a file if a
+# PARENT DIRECTORY is excluded, so a plain `data/` would make the `!` exception below
+# dead. `data/**` excludes the contents rather than the directory itself, and
+# `!data/**/` re-admits the directories so git will descend into them; only files
+# matching a later `!` rule are actually tracked.
+data/**
+!data/**/
+# ...except the manifests: small plain-text provenance records saying which frame came
+# from which video, at which index, into which pool. They make the dataset's structure
+# reviewable in git without committing a single pixel. Frames, masks and preprocessed
+# arrays stay out. `.bak` copies stay out too (they do not match the `00_` prefix).
+!data/**/00_*manifest*.csv
 checkpoints/
 *.pt
 *.pth
@@ -38,4 +49,11 @@ runs/
 supporting_docs/
 CLAUDE.md
 .claude
-results/
+results/**
+!results/**/
+# ...except the evaluation logs. These are the experimental record: every report table
+# and figure is generated from them (see scripts/build_report_assets.py), never from
+# hand-typed numbers. Small, append-only, and diffable. The training-curve and figure
+# PNGs stay out - they are derived data, regenerable from these logs, and git stores a
+# full new blob for every regenerated binary.
+!results/**/*.jsonl

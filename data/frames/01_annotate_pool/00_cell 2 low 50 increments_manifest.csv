@@ -1,0 +1,21 @@
+source,frame_index,saved_index,timestamp_s,output_path,width,height
+data/raw/low/cell 2 low 50 increments.mp4,0,0,0.0,data/frames/01_annotate_pool/domain_low_cell2_000000.jpg,1228,922
+data/raw/low/cell 2 low 50 increments.mp4,495,1,22.5,data/frames/01_annotate_pool/domain_low_cell2_000495.jpg,1228,922
+data/raw/low/cell 2 low 50 increments.mp4,990,2,45.0,data/frames/01_annotate_pool/domain_low_cell2_000990.jpg,1228,922
+data/raw/low/cell 2 low 50 increments.mp4,1485,3,67.5,data/frames/01_annotate_pool/domain_low_cell2_001485.jpg,1228,922
+data/raw/low/cell 2 low 50 increments.mp4,1980,4,90.0,data/frames/01_annotate_pool/domain_low_cell2_001980.jpg,1228,922
+data/raw/low/cell 2 low 50 increments.mp4,2475,5,112.5,data/frames/01_annotate_pool/domain_low_cell2_002475.jpg,1228,922
+data/raw/low/cell 2 low 50 increments.mp4,2970,6,135.0,data/frames/01_annotate_pool/domain_low_cell2_002970.jpg,1228,922
+data/raw/low/cell 2 low 50 increments.mp4,3465,7,157.5,data/frames/01_annotate_pool/domain_low_cell2_003465.jpg,1228,922
+data/raw/low/cell 2 low 50 increments.mp4,3960,8,180.0,data/frames/01_annotate_pool/domain_low_cell2_003960.jpg,1228,922
+data/raw/low/cell 2 low 50 increments.mp4,4455,9,202.5,data/frames/01_annotate_pool/domain_low_cell2_004455.jpg,1228,922
+data/raw/low/cell 2 low 50 increments.mp4,4950,10,225.0,data/frames/01_annotate_pool/domain_low_cell2_004950.jpg,1228,922
+data/raw/low/cell 2 low 50 increments.mp4,5445,11,247.5,data/frames/01_annotate_pool/domain_low_cell2_005445.jpg,1228,922
+data/raw/low/cell 2 low 50 increments.mp4,5940,12,270.0,data/frames/01_annotate_pool/domain_low_cell2_005940.jpg,1228,922
+data/raw/low/cell 2 low 50 increments.mp4,6435,13,292.5,data/frames/01_annotate_pool/domain_low_cell2_006435.jpg,1228,922
+data/raw/low/cell 2 low 50 increments.mp4,6930,14,315.0,data/frames/01_annotate_pool/domain_low_cell2_006930.jpg,1228,922
+data/raw/low/cell 2 low 50 increments.mp4,7425,15,337.5,data/frames/01_annotate_pool/domain_low_cell2_007425.jpg,1228,922
+data/raw/low/cell 2 low 50 increments.mp4,7920,16,360.0,data/frames/01_annotate_pool/domain_low_cell2_007920.jpg,1228,922
+data/raw/low/cell 2 low 50 increments.mp4,8415,17,382.5,data/frames/01_annotate_pool/domain_low_cell2_008415.jpg,1228,922
+data/raw/low/cell 2 low 50 increments.mp4,8910,18,405.0,data/frames/01_annotate_pool/domain_low_cell2_008910.jpg,1228,922
+data/raw/low/cell 2 low 50 increments.mp4,9405,19,427.5,data/frames/01_annotate_pool/domain_low_cell2_009405.jpg,1228,922
