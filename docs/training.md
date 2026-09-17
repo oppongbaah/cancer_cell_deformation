@@ -194,7 +194,7 @@ Three tried, in order, each testing one new lever against the same unregularized
 | `low_cell6` DSC | 0.650 | **0.719** (better) |
 | `low_cell6` recall | 0.600 | **0.935** |
 
-Visual inspection (`scripts/render_holdout_comparison.py`, mask-only GT-vs-prediction comparison) explained the split: `low_cell6`'s original problem was **under-detection** (the model was missing most of the cell in several frames) — scale augmentation fixed this directly, by teaching the model to accept a more modest-sized blob as valid. `high_cell9`'s problem is **over-detection** — a spatial artifact the model includes as if it were the cell — a structurally different bug that size tolerance doesn't touch, and arguably slightly worsens by making the model more permissive everywhere. **Lesson: always check the per-cell breakdown before calling a pooled-metric change a win** — the pooled number alone hid a real regression here, and will again with only two development cells.
+Visual inspection (`scripts/report/render_holdout_comparison.py`, mask-only GT-vs-prediction comparison) explained the split: `low_cell6`'s original problem was **under-detection** (the model was missing most of the cell in several frames) — scale augmentation fixed this directly, by teaching the model to accept a more modest-sized blob as valid. `high_cell9`'s problem is **over-detection** — a spatial artifact the model includes as if it were the cell — a structurally different bug that size tolerance doesn't touch, and arguably slightly worsens by making the model more permissive everywhere. **Lesson: always check the per-cell breakdown before calling a pooled-metric change a win** — the pooled number alone hid a real regression here, and will again with only two development cells.
 
 **3. Combined recipe (`bf64_allaug`) — current best, genuinely improves both cells.** All four `CellDataset` augmentation knobs at once (noise 0.02, cutout 0.3, brightness/contrast 0.5, scale 0.5), cosine scheduler, dropout left off (it's model regularization, not augmentation, and was already shown to hurt), and the internal validation split repurposed from the old, entirely unused `test_split` (see [Data Layout](data.md#trainval-split-01_annotate_pool)) — 90% of the pool goes to training instead of 69%.
 
@@ -241,7 +241,7 @@ Two configs isolate it — `configs/multiclass_experiment_256_base_cos.yaml` (no
 
 Also confirmed: **the internal validation split carried no signal on this comparison at all.** `bf64_base_cos` scored 0.9285 internally and `bf64_scale_cos` 0.9277 — a 0.001 spread — while the development set separated the same two checkpoints by 0.066.
 
-Both charts in the progress reports are generated from `results/holdout_eval_log.jsonl` by `scripts/plot_percell_metrics.py` and `scripts/plot_sweep_dsc.py`, so no figure can drift from the run that produced it.
+Both charts in the progress reports are generated from `results/holdout_eval_log.jsonl` by `scripts/report/plot_percell_metrics.py` and `scripts/report/plot_sweep_dsc.py`, so no figure can drift from the run that produced it.
 
 ---
 

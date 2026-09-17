@@ -66,11 +66,11 @@ python scripts/preview_masks.py --limit 10
 Single entry point for the progress report's assets. It pins the arguments each figure was generated with and drives the individual plot scripts, so nothing in the report depends on remembering a command line.
 
 ```bash
-python scripts/build_report_assets.py                     # build everything
-python scripts/build_report_assets.py --list              # show job names, run nothing
-python scripts/build_report_assets.py --dry-run           # print the commands, run nothing
-python scripts/build_report_assets.py --only sweep pools  # rebuild a subset
-python scripts/build_report_assets.py --report-root ../masters_thesis
+python scripts/report/build_report_assets.py                     # build everything
+python scripts/report/build_report_assets.py --list              # show job names, run nothing
+python scripts/report/build_report_assets.py --dry-run           # print the commands, run nothing
+python scripts/report/build_report_assets.py --only sweep pools  # rebuild a subset
+python scripts/report/build_report_assets.py --report-root ../masters_thesis
 ```
 
 Figures are written to `<report-root>/images/`, LaTeX tables to `<report-root>/main_work/tables/` (the report `\input{}`s those). Intermediates from the comparison-strip renderer stay in `results/_report_strips/` rather than cluttering the report repo.
@@ -85,7 +85,7 @@ Figures are written to `<report-root>/images/`, LaTeX tables to `<report-root>/m
 | `--tex` | `progress_report_9_10_26.tex` | Report to compile with `--compile` |
 
 ```bash
-python scripts/build_report_assets.py --compile   # assets, then compile, then clean up
+python scripts/report/build_report_assets.py --compile   # assets, then compile, then clean up
 ```
 
 !!! warning "The report must be compiled at least twice"
@@ -100,8 +100,8 @@ python scripts/build_report_assets.py --compile   # assets, then compile, then c
 Generates `.tex` fragments the report `\input{}`s, so the tables can't drift from the pools the way hand-typed ones can.
 
 ```bash
-python scripts/make_report_tables.py percell --output ../masters_thesis/main_work/tables/percell.tex
-python scripts/make_report_tables.py headline --output ../masters_thesis/main_work/tables/headline.tex \
+python scripts/report/make_report_tables.py percell --output ../masters_thesis/main_work/tables/percell.tex
+python scripts/report/make_report_tables.py headline --output ../masters_thesis/main_work/tables/headline.tex \
     --run multiclass_experiment_256_bf64_base_cos="No augmentation (noise only)" \
     --run multiclass_experiment_256_bf64_scale_cos="Scale augmentation" \
     --baseline multiclass_experiment_256_bf64_base_cos \
@@ -117,7 +117,7 @@ python scripts/make_report_tables.py headline --output ../masters_thesis/main_wo
 Replaces a pool-summary table: shows which cells go where, that `01_annotate_pool` is *drawn from* `03_mask_factory` at different frame indices, and where the evaluation firewall sits. All counts are read off disk.
 
 ```bash
-python scripts/plot_pool_flow.py --output results/pool_flow.png
+python scripts/report/plot_pool_flow.py --output results/pool_flow.png
 ```
 
 ---
@@ -127,7 +127,7 @@ python scripts/plot_pool_flow.py --output results/pool_flow.png
 Measures mean label-1 area per cell from the annotation masks and plots every cell on one axis, with the training range as a band. Makes "the development cells are smaller than the training cells" checkable rather than asserted.
 
 ```bash
-python scripts/plot_cell_sizes.py --output results/cell_sizes.png
+python scripts/report/plot_cell_sizes.py --output results/cell_sizes.png
 ```
 
 ---
@@ -137,7 +137,7 @@ python scripts/plot_cell_sizes.py --output results/cell_sizes.png
 Two stacked bars showing the training pool growing by reclaiming an unused test split. **Counts are arguments, not derived** — the old split is historical and not reproducible from disk — and are printed on every run.
 
 ```bash
-python scripts/plot_split_change.py --before 293 78 54 --after 371 54 0
+python scripts/report/plot_split_change.py --before 293 78 54 --after 371 54 0
 ```
 
 ---
@@ -147,11 +147,11 @@ python scripts/plot_split_change.py --before 293 78 54 --after 371 54 0
 Renders the four-figure holdout comparison used in the thesis progress reports: N evenly-spaced frames from one holdout cell, shown as (1) raw unannotated frames, (2) the multiclass ground-truth annotation (via `preview_masks.py`'s own `_colorize()`, not a re-drawn approximation), (3) ground truth vs. U-Net prediction on a black background (mask-only), and (4) the same comparison overlaid on the original frame. All four share one auto-computed crop window and panel size, so the cell renders at the same scale in every figure. Every panel carries its own frame index in a label band above the image, so a figure printed in a report can be traced back to the exact files on disk — pass `--no-frame-labels` for bare panels.
 
 ```bash
-python scripts/render_holdout_comparison.py \
+python scripts/report/render_holdout_comparison.py \
     --pool 02_unet_holdout --cell high_cell9 \
     --checkpoint checkpoints/multiclass_experiment_256_bf32_reg2_cos/unet_best.pt
 
-python scripts/render_holdout_comparison.py \
+python scripts/report/render_holdout_comparison.py \
     --pool 02_unet_holdout --cell low_cell6 \
     --checkpoint checkpoints/multiclass_experiment_256/unet_best.pt --base-features 64
 ```
