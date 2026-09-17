@@ -61,6 +61,7 @@ class Visualizer:
         final_metrics: Optional[Dict] = None,
         best_epoch: Optional[int] = None,
         save_path: Optional[Union[str, Path]] = None,
+        n_classes: Optional[int] = None,
     ) -> plt.Figure:
         """Plot train/val loss, validation DSC, and (optionally) a final-metrics table.
 
@@ -115,7 +116,13 @@ class Visualizer:
         ax1.plot(epochs, history["val_loss"], label="Val loss")
         ax1.set_xlabel("Epoch")
         ax1.set_ylabel("Loss")
-        ax1.set_title("Segmentation Loss")
+        # The loss spans every class, while the DSC panel beside it plots the trapped
+        # cell alone — so a train/val gap can open here with the DSC curves still
+        # overlapping, which reads as a contradiction unless the titles say otherwise.
+        # (Measured on postswap_ftl_cw142_s42: a 0.052 loss gap whose trapped-cell
+        # share was 0.019, the rest being the decoy class at 0.859 train vs 0.594 val.)
+        ax1.set_title("Segmentation Loss"
+                      + (f" — all {n_classes} classes" if n_classes and n_classes > 1 else ""))
         ax1.legend()
 
         if "train_dsc" in history:
