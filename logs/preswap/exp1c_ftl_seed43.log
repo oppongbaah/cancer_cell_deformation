@@ -1,0 +1,138 @@
+[celldform] Dataset split (group-aware, 22 groups) — train: 370  val: 55
+[celldform] Config snapshot → checkpoints/multiclass_experiment_256_bf64_scale_cos_ftl_seed43/config.yaml
+
+============================================================
+  Platform info [before training]
+============================================================
+  OS          : Linux 6.18.33.2-microsoft-standard-WSL2 (x86_64)
+  Python      : 3.12.3
+  PyTorch     : 2.12.0+cu130
+  Device      : NVIDIA GeForce RTX 4060 Laptop GPU (GPU 0)
+  CUDA        : 13.0
+  VRAM        : 8.0 GB
+============================================================
+
+Epoch 001/100  train_loss=0.7783  train_DSC=0.0141  val_loss=0.7740  val_DSC=0.0003  (13.6s)
+  → Checkpoint saved: checkpoints/multiclass_experiment_256_bf64_scale_cos_ftl_seed43/unet_best.pt  (DSC=0.0003)
+Epoch 002/100  train_loss=0.6833  train_DSC=0.0052  val_loss=0.6592  val_DSC=0.0002  (8.4s)
+Epoch 003/100  train_loss=0.6450  train_DSC=0.0251  val_loss=0.6389  val_DSC=0.0198  (8.8s)
+  → Checkpoint saved: checkpoints/multiclass_experiment_256_bf64_scale_cos_ftl_seed43/unet_best.pt  (DSC=0.0198)
+Epoch 004/100  train_loss=0.6248  train_DSC=0.1058  val_loss=0.6251  val_DSC=0.0837  (8.8s)
+  → Checkpoint saved: checkpoints/multiclass_experiment_256_bf64_scale_cos_ftl_seed43/unet_best.pt  (DSC=0.0837)
+Epoch 005/100  train_loss=0.6115  train_DSC=0.2431  val_loss=0.6053  val_DSC=0.2590  (8.3s)
+  → Checkpoint saved: checkpoints/multiclass_experiment_256_bf64_scale_cos_ftl_seed43/unet_best.pt  (DSC=0.2590)
+Epoch 006/100  train_loss=0.5964  train_DSC=0.4256  val_loss=0.5917  val_DSC=0.3083  (8.9s)
+  → Checkpoint saved: checkpoints/multiclass_experiment_256_bf64_scale_cos_ftl_seed43/unet_best.pt  (DSC=0.3083)
+Epoch 007/100  train_loss=0.5891  train_DSC=0.4956  val_loss=0.5862  val_DSC=0.3104  (10.6s)
+  → Checkpoint saved: checkpoints/multiclass_experiment_256_bf64_scale_cos_ftl_seed43/unet_best.pt  (DSC=0.3104)
+Epoch 008/100  train_loss=0.5784  train_DSC=0.4976  val_loss=0.5809  val_DSC=0.4259  (10.5s)
+  → Checkpoint saved: checkpoints/multiclass_experiment_256_bf64_scale_cos_ftl_seed43/unet_best.pt  (DSC=0.4259)
+Epoch 009/100  train_loss=0.5679  train_DSC=0.5076  val_loss=0.5685  val_DSC=0.4211  (8.9s)
+Epoch 010/100  train_loss=0.5594  train_DSC=0.5036  val_loss=0.5591  val_DSC=0.4333  (8.8s)
+  → Checkpoint saved: checkpoints/multiclass_experiment_256_bf64_scale_cos_ftl_seed43/unet_best.pt  (DSC=0.4333)
+Epoch 011/100  train_loss=0.5514  train_DSC=0.5093  val_loss=0.5501  val_DSC=0.4560  (8.8s)
+  → Checkpoint saved: checkpoints/multiclass_experiment_256_bf64_scale_cos_ftl_seed43/unet_best.pt  (DSC=0.4560)
+Epoch 012/100  train_loss=0.5444  train_DSC=0.5328  val_loss=0.5451  val_DSC=0.3858  (8.7s)
+Epoch 013/100  train_loss=0.5383  train_DSC=0.5393  val_loss=0.5321  val_DSC=0.5119  (8.6s)
+  → Checkpoint saved: checkpoints/multiclass_experiment_256_bf64_scale_cos_ftl_seed43/unet_best.pt  (DSC=0.5119)
+Epoch 014/100  train_loss=0.5323  train_DSC=0.5893  val_loss=0.5322  val_DSC=0.4692  (8.7s)
+Epoch 015/100  train_loss=0.5264  train_DSC=0.6427  val_loss=0.5261  val_DSC=0.6926  (8.8s)
+  → Checkpoint saved: checkpoints/multiclass_experiment_256_bf64_scale_cos_ftl_seed43/unet_best.pt  (DSC=0.6926)
+Epoch 016/100  train_loss=0.5219  train_DSC=0.6594  val_loss=0.5219  val_DSC=0.6448  (8.3s)
+Epoch 017/100  train_loss=0.5162  train_DSC=0.6906  val_loss=0.5145  val_DSC=0.6422  (8.8s)
+Epoch 018/100  train_loss=0.5105  train_DSC=0.7241  val_loss=0.5108  val_DSC=0.6669  (8.8s)
+Epoch 019/100  train_loss=0.5058  train_DSC=0.7300  val_loss=0.5017  val_DSC=0.7349  (8.4s)
+  → Checkpoint saved: checkpoints/multiclass_experiment_256_bf64_scale_cos_ftl_seed43/unet_best.pt  (DSC=0.7349)
+Epoch 020/100  train_loss=0.5030  train_DSC=0.6995  val_loss=0.4970  val_DSC=0.7300  (8.8s)
+Epoch 021/100  train_loss=0.4968  train_DSC=0.7631  val_loss=0.4909  val_DSC=0.7855  (9.0s)
+  → Checkpoint saved: checkpoints/multiclass_experiment_256_bf64_scale_cos_ftl_seed43/unet_best.pt  (DSC=0.7855)
+Epoch 022/100  train_loss=0.4922  train_DSC=0.7774  val_loss=0.4877  val_DSC=0.7478  (9.2s)
+Epoch 023/100  train_loss=0.4886  train_DSC=0.7657  val_loss=0.4812  val_DSC=0.7851  (8.3s)
+Epoch 024/100  train_loss=0.4843  train_DSC=0.7925  val_loss=0.4779  val_DSC=0.7603  (8.8s)
+Epoch 025/100  train_loss=0.4814  train_DSC=0.7540  val_loss=0.4786  val_DSC=0.7723  (8.9s)
+Epoch 026/100  train_loss=0.4771  train_DSC=0.7827  val_loss=0.4758  val_DSC=0.6834  (8.3s)
+Epoch 027/100  train_loss=0.4734  train_DSC=0.7846  val_loss=0.4662  val_DSC=0.8136  (9.4s)
+  → Checkpoint saved: checkpoints/multiclass_experiment_256_bf64_scale_cos_ftl_seed43/unet_best.pt  (DSC=0.8136)
+Epoch 028/100  train_loss=0.4695  train_DSC=0.8029  val_loss=0.4607  val_DSC=0.7939  (8.9s)
+Epoch 029/100  train_loss=0.4662  train_DSC=0.7885  val_loss=0.4538  val_DSC=0.8143  (8.9s)
+  → Checkpoint saved: checkpoints/multiclass_experiment_256_bf64_scale_cos_ftl_seed43/unet_best.pt  (DSC=0.8143)
+Epoch 030/100  train_loss=0.4621  train_DSC=0.7952  val_loss=0.4490  val_DSC=0.7981  (8.3s)
+Epoch 031/100  train_loss=0.4587  train_DSC=0.8103  val_loss=0.4442  val_DSC=0.7641  (8.8s)
+Epoch 032/100  train_loss=0.4546  train_DSC=0.8007  val_loss=0.4398  val_DSC=0.7934  (8.8s)
+Epoch 033/100  train_loss=0.4507  train_DSC=0.8155  val_loss=0.4387  val_DSC=0.8436  (8.8s)
+  → Checkpoint saved: checkpoints/multiclass_experiment_256_bf64_scale_cos_ftl_seed43/unet_best.pt  (DSC=0.8436)
+Epoch 034/100  train_loss=0.4486  train_DSC=0.8060  val_loss=0.4300  val_DSC=0.8281  (8.5s)
+Epoch 035/100  train_loss=0.4430  train_DSC=0.8301  val_loss=0.4334  val_DSC=0.6860  (8.7s)
+Epoch 036/100  train_loss=0.4415  train_DSC=0.8092  val_loss=0.4239  val_DSC=0.8215  (8.8s)
+Epoch 037/100  train_loss=0.4356  train_DSC=0.8201  val_loss=0.4167  val_DSC=0.8094  (8.4s)
+Epoch 038/100  train_loss=0.4315  train_DSC=0.8282  val_loss=0.4140  val_DSC=0.7395  (8.8s)
+Epoch 039/100  train_loss=0.4266  train_DSC=0.8313  val_loss=0.4158  val_DSC=0.7204  (8.8s)
+Epoch 040/100  train_loss=0.4212  train_DSC=0.8283  val_loss=0.4014  val_DSC=0.8177  (8.8s)
+Epoch 041/100  train_loss=0.4178  train_DSC=0.8359  val_loss=0.3946  val_DSC=0.7649  (8.4s)
+Epoch 042/100  train_loss=0.4136  train_DSC=0.8391  val_loss=0.3904  val_DSC=0.8445  (8.8s)
+  → Checkpoint saved: checkpoints/multiclass_experiment_256_bf64_scale_cos_ftl_seed43/unet_best.pt  (DSC=0.8445)
+Epoch 043/100  train_loss=0.4103  train_DSC=0.8264  val_loss=0.3856  val_DSC=0.8192  (8.8s)
+Epoch 044/100  train_loss=0.4043  train_DSC=0.8465  val_loss=0.3796  val_DSC=0.8246  (8.5s)
+Epoch 045/100  train_loss=0.3964  train_DSC=0.8431  val_loss=0.3705  val_DSC=0.8635  (8.8s)
+  → Checkpoint saved: checkpoints/multiclass_experiment_256_bf64_scale_cos_ftl_seed43/unet_best.pt  (DSC=0.8635)
+Epoch 046/100  train_loss=0.3912  train_DSC=0.8644  val_loss=0.3705  val_DSC=0.8307  (8.8s)
+Epoch 047/100  train_loss=0.3859  train_DSC=0.8585  val_loss=0.3672  val_DSC=0.7923  (8.8s)
+Epoch 048/100  train_loss=0.3787  train_DSC=0.8601  val_loss=0.3597  val_DSC=0.7967  (8.3s)
+Epoch 049/100  train_loss=0.3731  train_DSC=0.8642  val_loss=0.3456  val_DSC=0.8441  (8.8s)
+Epoch 050/100  train_loss=0.3657  train_DSC=0.8772  val_loss=0.3379  val_DSC=0.8427  (8.8s)
+Epoch 051/100  train_loss=0.3575  train_DSC=0.8842  val_loss=0.3298  val_DSC=0.8479  (8.8s)
+Epoch 052/100  train_loss=0.3501  train_DSC=0.8919  val_loss=0.3222  val_DSC=0.8603  (8.4s)
+Epoch 053/100  train_loss=0.3432  train_DSC=0.8830  val_loss=0.3301  val_DSC=0.7891  (8.8s)
+Epoch 054/100  train_loss=0.3380  train_DSC=0.8934  val_loss=0.3095  val_DSC=0.8526  (8.8s)
+Epoch 055/100  train_loss=0.3318  train_DSC=0.8900  val_loss=0.3104  val_DSC=0.8383  (8.4s)
+Epoch 056/100  train_loss=0.3235  train_DSC=0.8982  val_loss=0.3102  val_DSC=0.8044  (8.8s)
+Epoch 057/100  train_loss=0.3180  train_DSC=0.8994  val_loss=0.3020  val_DSC=0.8075  (8.8s)
+Epoch 058/100  train_loss=0.3137  train_DSC=0.8952  val_loss=0.3003  val_DSC=0.8069  (8.8s)
+Epoch 059/100  train_loss=0.3087  train_DSC=0.9012  val_loss=0.2917  val_DSC=0.8442  (8.4s)
+Epoch 060/100  train_loss=0.3002  train_DSC=0.9035  val_loss=0.2756  val_DSC=0.8707  (8.8s)
+  → Checkpoint saved: checkpoints/multiclass_experiment_256_bf64_scale_cos_ftl_seed43/unet_best.pt  (DSC=0.8707)
+Epoch 061/100  train_loss=0.2944  train_DSC=0.9051  val_loss=0.2695  val_DSC=0.8777  (8.8s)
+  → Checkpoint saved: checkpoints/multiclass_experiment_256_bf64_scale_cos_ftl_seed43/unet_best.pt  (DSC=0.8777)
+Epoch 062/100  train_loss=0.2886  train_DSC=0.9080  val_loss=0.2733  val_DSC=0.8294  (8.8s)
+Epoch 063/100  train_loss=0.2811  train_DSC=0.9140  val_loss=0.2714  val_DSC=0.8451  (8.4s)
+Epoch 064/100  train_loss=0.2777  train_DSC=0.9137  val_loss=0.2618  val_DSC=0.8471  (8.8s)
+Epoch 065/100  train_loss=0.2747  train_DSC=0.9136  val_loss=0.2671  val_DSC=0.8075  (8.8s)
+Epoch 066/100  train_loss=0.2870  train_DSC=0.8418  val_loss=0.2814  val_DSC=0.7873  (8.3s)
+Epoch 067/100  train_loss=0.2733  train_DSC=0.8982  val_loss=0.2658  val_DSC=0.8350  (8.8s)
+Epoch 068/100  train_loss=0.2655  train_DSC=0.9055  val_loss=0.2535  val_DSC=0.8600  (9.1s)
+Epoch 069/100  train_loss=0.2633  train_DSC=0.9091  val_loss=0.2518  val_DSC=0.8443  (8.7s)
+Epoch 070/100  train_loss=0.2568  train_DSC=0.9155  val_loss=0.2500  val_DSC=0.8372  (10.4s)
+Epoch 071/100  train_loss=0.2539  train_DSC=0.9161  val_loss=0.2463  val_DSC=0.8510  (9.3s)
+Epoch 072/100  train_loss=0.2490  train_DSC=0.9216  val_loss=0.2430  val_DSC=0.8518  (8.8s)
+Epoch 073/100  train_loss=0.2454  train_DSC=0.9188  val_loss=0.2453  val_DSC=0.8580  (7.9s)
+Epoch 074/100  train_loss=0.2447  train_DSC=0.9175  val_loss=0.2345  val_DSC=0.8674  (8.8s)
+Epoch 075/100  train_loss=0.2410  train_DSC=0.9227  val_loss=0.2410  val_DSC=0.8310  (8.8s)
+Epoch 076/100  train_loss=0.2392  train_DSC=0.9220  val_loss=0.2385  val_DSC=0.8391  (8.8s)
+Epoch 077/100  train_loss=0.2371  train_DSC=0.9197  val_loss=0.2332  val_DSC=0.8464  (8.4s)
+Epoch 078/100  train_loss=0.2355  train_DSC=0.9241  val_loss=0.2409  val_DSC=0.8284  (8.8s)
+Epoch 079/100  train_loss=0.2319  train_DSC=0.9258  val_loss=0.2309  val_DSC=0.8315  (8.8s)
+Epoch 080/100  train_loss=0.2309  train_DSC=0.9256  val_loss=0.2298  val_DSC=0.8379  (8.8s)
+Epoch 081/100  train_loss=0.2304  train_DSC=0.9255  val_loss=0.2345  val_DSC=0.8342  (8.4s)
+Early stopping: no val_DSC improvement > 0.001 for 20 epochs (best=0.8777 at epoch 61). Stopping at epoch 81/100.
+
+[celldform] Reloaded best checkpoint for final evaluation: epoch 61
+
+Final validation metrics:
+  [trapped_cell]
+    dsc: 0.8926
+    iou: 0.8060
+    precision: 0.8373
+    recall: 0.9557
+  [class_2]
+    dsc: 0.7019
+    iou: 0.5407
+    precision: 0.8089
+    recall: 0.6199
+  [mean]
+    dsc: 0.7972
+    iou: 0.6734
+    precision: 0.8231
+    recall: 0.7878
+/home/mega/work/thesis/cancer_cell_deformation/celldform/utils/visualization.py:148: UserWarning: This figure includes Axes that are not compatible with tight_layout, so results might be incorrect.
+  fig.tight_layout()
+Training curves saved to results/unet_training_curves_v47_ftl_seed43.png

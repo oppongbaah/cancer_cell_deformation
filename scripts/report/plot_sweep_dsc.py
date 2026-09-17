@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Horizontal bar chart ranking every checkpoint in results/holdout_eval_log.jsonl
+Horizontal bar chart ranking every checkpoint in results/preswap/preswap_eval_log.jsonl
 by its pooled trapped-cell DSC on the development set.
 
 Companion to scripts/report/plot_percell_metrics.py: that one compares a handful of
@@ -44,7 +44,7 @@ def _pair(spec: str) -> tuple[str, str]:
 
 def main() -> None:
     p = argparse.ArgumentParser(description="Rank all checkpoints by pooled holdout DSC")
-    p.add_argument("--log", type=Path, default=Path("results/holdout_eval_log.jsonl"))
+    p.add_argument("--log", type=Path, default=Path("results/preswap/preswap_eval_log.jsonl"))
     p.add_argument("--class-id", default="1")
     p.add_argument("--metric", default="dsc")
     p.add_argument("--highlight", action="append", default=[],

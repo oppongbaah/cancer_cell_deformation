@@ -19,7 +19,7 @@ Outputs land in the report repo, not here:
 After running, recompile the report:
     cd <report-root>/main_work && pdflatex -interaction=nonstopmode progress_report_9_17_26.tex
 
-Run it after ANY change to the pools, the masks, or results/holdout_eval_log.jsonl.
+Run it after ANY change to the pools, the masks, or results/preswap/preswap_eval_log.jsonl.
 The comparison-strip jobs additionally need the two checkpoints they name to be
 present; if a checkpoint has been retired, drop or repoint that job rather than
 letting the report keep a stale image.
@@ -103,7 +103,7 @@ def jobs(img: Path, tab: Path) -> dict[str, list[str]]:
 
         # ── high-9 false-positive diagnosis ─────────────────────────────────
         "fp-diagnosis": ["scripts/report/diagnose_false_positives.py", "--cell", "high_cell9",
-                         "--checkpoint", f"checkpoints/{SCALE}/unet_best.pt",
+                         "--checkpoint", f"checkpoints/preswap/{SCALE}/unet_best.pt",
                          "--output", str(img / "fp_diagnosis_9_17.png")],
         # ── Experiment 1: the three loss interventions, + the seed repeat ───
         "table-loss": ["scripts/report/make_report_tables.py", "headline",
@@ -131,7 +131,7 @@ def jobs(img: Path, tab: Path) -> dict[str, list[str]]:
         # rendering with the defaults silently mislabels every colour in the caption.
         "strip-fp": ["scripts/report/render_holdout_comparison.py",
                      "--pool", "02_unet_holdout", "--cell", "high_cell9",
-                     "--checkpoint", f"checkpoints/{SCALE}/unet_best.pt",
+                     "--checkpoint", f"checkpoints/preswap/{SCALE}/unet_best.pt",
                      "--base-features", "64", "--n-frames", "6",
                      "--gt-color", "0,200,0", "--pred-color", "170,95,40",
                      "--output-dir", str(STRIP_BUILD / "high_cell9_fp"),

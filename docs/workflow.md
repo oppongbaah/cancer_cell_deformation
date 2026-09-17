@@ -156,7 +156,7 @@ python scripts/evaluate_unet.py --checkpoint checkpoints/multiclass_experiment_2
     --config checkpoints/multiclass_experiment_256_bf64_scale_cos/config.yaml --filter low_cell6
 ```
 
-Every run appends its full-precision metrics to `results/holdout_eval_log.jsonl` (`--no-save-results` to skip, `--results-log` to redirect) — that file, not a number copied into a doc or terminal scrollback, is the durable record.
+Every run appends its full-precision metrics to `results/preswap/preswap_eval_log.jsonl` (`--no-save-results` to skip, `--results-log` to redirect) — that file, not a number copied into a doc or terminal scrollback, is the durable record.
 
 !!! danger "Always check the per-cell breakdown, never trust the pooled number alone"
     With only two development cells, the pooled score is a frame-weighted blend, not an average, and it has hidden a real regression before: `bf64_scale` looked like a win pooled (0.525→0.541) but actually made `high_cell9` *worse* (0.428→0.368) while making `low_cell6` much better — the `--filter` flags above exist specifically so this doesn't get missed again. See [Training Results](training.md#the-2026-09-full-evaluation-sweep) for the full story.

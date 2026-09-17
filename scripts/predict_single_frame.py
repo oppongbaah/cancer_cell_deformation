@@ -16,7 +16,7 @@ checkpoints both load correctly without manual flags.
 Usage
 -----
 python scripts/predict_single_frame.py \\
-    --checkpoint checkpoints/multiclass_experiment_256/unet_best.pt \\
+    --checkpoint checkpoints/preswap/multiclass_experiment_256/unet_best.pt \\
     --frame data/frames/02_unet_holdout/high_cell9_005000.jpg
 """
 

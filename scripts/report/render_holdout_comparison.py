@@ -29,15 +29,15 @@ Usage
 -----
 python scripts/report/render_holdout_comparison.py \\
     --pool 02_unet_holdout --cell high_cell9 \\
-    --checkpoint checkpoints/multiclass_experiment_256_bf32_reg2_cos/unet_best.pt
+    --checkpoint checkpoints/preswap/multiclass_experiment_256_bf32_reg2_cos/unet_best.pt
 
 python scripts/report/render_holdout_comparison.py \\
     --pool 02_unet_holdout --cell low_cell6 \\
-    --checkpoint checkpoints/multiclass_experiment_256/unet_best.pt \\
+    --checkpoint checkpoints/preswap/multiclass_experiment_256/unet_best.pt \\
     --base-features 64 --n-frames 5 --output-dir results/holdout_comparisons/low_cell6
 
 python scripts/report/render_holdout_comparison.py --pool 02_unet_holdout --cell high_cell9 \\
-    --checkpoint checkpoints/multiclass_experiment_256_bf32_reg2_cos/unet_best.pt \\
+    --checkpoint checkpoints/preswap/multiclass_experiment_256_bf32_reg2_cos/unet_best.pt \\
     --gt-color 0,60,255 --half-width 140 --half-height 140   # pin crop + palette explicitly
 """
 

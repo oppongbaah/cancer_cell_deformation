@@ -13,7 +13,7 @@ Two tables:
             01_annotate_pool (domain_ prefix), 03_mask_factory and
             02_unet_holdout, and checks each frame for a mask.
   headline  development-set results for the runs named on the command line,
-            looked up in results/holdout_eval_log.jsonl by (checkpoint, filter).
+            looked up in results/preswap/preswap_eval_log.jsonl by (checkpoint, filter).
   baseline  one checkpoint, broken out per development cell plus pooled.
   decoy     where each cell's false positives land — on annotated decoy
             objects (class 2) or on background. Loads the model, so it is
@@ -41,6 +41,22 @@ from collections import defaultdict
 from pathlib import Path
 
 _EXTS = (".jpg", ".jpeg", ".png")
+
+
+def _find_checkpoint(name: str) -> Path:
+    """Locate <name>/unet_best.pt under checkpoints/, wherever it has been filed.
+
+    Checkpoints are grouped into checkpoints/preswap|postswap|_retired, and that
+    grouping has changed before. Searching by directory name keeps this working
+    across reorganisations instead of pinning one layout.
+    """
+    root = Path("checkpoints")
+    direct = root / name / "unet_best.pt"
+    if direct.exists():
+        return direct
+    for c in root.glob(f"*/{name}/unet_best.pt"):
+        return c
+    raise SystemExit(f"No checkpoint '{name}' found under {root}/ (searched one level deep)")
 
 
 def _tex(s: str) -> str:
@@ -221,7 +237,7 @@ def decoy(root: Path, ck: str, cells, base_features: int) -> str:
     sys.path.insert(0, str(Path(__file__).parent.parent.parent))  # repo root
     from celldform.segmentation.unet import UNet
 
-    model = UNet.from_checkpoint(Path(f"checkpoints/{ck}/unet_best.pt"),
+    model = UNet.from_checkpoint(_find_checkpoint(ck),
                                  in_channels=1, base_features=base_features, out_channels=3)
     mk = root / "masks" / "02_unet_holdout_multiclass"
     pre = root / "preprocessed" / "evaluate" / "02_unet_holdout" / "inputs"
@@ -265,7 +281,7 @@ def main() -> None:
     p = argparse.ArgumentParser(description="Emit the report's LaTeX tables from the data")
     p.add_argument("table", choices=["percell", "headline", "baseline", "decoy"])
     p.add_argument("--data-root", type=Path, default=Path("data"))
-    p.add_argument("--log", type=Path, default=Path("results/holdout_eval_log.jsonl"))
+    p.add_argument("--log", type=Path, default=Path("results/preswap/preswap_eval_log.jsonl"))
     p.add_argument("--run", action="append", default=[], metavar="KEY[=LABEL]")
     p.add_argument("--extra-run", action="append", default=[], metavar="KEY[=LABEL]",
                    help="Row rendered in italics, below a rule — for runs that are not comparable")

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Grouped bar chart of per-cell holdout metrics, read straight out of
-results/holdout_eval_log.jsonl — one panel per evaluation scope (each
+results/preswap/preswap_eval_log.jsonl — one panel per evaluation scope (each
 development-set cell, plus the pooled figure), grouped bars per metric,
 one bar per checkpoint.
 
@@ -96,7 +96,7 @@ def _lookup(rows: list[dict], ckpt_key: str, scope_key: str, cls: str) -> dict:
 
 def main() -> None:
     p = argparse.ArgumentParser(description="Per-cell holdout metric bar chart")
-    p.add_argument("--log", type=Path, default=Path("results/holdout_eval_log.jsonl"))
+    p.add_argument("--log", type=Path, default=Path("results/preswap/preswap_eval_log.jsonl"))
     p.add_argument("--checkpoint", action="append", required=True, metavar="KEY[=LABEL]",
                    help="Checkpoint name substring, repeatable. The first is the baseline.")
     p.add_argument("--scope", action="append", required=True, metavar="KEY[=LABEL]",

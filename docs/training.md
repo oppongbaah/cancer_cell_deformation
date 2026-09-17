@@ -154,7 +154,7 @@ The checkpoint that looked best on the internal validation split (`bf32_reg2_cos
 
 ### Full 14-checkpoint sweep, evaluated against the real development set
 
-Every checkpoint from the `base_features`/dropout/cutout/regularization sweep was re-evaluated against the full 101-frame development set (`scripts/evaluate_unet.py --pool 02_unet_holdout`, results logged to `results/holdout_eval_log.jsonl`):
+Every checkpoint from the `base_features`/dropout/cutout/regularization sweep was re-evaluated against the full 101-frame development set (`scripts/evaluate_unet.py --pool 02_unet_holdout`, results logged to `results/preswap/preswap_eval_log.jsonl`):
 
 | Checkpoint | `base_features` | Recipe | Trapped-cell DSC |
 |---|---|---|---|
@@ -241,7 +241,7 @@ Two configs isolate it — `configs/multiclass_experiment_256_base_cos.yaml` (no
 
 Also confirmed: **the internal validation split carried no signal on this comparison at all.** `bf64_base_cos` scored 0.9285 internally and `bf64_scale_cos` 0.9277 — a 0.001 spread — while the development set separated the same two checkpoints by 0.066.
 
-Both charts in the progress reports are generated from `results/holdout_eval_log.jsonl` by `scripts/report/plot_percell_metrics.py` and `scripts/report/plot_sweep_dsc.py`, so no figure can drift from the run that produced it.
+Both charts in the progress reports are generated from `results/preswap/preswap_eval_log.jsonl` by `scripts/report/plot_percell_metrics.py` and `scripts/report/plot_sweep_dsc.py`, so no figure can drift from the run that produced it.
 
 ---
 

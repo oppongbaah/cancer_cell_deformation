@@ -91,7 +91,7 @@ python scripts/report/build_report_assets.py --compile   # assets, then compile,
 !!! warning "The report must be compiled at least twice"
     Cross-references and `\captionof` numbers resolve through the `.aux` file, and the temp files are deleted after every build — so a **single** `pdflatex` pass always starts cold and renders every reference as `??` (e.g. `§??`). `--compile` runs the passes needed and then fails loudly if anything is still unresolved, rather than shipping a PDF with `??` in it.
 
-**Run it after any change to the frame pools, the masks, or `results/holdout_eval_log.jsonl`**, then recompile the report. Every number in the document comes from one of the scripts it drives, so a stale figure means this wasn't run — not that a number needs editing by hand.
+**Run it after any change to the frame pools, the masks, or `results/preswap/preswap_eval_log.jsonl`**, then recompile the report. Every number in the document comes from one of the scripts it drives, so a stale figure means this wasn't run — not that a number needs editing by hand.
 
 ---
 
@@ -283,12 +283,12 @@ python scripts/evaluate_unet.py --checkpoint checkpoints/unet_best.pt --pool 02_
 | `--pool` | `02_unet_holdout` | Pool to evaluate |
 | `--config` | `configs/default.yaml` | YAML config |
 | `--batch-size` | `8` | Inference batch size |
-| `--results-log` | `results/holdout_eval_log.jsonl` | JSONL file each run's metrics get appended to |
+| `--results-log` | `results/preswap/preswap_eval_log.jsonl` | JSONL file each run's metrics get appended to |
 | `--no-save-results` | off | Skip the append (stdout only) |
 
 **Metrics reported:** DSC, IoU, precision, recall, accuracy. When the checkpoint's config has `unet.out_channels > 1`, results are reported per class (`background`, `trapped_cell`, ...) instead of as a single flat table.
 
-**Every run is also logged to disk** (unless `--no-save-results`) as one JSON line appended to `results/holdout_eval_log.jsonl` — full-precision metrics per class, plus `timestamp`/`checkpoint`/`config`/`pool`/`n_images`/`multiclass`. Printing to stdout alone doesn't survive the terminal scrolling past it; this is the durable record to check a reported number against, or to re-derive a summary table from later (`json.loads` each line).
+**Every run is also logged to disk** (unless `--no-save-results`) as one JSON line appended to `results/preswap/preswap_eval_log.jsonl` — full-precision metrics per class, plus `timestamp`/`checkpoint`/`config`/`pool`/`n_images`/`multiclass`. Printing to stdout alone doesn't survive the terminal scrolling past it; this is the durable record to check a reported number against, or to re-derive a summary table from later (`json.loads` each line).
 
 ---
 

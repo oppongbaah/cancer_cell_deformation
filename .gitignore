@@ -30,7 +30,12 @@ data/**
 # exactly the file you want in history rather than on one machine.
 !data/**/README.md
 !data/**/*_UNDO_*.json
-checkpoints/
+# Weights are 300 MB+ each (7 GB total) and stay out. The README does not: it is the
+# only tracked record of what each checkpoint is, which is current, and which are
+# invalid -- the weights themselves can be retrained, that knowledge cannot.
+checkpoints/**
+!checkpoints/**/
+!checkpoints/README.md
 *.pt
 *.pth
 *.ckpt
@@ -47,19 +52,32 @@ checkpoints/
 .DS_Store
 Thumbs.db
 
-# Logs
+# Logs — stray logs anywhere stay out, but the training logs under logs/ are kept.
+# They hold every per-epoch train/val loss and DSC, which is what the training-curve
+# figures are drawn from: ~292 KB of text carrying strictly more information than the
+# 6.4 MB of PNGs it can regenerate, and unlike a PNG it diffs and compresses.
 *.log
+!logs/
+!logs/**/
+!logs/**/*.log
 runs/
 
 # Supporting documents (kept local only)
 supporting_docs/
 CLAUDE.md
 .claude
+
+# results/ — only the evaluation logs. They are the experimental record every report
+# table and figure is generated from (scripts/report/build_report_assets.py), they are
+# append-only, and nothing can rebuild them: that would mean re-running every
+# checkpoint, and several have already been deleted.
+#
+# Deliberately NOT tracked, because each is derived data whose source IS in git:
+#   results/**/*.png          training curves — regenerate from logs/**/*.log
+#   results/_report_strips/   render_holdout_comparison.py intermediates; the variants
+#                             that reach the report are tracked in masters_thesis/images/
+# Git stores a whole new blob per regenerated binary, so tracking figures grows the repo
+# by their full size on every rebuild rather than by their diff.
 results/**
 !results/**/
-# ...except the evaluation logs. These are the experimental record: every report table
-# and figure is generated from them (see scripts/build_report_assets.py), never from
-# hand-typed numbers. Small, append-only, and diffable. The training-curve and figure
-# PNGs stay out - they are derived data, regenerable from these logs, and git stores a
-# full new blob for every regenerated binary.
 !results/**/*.jsonl
