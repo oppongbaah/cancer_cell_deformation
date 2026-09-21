@@ -40,9 +40,12 @@ checkpoints/**
 *.pth
 *.ckpt
 
-# Jupyter
+# Jupyter — scratch notebooks stay out, but notebooks/ is documentation: a runnable
+# walkthrough of the pipeline. Outputs are stripped before committing so the diffs stay
+# readable (a notebook with outputs diffs as one enormous blob).
 .ipynb_checkpoints/
 *.ipynb
+!notebooks/**/*.ipynb
 
 # IDE
 .vscode/

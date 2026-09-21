@@ -390,3 +390,58 @@ cells plus pooled, writes the log to `logs/postswap/`, moves the training curve 
 
 Use it rather than calling `train_unet.py` directly, so artefacts land in the right
 folders and the comparison happens automatically.
+
+
+---
+
+## `notebooks/pipeline_walkthrough.ipynb` — the pipeline end to end
+
+A runnable tour of all seven stages against the data actually on disk: pool inspection
+and the firewall check, frame extraction, mask validation, preprocessing, the train/val
+split, evaluation with the noise floor applied, features, classification, biomechanics
+and real-time inference.
+
+```bash
+jupyter lab notebooks/pipeline_walkthrough.ipynb
+```
+
+Most cells only read and display. The four that write are each gated:
+
+```python
+RUN_ORGANISE = False      # rebuilds data/frames/ from raw  ← destructive
+RUN_PREPROCESS = False    # rewrites data/preprocessed/**
+RUN_TRAINING = False      # ~15 min on an 8 GB GPU
+RUN_EVAL = False          # runs the model over the development set
+```
+
+They print what they *would* do while the flag is `False`.
+
+### Notebook outputs are stripped automatically
+
+`nbstripout` is installed as a git **clean filter**, so outputs and `execution_count`
+never reach a commit — the working file keeps them, git stores only the source. Without
+this a single re-run produces a multi-megabyte diff of base64 PNGs in which nothing
+meaningful changed.
+
+`.gitattributes` is committed, but the filter command lives in `.git/config`, which is
+not. **After cloning, run it once:**
+
+```bash
+pip install -e ".[dev]"      # brings in nbstripout
+nbstripout --install --attributes .gitattributes
+```
+
+Verify it took effect:
+
+```bash
+git config --local --get filter.nbstripout.clean      # should print a command
+```
+
+If you skip this, git silently does nothing — an undefined filter is not an error — and
+outputs go into history as normal.
+
+!!! tip "Appendix"
+    The last section lists the traps this pipeline has actually fallen into — stale
+    preprocessing silently breaking the firewall, single-run deltas below the noise
+    floor, an oversized validation group voiding a run. Worth reading before a first
+    experiment.

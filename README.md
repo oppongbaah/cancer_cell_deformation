@@ -36,6 +36,13 @@ pip install -e ".[annotation]"   # adds napari for mask annotation
 pip install -e ".[hpc]"          # adds mpi4py for Anvil / SLURM
 ```
 
+One-time, after cloning — notebook outputs are stripped on commit by a git filter whose
+command lives in `.git/config` (not committed), so it has to be registered locally:
+
+```bash
+nbstripout --install --attributes .gitattributes
+```
+
 ---
 
 ## Quick start
