@@ -86,7 +86,7 @@ A **smoke test** (does the code run at all — shapes, dtypes, no crash) is a di
 1. Keep tuning using the development set (`high_cell9` + `low_cell6`), as normal.
 2. Once the recipe is genuinely settled, fold `high_cell9` + `low_cell6` into the training pool.
 3. Train the final/production checkpoint once, same recipe, on the enlarged pool.
-4. *Only then* annotate `high_cell10` (`python scripts/annotate.py --image-dir data/frames/02_unet_holdout/final_test --mask-dir data/masks/02_unet_holdout_multiclass --multiclass` — note the explicit `--image-dir`/`--mask-dir` pair; a bare `--pool 02_unet_holdout/final_test` does not resolve the mask directory correctly).
+4. *Only then* annotate `high_cell10` (`python scripts/annotation/annotate.py --image-dir data/frames/02_unet_holdout/final_test --mask-dir data/masks/02_unet_holdout_multiclass --multiclass` — note the explicit `--image-dir`/`--mask-dir` pair; a bare `--pool 02_unet_holdout/final_test` does not resolve the mask directory correctly).
 5. Evaluate the final checkpoint on `high_cell10` exactly once. That's the reported blind-test score.
 
 If asked to annotate or evaluate `high_cell10` before step 2 has actually happened, that's very likely premature — confirm first.
@@ -102,11 +102,11 @@ If asked to annotate or evaluate `high_cell10` before step 2 has actually happen
 | Train | 371 | ~90% | U-Net training |
 | Val | 54 | ~10% | Checkpoint selection / early stopping only — **not** the reportable score |
 
-**There is no third "test" split inside `01_annotate_pool` anymore** (removed 2026-09-04, `celldform.config.DataConfig`/`scripts/train_unet.py`) — it was computed every run and printed in the split summary, but never actually built into a loader or evaluated by anything; the external `02_unet_holdout` development/blind-test evaluation already fulfills the role a third split would have, so keeping one was pure redundancy that shrank the training pool for nothing. The current 90/10 split reuses what used to be a separate, unused 10% "test" allocation as `val_split` instead of the old dedicated 15% — net effect: the training pool grew from ~69% to ~90% of the annotated data with the same monitoring mechanics, just on a smaller slice.
+**There is no third "test" split inside `01_annotate_pool` anymore** (removed 2026-09-04, `celldform.config.DataConfig`/`scripts/training/train_unet.py`) — it was computed every run and printed in the split summary, but never actually built into a loader or evaluated by anything; the external `02_unet_holdout` development/blind-test evaluation already fulfills the role a third split would have, so keeping one was pure redundancy that shrank the training pool for nothing. The current 90/10 split reuses what used to be a separate, unused 10% "test" allocation as `val_split` instead of the old dedicated 15% — net effect: the training pool grew from ~69% to ~90% of the annotated data with the same monitoring mechanics, just on a smaller slice.
 
 ### How the grouping works
 
-Splitting is **group-aware** (`scripts/train_unet.py::_build_groups`/`_group_split`) — frames from the same cell or the same legacy acquisition burst never split across train/val, since they're correlated (same biology, same laser session). Two group types:
+Splitting is **group-aware** (`scripts/training/train_unet.py::_build_groups`/`_group_split`) — frames from the same cell or the same legacy acquisition burst never split across train/val, since they're correlated (same biology, same laser session). Two group types:
 
 - **Legacy frames** (`YYYYMMDDHHMMSS.jpg`) are clustered into acquisition **bursts** — a gap of more than 5 seconds between sorted timestamps starts a new burst.
 - **Domain-adapt frames** (`domain_<her2>_<cell_id>_<frame>.jpg`) are grouped by cell identity.

@@ -1,5 +1,9 @@
 # celldform
 
+!!! tip "Start here"
+    **[Project Status](status.md)** — the current model, what changed on 17 September,
+    and where the evidence points next. The pages below are reference material.
+
 **Real-Time Machine Learning Framework for Quantitative SKBR3 Cell Deformation Analysis in Dual-Beam Optical Tweezer Systems**
 
 *Isaac Oppong-Baah — M.S. Electronics Engineering, Norfolk State University, 2026*

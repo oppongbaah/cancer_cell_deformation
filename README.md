@@ -1,5 +1,14 @@
 # celldform
 
+> **Current model:** `checkpoints/postswap/postswap_ftl_cw142_s42/unet_best.pt` —
+> development-set pooled DSC **0.800 ± 0.047** (3-seed mean, 4 cells, 172 frames).
+> Config: `configs/postswap/postswap_ftl_cw142_s42.yaml`.
+> See [docs/status.md](docs/status.md) for where the project stands, and
+> `configs/README.md` / `checkpoints/README.md` for what every other file is.
+>
+> ⚠️ **Measured run-to-run spread is sd 0.047 / range 0.093.** A single-run difference
+> below ~0.13 is not a result. Use `scripts/training/compare_postswap.py`.
+
 **Real-Time Machine Learning Framework for Quantitative SKBR3 Cell Deformation Analysis in Dual-Beam Optical Tweezer Systems**
 
 *Isaac Oppong-Baah — M.S. Electronics Engineering, Norfolk State University, 2026*
@@ -51,11 +60,11 @@ labels    = CellClassifier.load("checkpoints/svm.pkl").predict(
 
 ```bash
 celldform-organize-dataset                              # Stage 0 — organise raw data
-python scripts/annotate.py                             # annotate training images
-python scripts/validate_masks.py                       # validate masks
-python scripts/preprocess_frames.py --masks            # Stage 2 — preprocess
+python scripts/annotation/annotate.py                             # annotate training images
+python scripts/annotation/validate_masks.py                       # validate masks
+python scripts/data/preprocess_frames.py --masks            # Stage 2 — preprocess
 celldform-train-unet --config configs/default.yaml     # Stage 3 — train U-Net
-python scripts/evaluate_unet.py --checkpoint ...       # evaluate on holdout set
+python scripts/training/evaluate_unet.py --checkpoint ...       # evaluate on holdout set
 celldform-infer <input> --unet-ckpt ... --classifier-ckpt ...  # Stages 1–6 inference
 ```
 

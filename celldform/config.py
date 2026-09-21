@@ -39,7 +39,7 @@ class DataConfig:
     val_split: float = 0.15     # fraction held out for checkpoint-selection/early-stopping monitoring
                                  # during training. NOT the thesis-reportable evaluation — that's a
                                  # separate, external pool (data/frames/02_unet_holdout/), scored via
-                                 # scripts/evaluate_unet.py. A third internal "test" split used to also
+                                 # scripts/training/evaluate_unet.py. A third internal "test" split used to also
                                  # exist here but was removed 2026-09-04: it was computed every run and
                                  # printed in the split summary, but never actually built into a loader
                                  # or evaluated anywhere in train_unet.py — the external holdout already
@@ -104,9 +104,41 @@ class TrainingCfg:
                                     # only warns, it doesn't guarantee determinism for that op either, so this
                                     # is a best-effort lever, not a hard guarantee, for multiclass configs.
     class_weights: Optional[List[float]] = None  # per-class weight for CrossEntropyLoss (multiclass only); null = uniform
+    split_seed: Optional[int] = None  # seed for the train/val GROUP split only. None (default) =
+                                      # fall back to `seed`, which is the historical behaviour and
+                                      # keeps every past run reproducible. Set it to decouple the two:
+                                      # `seed` then varies weight init / data order while the split
+                                      # stays fixed. Added 2026-09-17 because a seed 42->43 change
+                                      # moved development-set DSC by 0.072, and because the split is
+                                      # seeded from the same value, that figure bundles initialisation
+                                      # noise with split composition and cannot be decomposed. Hold
+                                      # split_seed fixed and vary seed to isolate initialisation.
+    loss_type: str = "dice_ce"     # multiclass only: "dice_ce" (default, historical) | "focal_tversky".
+                                   # focal_tversky swaps the Dice region term for a Focal-Tversky term,
+                                   # keeping the same loss_alpha*CE + (1-loss_alpha)*region structure.
+                                   # Tversky index TI = TP / (TP + a*FP + b*FN) generalises Dice (a=b=0.5);
+                                   # a > b penalises FALSE POSITIVES harder, which is the failure mode here
+                                   # (trapped-cell precision 0.45-0.58 on the high-power cells at pooled
+                                   # recall 0.77-0.86 — the model over-predicts cell area). The focal
+                                   # exponent then reshapes how hard vs. easy classes are weighted.
+    tversky_alpha: float = 0.7     # FP penalty in the Tversky index. 0.5 = Dice. >0.5 favours precision.
+    tversky_beta: float = 0.3      # FN penalty. tversky_alpha + tversky_beta = 1.0 is the usual convention.
+    focal_gamma: float = 0.75      # exponent on (1 - TI). 1.0 = plain Tversky, no focal reshaping.
+                                   # 0.75 corresponds to Abraham & Khan (2019)'s 1/gamma with gamma=4/3.
+    dice_exclude_background: bool = False  # multiclass only. False (default) keeps the historical
+                                           # behaviour: _DiceCELoss averages Dice over ALL classes,
+                                           # background included. Background Dice sits at ~0.9996 from
+                                           # pixel imbalance alone and is near-constant, so it occupies
+                                           # ~1/3 of the Dice term while contributing almost no gradient.
+                                           # True averages over the foreground classes only, which at
+                                           # loss_alpha=0.3 moves ~23% of the total objective off
+                                           # background and onto trapped-cell + decoy. Mirrors the
+                                           # exclude_from_mean=(0,) default already used for *reporting*
+                                           # in SegmentationMetrics.per_class() (2026-09-02) — that pass
+                                           # changed the displayed metrics only, never the loss.
     domain_oversample_weight: float = 1.0  # sampling weight for domain_-prefixed (real-cell) train frames vs.
                                             # legacy frames; 1.0 = no oversampling (uniform, default). See
-                                            # scripts/train_unet.py's WeightedRandomSampler for how this is applied.
+                                            # scripts/training/train_unet.py's WeightedRandomSampler for how this is applied.
     # Set via a nested `training.augmentation:` block in the YAML (see _parse_training) —
     # e.g. `augmentation: {noise_std: 0.02, cutout_prob: 0.3}` — not top-level training: keys.
     # Old flat augment_noise_std/augment_cutout_prob YAML keys are still read as a fallback.
@@ -114,7 +146,7 @@ class TrainingCfg:
                                      # [0,1] train frame, on top of the existing flip/rotation augmentation;
                                      # 0.0 = off (default). Masks are never noised. Meant to help the
                                      # legacy-vs-real-domain gap in ways flip/rotation alone can't — see
-                                     # CellDataset in scripts/train_unet.py.
+                                     # CellDataset in scripts/training/train_unet.py.
     augment_cutout_prob: float = 0.0  # probability of erasing one random rectangular patch (8-25% of each
                                        # side, filled with the frame's own mean intensity) from the train
                                        # frame; 0.0 = off (default). Mask is untouched — the label still
@@ -357,6 +389,12 @@ def _parse_training(t: dict) -> TrainingCfg:
         cudnn_benchmark=bool(t.get("cudnn_benchmark", True)),
         strict_deterministic=bool(t.get("strict_deterministic", False)),
         class_weights=class_weights,
+        split_seed=(int(t["split_seed"]) if t.get("split_seed") is not None else None),
+        loss_type=str(t.get("loss_type", "dice_ce")),
+        tversky_alpha=float(t.get("tversky_alpha", 0.7)),
+        tversky_beta=float(t.get("tversky_beta", 0.3)),
+        focal_gamma=float(t.get("focal_gamma", 0.75)),
+        dice_exclude_background=bool(t.get("dice_exclude_background", False)),
         domain_oversample_weight=float(t.get("domain_oversample_weight", 1.0)),
         augment_noise_std=float(noise_std),
         augment_cutout_prob=float(cutout_prob),

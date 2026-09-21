@@ -1,0 +1,165 @@
+[celldform] Dataset split (group-aware, 22 groups) — train: 397  val: 54
+[celldform]   split assignment (seed=43, split_seed=42)
+[celldform]     val  : low_cell4(19), legacy_burst_5(18), legacy_burst_2(17)
+[celldform]     train: high_cell10(50), low_cell2(24), high_cell2(20), high_cell3(20), high_cell4(20), high_cell6(20), high_cell7(20), low_cell1(20), high_cell8(19), low_cell3(19), legacy(165)
+[celldform]   note: cell group(s) held out of training this run: low_cell4
+[celldform] Config snapshot → checkpoints/postswap_ftl_cw142_s43/config.yaml
+
+============================================================
+  Platform info [before training]
+============================================================
+  OS          : Linux 6.18.33.2-microsoft-standard-WSL2 (x86_64)
+  Python      : 3.12.3
+  PyTorch     : 2.12.0+cu130
+  Device      : NVIDIA GeForce RTX 4060 Laptop GPU (GPU 0)
+  CUDA        : 13.0
+  VRAM        : 8.0 GB
+============================================================
+
+Epoch 001/100  train_loss=0.7740  train_DSC=0.0133  val_loss=0.7659  val_DSC=0.0002  (13.6s)
+  → Checkpoint saved: checkpoints/postswap_ftl_cw142_s43/unet_best.pt  (DSC=0.0002)
+Epoch 002/100  train_loss=0.6801  train_DSC=0.0029  val_loss=0.6546  val_DSC=0.0003  (9.3s)
+  → Checkpoint saved: checkpoints/postswap_ftl_cw142_s43/unet_best.pt  (DSC=0.0003)
+Epoch 003/100  train_loss=0.6419  train_DSC=0.0117  val_loss=0.6368  val_DSC=0.0788  (9.4s)
+  → Checkpoint saved: checkpoints/postswap_ftl_cw142_s43/unet_best.pt  (DSC=0.0788)
+Epoch 004/100  train_loss=0.6216  train_DSC=0.0443  val_loss=0.6172  val_DSC=0.1111  (9.3s)
+  → Checkpoint saved: checkpoints/postswap_ftl_cw142_s43/unet_best.pt  (DSC=0.1111)
+Epoch 005/100  train_loss=0.6058  train_DSC=0.1194  val_loss=0.6002  val_DSC=0.2414  (9.3s)
+  → Checkpoint saved: checkpoints/postswap_ftl_cw142_s43/unet_best.pt  (DSC=0.2414)
+Epoch 006/100  train_loss=0.5942  train_DSC=0.3786  val_loss=0.5910  val_DSC=0.5337  (9.4s)
+  → Checkpoint saved: checkpoints/postswap_ftl_cw142_s43/unet_best.pt  (DSC=0.5337)
+Epoch 007/100  train_loss=0.5824  train_DSC=0.4625  val_loss=0.5781  val_DSC=0.5620  (9.3s)
+  → Checkpoint saved: checkpoints/postswap_ftl_cw142_s43/unet_best.pt  (DSC=0.5620)
+Epoch 008/100  train_loss=0.5760  train_DSC=0.4267  val_loss=0.5668  val_DSC=0.5329  (9.3s)
+Epoch 009/100  train_loss=0.5645  train_DSC=0.4619  val_loss=0.5595  val_DSC=0.5195  (9.3s)
+Epoch 010/100  train_loss=0.5559  train_DSC=0.4587  val_loss=0.5542  val_DSC=0.5596  (9.3s)
+Epoch 011/100  train_loss=0.5484  train_DSC=0.4451  val_loss=0.5449  val_DSC=0.5748  (9.3s)
+  → Checkpoint saved: checkpoints/postswap_ftl_cw142_s43/unet_best.pt  (DSC=0.5748)
+Epoch 012/100  train_loss=0.5426  train_DSC=0.4473  val_loss=0.5379  val_DSC=0.6393  (9.3s)
+  → Checkpoint saved: checkpoints/postswap_ftl_cw142_s43/unet_best.pt  (DSC=0.6393)
+Epoch 013/100  train_loss=0.5359  train_DSC=0.4803  val_loss=0.5325  val_DSC=0.6434  (9.3s)
+  → Checkpoint saved: checkpoints/postswap_ftl_cw142_s43/unet_best.pt  (DSC=0.6434)
+Epoch 014/100  train_loss=0.5304  train_DSC=0.4965  val_loss=0.5284  val_DSC=0.6986  (9.3s)
+  → Checkpoint saved: checkpoints/postswap_ftl_cw142_s43/unet_best.pt  (DSC=0.6986)
+Epoch 015/100  train_loss=0.5246  train_DSC=0.5920  val_loss=0.5199  val_DSC=0.7638  (9.3s)
+  → Checkpoint saved: checkpoints/postswap_ftl_cw142_s43/unet_best.pt  (DSC=0.7638)
+Epoch 016/100  train_loss=0.5186  train_DSC=0.6426  val_loss=0.5168  val_DSC=0.7380  (9.3s)
+Epoch 017/100  train_loss=0.5128  train_DSC=0.6657  val_loss=0.5113  val_DSC=0.7363  (9.3s)
+Epoch 018/100  train_loss=0.5083  train_DSC=0.6485  val_loss=0.5035  val_DSC=0.7619  (9.3s)
+Epoch 019/100  train_loss=0.5032  train_DSC=0.6965  val_loss=0.4999  val_DSC=0.8601  (9.3s)
+  → Checkpoint saved: checkpoints/postswap_ftl_cw142_s43/unet_best.pt  (DSC=0.8601)
+Epoch 020/100  train_loss=0.4982  train_DSC=0.7082  val_loss=0.4946  val_DSC=0.7474  (9.3s)
+Epoch 021/100  train_loss=0.4936  train_DSC=0.7334  val_loss=0.4922  val_DSC=0.7023  (9.3s)
+Epoch 022/100  train_loss=0.4882  train_DSC=0.7432  val_loss=0.4885  val_DSC=0.5886  (9.3s)
+Epoch 023/100  train_loss=0.4861  train_DSC=0.7175  val_loss=0.4820  val_DSC=0.8053  (9.4s)
+Epoch 024/100  train_loss=0.4801  train_DSC=0.7685  val_loss=0.4824  val_DSC=0.6007  (9.3s)
+Epoch 025/100  train_loss=0.4772  train_DSC=0.7559  val_loss=0.4768  val_DSC=0.7679  (9.2s)
+Epoch 026/100  train_loss=0.4720  train_DSC=0.7891  val_loss=0.4676  val_DSC=0.8416  (9.3s)
+Epoch 027/100  train_loss=0.4683  train_DSC=0.7790  val_loss=0.4657  val_DSC=0.8341  (9.3s)
+Epoch 028/100  train_loss=0.4644  train_DSC=0.8019  val_loss=0.4667  val_DSC=0.7237  (9.3s)
+Epoch 029/100  train_loss=0.4606  train_DSC=0.7874  val_loss=0.4590  val_DSC=0.7336  (9.3s)
+Epoch 030/100  train_loss=0.4561  train_DSC=0.7972  val_loss=0.4520  val_DSC=0.8621  (9.4s)
+  → Checkpoint saved: checkpoints/postswap_ftl_cw142_s43/unet_best.pt  (DSC=0.8621)
+Epoch 031/100  train_loss=0.4526  train_DSC=0.8105  val_loss=0.4477  val_DSC=0.7527  (9.3s)
+Epoch 032/100  train_loss=0.4487  train_DSC=0.7993  val_loss=0.4442  val_DSC=0.8051  (9.4s)
+Epoch 033/100  train_loss=0.4456  train_DSC=0.8032  val_loss=0.4414  val_DSC=0.7281  (9.3s)
+Epoch 034/100  train_loss=0.4404  train_DSC=0.8044  val_loss=0.4370  val_DSC=0.8594  (9.3s)
+Epoch 035/100  train_loss=0.4360  train_DSC=0.8152  val_loss=0.4281  val_DSC=0.8474  (9.3s)
+Epoch 036/100  train_loss=0.4314  train_DSC=0.8155  val_loss=0.4295  val_DSC=0.7516  (9.3s)
+Epoch 037/100  train_loss=0.4266  train_DSC=0.8194  val_loss=0.4243  val_DSC=0.7276  (9.6s)
+Epoch 038/100  train_loss=0.4233  train_DSC=0.8080  val_loss=0.4135  val_DSC=0.7711  (9.3s)
+Epoch 039/100  train_loss=0.4160  train_DSC=0.8356  val_loss=0.4092  val_DSC=0.8408  (9.3s)
+Epoch 040/100  train_loss=0.4094  train_DSC=0.8522  val_loss=0.4007  val_DSC=0.8169  (9.3s)
+Epoch 041/100  train_loss=0.4055  train_DSC=0.8536  val_loss=0.4093  val_DSC=0.8161  (9.3s)
+Epoch 042/100  train_loss=0.4001  train_DSC=0.8375  val_loss=0.3890  val_DSC=0.8800  (9.2s)
+  → Checkpoint saved: checkpoints/postswap_ftl_cw142_s43/unet_best.pt  (DSC=0.8800)
+Epoch 043/100  train_loss=0.3939  train_DSC=0.8517  val_loss=0.3912  val_DSC=0.8642  (9.3s)
+Epoch 044/100  train_loss=0.3877  train_DSC=0.8592  val_loss=0.3757  val_DSC=0.8538  (9.3s)
+Epoch 045/100  train_loss=0.3804  train_DSC=0.8680  val_loss=0.3673  val_DSC=0.8657  (9.3s)
+Epoch 046/100  train_loss=0.3738  train_DSC=0.8687  val_loss=0.3648  val_DSC=0.8929  (9.3s)
+  → Checkpoint saved: checkpoints/postswap_ftl_cw142_s43/unet_best.pt  (DSC=0.8929)
+Epoch 047/100  train_loss=0.3690  train_DSC=0.8645  val_loss=0.3738  val_DSC=0.7708  (9.3s)
+Epoch 048/100  train_loss=0.3612  train_DSC=0.8705  val_loss=0.3631  val_DSC=0.8694  (9.3s)
+Epoch 049/100  train_loss=0.3539  train_DSC=0.8747  val_loss=0.3497  val_DSC=0.8842  (9.2s)
+Epoch 050/100  train_loss=0.3431  train_DSC=0.8846  val_loss=0.3450  val_DSC=0.8869  (9.3s)
+Epoch 051/100  train_loss=0.3355  train_DSC=0.8923  val_loss=0.3281  val_DSC=0.8902  (9.3s)
+Epoch 052/100  train_loss=0.3266  train_DSC=0.8989  val_loss=0.3254  val_DSC=0.9131  (9.3s)
+  → Checkpoint saved: checkpoints/postswap_ftl_cw142_s43/unet_best.pt  (DSC=0.9131)
+Epoch 053/100  train_loss=0.3233  train_DSC=0.8876  val_loss=0.3270  val_DSC=0.9148  (9.3s)
+  → Checkpoint saved: checkpoints/postswap_ftl_cw142_s43/unet_best.pt  (DSC=0.9148)
+Epoch 054/100  train_loss=0.3160  train_DSC=0.8879  val_loss=0.3296  val_DSC=0.9155  (9.3s)
+  → Checkpoint saved: checkpoints/postswap_ftl_cw142_s43/unet_best.pt  (DSC=0.9155)
+Epoch 055/100  train_loss=0.3074  train_DSC=0.8955  val_loss=0.3117  val_DSC=0.9083  (9.3s)
+Epoch 056/100  train_loss=0.2968  train_DSC=0.9024  val_loss=0.3016  val_DSC=0.9071  (9.3s)
+Epoch 057/100  train_loss=0.2905  train_DSC=0.9096  val_loss=0.3031  val_DSC=0.9121  (9.3s)
+Epoch 058/100  train_loss=0.2849  train_DSC=0.9083  val_loss=0.2908  val_DSC=0.9209  (9.3s)
+  → Checkpoint saved: checkpoints/postswap_ftl_cw142_s43/unet_best.pt  (DSC=0.9209)
+Epoch 059/100  train_loss=0.2787  train_DSC=0.9087  val_loss=0.2873  val_DSC=0.9206  (9.3s)
+Epoch 060/100  train_loss=0.2703  train_DSC=0.9149  val_loss=0.2830  val_DSC=0.9280  (9.3s)
+  → Checkpoint saved: checkpoints/postswap_ftl_cw142_s43/unet_best.pt  (DSC=0.9280)
+Epoch 061/100  train_loss=0.2626  train_DSC=0.9200  val_loss=0.2790  val_DSC=0.9257  (9.3s)
+Epoch 062/100  train_loss=0.2592  train_DSC=0.9156  val_loss=0.2687  val_DSC=0.9125  (9.3s)
+Epoch 063/100  train_loss=0.2523  train_DSC=0.9179  val_loss=0.2744  val_DSC=0.9172  (9.3s)
+Epoch 064/100  train_loss=0.2486  train_DSC=0.9191  val_loss=0.2662  val_DSC=0.9326  (9.3s)
+  → Checkpoint saved: checkpoints/postswap_ftl_cw142_s43/unet_best.pt  (DSC=0.9326)
+Epoch 065/100  train_loss=0.2442  train_DSC=0.9202  val_loss=0.2589  val_DSC=0.9242  (9.3s)
+Epoch 066/100  train_loss=0.2359  train_DSC=0.9233  val_loss=0.2600  val_DSC=0.9286  (9.3s)
+Epoch 067/100  train_loss=0.2354  train_DSC=0.9199  val_loss=0.2597  val_DSC=0.9336  (9.3s)
+  → Checkpoint saved: checkpoints/postswap_ftl_cw142_s43/unet_best.pt  (DSC=0.9336)
+Epoch 068/100  train_loss=0.2297  train_DSC=0.9275  val_loss=0.2549  val_DSC=0.9243  (9.2s)
+Epoch 069/100  train_loss=0.2283  train_DSC=0.9282  val_loss=0.2550  val_DSC=0.9310  (9.3s)
+Epoch 070/100  train_loss=0.2249  train_DSC=0.9286  val_loss=0.2561  val_DSC=0.9369  (9.3s)
+  → Checkpoint saved: checkpoints/postswap_ftl_cw142_s43/unet_best.pt  (DSC=0.9369)
+Epoch 071/100  train_loss=0.2207  train_DSC=0.9330  val_loss=0.2481  val_DSC=0.9277  (9.3s)
+Epoch 072/100  train_loss=0.2181  train_DSC=0.9272  val_loss=0.2463  val_DSC=0.9292  (9.3s)
+Epoch 073/100  train_loss=0.2132  train_DSC=0.9322  val_loss=0.2436  val_DSC=0.9310  (9.3s)
+Epoch 074/100  train_loss=0.2102  train_DSC=0.9331  val_loss=0.2464  val_DSC=0.9290  (9.3s)
+Epoch 075/100  train_loss=0.2105  train_DSC=0.9303  val_loss=0.2458  val_DSC=0.9344  (9.3s)
+Epoch 076/100  train_loss=0.2075  train_DSC=0.9332  val_loss=0.2431  val_DSC=0.9310  (9.3s)
+Epoch 077/100  train_loss=0.2051  train_DSC=0.9339  val_loss=0.2456  val_DSC=0.9276  (9.3s)
+Epoch 078/100  train_loss=0.2028  train_DSC=0.9341  val_loss=0.2404  val_DSC=0.9393  (9.3s)
+  → Checkpoint saved: checkpoints/postswap_ftl_cw142_s43/unet_best.pt  (DSC=0.9393)
+Epoch 079/100  train_loss=0.2012  train_DSC=0.9346  val_loss=0.2408  val_DSC=0.9398  (9.3s)
+  → Checkpoint saved: checkpoints/postswap_ftl_cw142_s43/unet_best.pt  (DSC=0.9398)
+Epoch 080/100  train_loss=0.1987  train_DSC=0.9363  val_loss=0.2383  val_DSC=0.9379  (9.3s)
+Epoch 081/100  train_loss=0.1992  train_DSC=0.9327  val_loss=0.2385  val_DSC=0.9383  (9.3s)
+Epoch 082/100  train_loss=0.1969  train_DSC=0.9363  val_loss=0.2429  val_DSC=0.9316  (9.3s)
+Epoch 083/100  train_loss=0.1970  train_DSC=0.9357  val_loss=0.2358  val_DSC=0.9338  (9.3s)
+Epoch 084/100  train_loss=0.1972  train_DSC=0.9355  val_loss=0.2409  val_DSC=0.9346  (9.3s)
+Epoch 085/100  train_loss=0.1953  train_DSC=0.9337  val_loss=0.2409  val_DSC=0.9322  (9.3s)
+Epoch 086/100  train_loss=0.1932  train_DSC=0.9355  val_loss=0.2384  val_DSC=0.9357  (9.3s)
+Epoch 087/100  train_loss=0.1908  train_DSC=0.9378  val_loss=0.2378  val_DSC=0.9369  (9.3s)
+Epoch 088/100  train_loss=0.1932  train_DSC=0.9360  val_loss=0.2354  val_DSC=0.9366  (9.3s)
+Epoch 089/100  train_loss=0.1906  train_DSC=0.9360  val_loss=0.2368  val_DSC=0.9354  (9.3s)
+Epoch 090/100  train_loss=0.1910  train_DSC=0.9374  val_loss=0.2352  val_DSC=0.9368  (9.3s)
+Epoch 091/100  train_loss=0.1887  train_DSC=0.9401  val_loss=0.2355  val_DSC=0.9368  (9.3s)
+Epoch 092/100  train_loss=0.1884  train_DSC=0.9373  val_loss=0.2354  val_DSC=0.9376  (9.3s)
+Epoch 093/100  train_loss=0.1872  train_DSC=0.9380  val_loss=0.2345  val_DSC=0.9371  (9.3s)
+Epoch 094/100  train_loss=0.1898  train_DSC=0.9385  val_loss=0.2355  val_DSC=0.9358  (9.3s)
+Epoch 095/100  train_loss=0.1897  train_DSC=0.9389  val_loss=0.2356  val_DSC=0.9366  (9.3s)
+Epoch 096/100  train_loss=0.1876  train_DSC=0.9384  val_loss=0.2345  val_DSC=0.9370  (9.3s)
+Epoch 097/100  train_loss=0.1889  train_DSC=0.9399  val_loss=0.2342  val_DSC=0.9373  (9.3s)
+Epoch 098/100  train_loss=0.1887  train_DSC=0.9395  val_loss=0.2353  val_DSC=0.9369  (9.3s)
+Early stopping: no val_DSC improvement > 0.001 for 20 epochs (best=0.9398 at epoch 79). Stopping at epoch 98/100.
+
+[celldform] Reloaded best checkpoint for final evaluation: epoch 79
+
+Final validation metrics:
+  [trapped_cell]
+    dsc: 0.9399
+    iou: 0.8867
+    precision: 0.9310
+    recall: 0.9490
+  [class_2]
+    dsc: 0.6149
+    iou: 0.4439
+    precision: 0.7032
+    recall: 0.5463
+  [mean]
+    dsc: 0.7774
+    iou: 0.6653
+    precision: 0.8171
+    recall: 0.7476
+/home/mega/work/thesis/cancer_cell_deformation/celldform/utils/visualization.py:148: UserWarning: This figure includes Axes that are not compatible with tight_layout, so results might be incorrect.
+  fig.tight_layout()
+Training curves saved to results/unet_training_curves_v49_postswap_ftl_cw142_s43.png

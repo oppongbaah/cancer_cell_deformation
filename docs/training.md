@@ -1,5 +1,32 @@
 # U-Net Training Results
 
+!!! danger "Superseded — read this first (2026-09-17)"
+
+    **Every tuning delta on this page is smaller than the measured noise.**
+
+    Re-running one configuration changing **only the random seed** moved pooled
+    development-set DSC from **0.691 to 0.619** — a swing of **0.072**. A three-seed
+    repeat with the train/val split pinned gave **sd 0.047, range 0.093**.
+
+    | Quantity | Magnitude |
+    |---|---|
+    | Seed-only swing | **0.072–0.093** |
+    | Focal–Tversky "gain" | 0.023 — swamped |
+    | Scale augmentation (the settled recipe) | 0.066 — inside the band |
+    | Regularisation sweep deltas | 0.005–0.02 — far inside |
+
+    None of the single-run comparisons below are established. They are kept as the
+    record of what was tried, not as evidence of what works. A single run resolves
+    differences above roughly **0.13**; report multi-seed means with spread instead.
+
+    **Also note the development set changed on 17 September** (`high-10` into training,
+    `high-1` into evaluation), so pre- and post-swap numbers are not comparable at all.
+
+    Current baseline: `postswap_ftl_cw142_s42`, **pooled DSC 0.800** (3-seed mean,
+    sd 0.047). See `configs/README.md` and `checkpoints/README.md`.
+
+---
+
 Training results from the first 39-mask smoke test through the current best checkpoint. Runs 1-4 below (2026-07/08) established the label scheme (multiclass, 256×256, frozen 2026-08-10) and surfaced a real legacy/real-cell domain gap. **If you only read one section, read [The 2026-09 full evaluation sweep](#the-2026-09-full-evaluation-sweep)** — it's the most consequential finding in this document: an internal-validation-optimized checkpoint that looked excellent turned out to generalize roughly 2.6× worse than a "worse-looking" one, once evaluated against genuinely novel cells for the first time.
 
 **Current state (2026-09-10):** `02_unet_holdout`'s development set (`high_cell9` + `low_cell6`) is fully annotated and has been evaluated against every checkpoint. Best real-generalization checkpoint: **`checkpoints/multiclass_experiment_256_bf64_scale_cos/unet_best.pt`, pooled DSC 0.671** — scale augmentation alone, under the cosine schedule and 90% training split. A third cell, `high_cell10`, is reserved as a blind test and deliberately not yet annotated — see [Next Steps](#next-steps).
@@ -83,7 +110,7 @@ Training curves and per-class metric tables: `results/unet_training_curves_v13_b
 - **Labeling scheme matters more than resolution alone.** At 128×128, adding the decoy-object class raised trapped-cell DSC from 0.590 to 0.736 (+0.146) — a larger jump than switching binary from 128×128 to 256×256 (0.590 → 0.763, +0.173, comparable magnitude) or multiclass from 128×128 to 256×256 (0.736 → 0.784, +0.048, smaller). The best result combines both: multiclass at 256×256.
 - **Why multiclass helps:** giving decoy objects (untrapped cells, debris, lookalike blobs) their own class instead of leaving them as unlabeled background stops the loss from penalizing the model for segmenting them — under the binary scheme, a decoy that visually resembles the trapped cell is background the model is punished for finding, which pushes precision down indiscriminately. Explicitly modeling it as its own class lets the network learn to distinguish "cell-like blob, but not the trapped one" from "the trapped cell," rather than lumping both into one binary decision.
 - **The decoy class itself is harder** (DSC 0.682 vs. 0.784 for trapped_cell) — expected, since decoy objects are a heterogeneous category (any non-trapped cell-like blob) rather than the single consistent target the trapped-cell class represents.
-- **Multiclass converges faster and can overfit sooner:** the 256×256 multiclass run peaked at epoch 73 (val DSC 0.784) then declined to ~0.69 by epoch 100, while the binary run kept improving to epoch 99. `scripts/train_unet.py` reloads `unet_best.pt` before final evaluation specifically to guard against this — final metrics reflect the peak, not wherever the fixed 100-epoch budget happened to end.
+- **Multiclass converges faster and can overfit sooner:** the 256×256 multiclass run peaked at epoch 73 (val DSC 0.784) then declined to ~0.69 by epoch 100, while the binary run kept improving to epoch 99. `scripts/training/train_unet.py` reloads `unet_best.pt` before final evaluation specifically to guard against this — final metrics reflect the peak, not wherever the fixed 100-epoch budget happened to end.
 - **Caveat:** these are 40-mask, single-seed runs — not yet a controlled statistical comparison.
 
 **Decision (2026-08-10):** multiclass @ 256×256 is the frozen label scheme and resolution going forward. `binary_experiment_{128,256}.yaml` and the 128×128 multiclass config are no longer being actively pursued — kept only as this historical ablation record. This does not change the downstream contract: `UNet.predict(..., binary_output=True)` collapses the 3-class map to trapped-cell-only binary before `MorphologyExtractor` and everything past it (commit `b6e181b`) — multiclass is a training-time-only mechanism for a sharper trapped-cell boundary.
@@ -100,7 +127,7 @@ Training curves and per-class metric tables: `results/unet_training_curves_v13_b
 | trapped_cell | **0.943** | 0.891 | 0.912 | 0.974 |
 | other/decoy | 0.759 | 0.612 | 0.697 | 0.834 |
 
-Training curves: `results/unet_training_curves_v19.png`. The group-aware split (leave-one-cell-out, confirmed in `scripts/train_unet.py`'s `_build_groups`/`_group_split`) means this jump from 0.784 (Run 3, 40 masks) is real added-data signal, not leakage — but see the caveat immediately below before treating 0.943 as the thesis number.
+Training curves: `results/unet_training_curves_v19.png`. The group-aware split (leave-one-cell-out, confirmed in `scripts/training/train_unet.py`'s `_build_groups`/`_group_split`) means this jump from 0.784 (Run 3, 40 masks) is real added-data signal, not leakage — but see the caveat immediately below before treating 0.943 as the thesis number.
 
 ## Domain Gap
 
@@ -117,7 +144,7 @@ High precision (0.895) with collapsed recall means the model under-segments real
 
 **1. More real cells in training (run 2026-08-19).** `celldform/acquisition/organiser.py`'s `domain_adapt` video list was extended from 4 cells to all 11 `03_mask_factory` cells, and `--domain-adapt-n` was raised 5→20/cell (`celldform-organize-dataset --no-clean --domain-adapt-n 20`) rather than waiting on the honest `02_unet_holdout` DSC to pick a value — the decision was made to grow the pool first and use the legacy-vs-domain DSC breakdown on the internal train/val/test split as the interim feedback signal instead, keeping `02_unet_holdout` reserved for the eventual thesis number (see [Next Steps](#next-steps)). `01_annotate_pool` grew from 220 → 428 images (200 legacy + 228 domain-adapt); 208 of the domain frames are new and pending annotation. Frames can safely belong to both `01_annotate_pool` (segmentation training) and `03_mask_factory` (classifier feature extraction) — same precedent as the existing 4 domain-adapt cells, no contamination, since `_domain_adapt()` and `_extract_group()` sample different frame indices from the same video.
 
-**2. Oversampling existing domain frames (tried, did not help).** Added `training.domain_oversample_weight` (`celldform/config.py`, default `1.0`) — a `WeightedRandomSampler` (`scripts/train_unet.py`) that resamples `domain_`-prefixed train frames more often per epoch, at zero new-annotation cost. Toggle via a config's `training:` block or the `--domain-oversample-weight <N>` CLI flag on `celldform-train-unet`/`scripts/train_unet.py`. A/B tested at weight=8.0 (`configs/multiclass_experiment_256_domain_oversample.yaml`, ~12%→~41% real-domain frames/epoch) against the Run 4 baseline:
+**2. Oversampling existing domain frames (tried, did not help).** Added `training.domain_oversample_weight` (`celldform/config.py`, default `1.0`) — a `WeightedRandomSampler` (`scripts/training/train_unet.py`) that resamples `domain_`-prefixed train frames more often per epoch, at zero new-annotation cost. Toggle via a config's `training:` block or the `--domain-oversample-weight <N>` CLI flag on `celldform-train-unet`/`scripts/training/train_unet.py`. A/B tested at weight=8.0 (`configs/multiclass_experiment_256_domain_oversample.yaml`, ~12%→~41% real-domain frames/epoch) against the Run 4 baseline:
 
 | Test subset (n) | Baseline (weight=1) | Oversampled (weight=8) |
 |---|---|---|
@@ -128,11 +155,11 @@ No improvement — resampling only exposes the model to the same 15 unique real 
 
 ### Checkpoint-loading bug found and fixed (2026-08-10)
 
-`UNet.from_checkpoint()` (`celldform/segmentation/unet.py`) did a bare `load_state_dict(torch.load(path))`, but `SegmentationTrainer._save_checkpoint()` actually wraps weights in `{"epoch", "val_dsc", "model_state_dict", ...}` — so `celldform-infer` and `scripts/infer.py` would crash on any checkpoint training actually produces. `evaluate_unet.py` and `predict_single_frame.py` had each independently worked around it with a manual unwrap; `tests/test_segmentation.py` didn't catch it because it saves a bare state dict via `model.save()`, never exercising the wrapped-dict path a real training run produces. Fixed to unwrap `model_state_dict` when present.
+`UNet.from_checkpoint()` (`celldform/segmentation/unet.py`) did a bare `load_state_dict(torch.load(path))`, but `SegmentationTrainer._save_checkpoint()` actually wraps weights in `{"epoch", "val_dsc", "model_state_dict", ...}` — so `celldform-infer` and `scripts/inference/infer.py` would crash on any checkpoint training actually produces. `evaluate_unet.py` and `predict_single_frame.py` had each independently worked around it with a manual unwrap; `tests/test_segmentation.py` didn't catch it because it saves a bare state dict via `model.save()`, never exercising the wrapped-dict path a real training run produces. Fixed to unwrap `model_state_dict` when present.
 
 ### Contamination bug found and fixed (2026-08-19)
 
-`organise()`'s legacy-image copy step (`celldform/acquisition/organiser.py`) had no exclusion for the 20 frames permanently reserved into `02_unet_holdout/legacy_holdout/` — running `celldform-organize-dataset --no-clean` to grow the domain-adapt pool (mitigation 1, above) silently recopied all 220 legacy JPGs, holdout included, back into `01_annotate_pool`. Caught before annotation touched them (no masks existed yet for those 20 filenames), so no holdout contamination actually reached the model — but a routine `--no-clean` rerun would eventually have annotated them by accident, since their timestamp-numeric filenames sort before `domain_*` and `scripts/annotate.py` resumes on the first unannotated image. Fixed: `organise()` now reads whatever's in `legacy_holdout/` and permanently excludes those filenames from the legacy copy, so this can't recur on future reruns; the 20 duplicated files were removed from the pool.
+`organise()`'s legacy-image copy step (`celldform/acquisition/organiser.py`) had no exclusion for the 20 frames permanently reserved into `02_unet_holdout/legacy_holdout/` — running `celldform-organize-dataset --no-clean` to grow the domain-adapt pool (mitigation 1, above) silently recopied all 220 legacy JPGs, holdout included, back into `01_annotate_pool`. Caught before annotation touched them (no masks existed yet for those 20 filenames), so no holdout contamination actually reached the model — but a routine `--no-clean` rerun would eventually have annotated them by accident, since their timestamp-numeric filenames sort before `domain_*` and `scripts/annotation/annotate.py` resumes on the first unannotated image. Fixed: `organise()` now reads whatever's in `legacy_holdout/` and permanently excludes those filenames from the legacy copy, so this can't recur on future reruns; the 20 duplicated files were removed from the pool.
 
 ### Domain gap closed (2026-08-27)
 
@@ -154,7 +181,7 @@ The checkpoint that looked best on the internal validation split (`bf32_reg2_cos
 
 ### Full 14-checkpoint sweep, evaluated against the real development set
 
-Every checkpoint from the `base_features`/dropout/cutout/regularization sweep was re-evaluated against the full 101-frame development set (`scripts/evaluate_unet.py --pool 02_unet_holdout`, results logged to `results/holdout_eval_log.jsonl`):
+Every checkpoint from the `base_features`/dropout/cutout/regularization sweep was re-evaluated against the full 101-frame development set (`scripts/training/evaluate_unet.py --pool 02_unet_holdout`, results logged to `results/preswap/preswap_eval_log.jsonl`):
 
 | Checkpoint | `base_features` | Recipe | Trapped-cell DSC |
 |---|---|---|---|
@@ -194,7 +221,7 @@ Three tried, in order, each testing one new lever against the same unregularized
 | `low_cell6` DSC | 0.650 | **0.719** (better) |
 | `low_cell6` recall | 0.600 | **0.935** |
 
-Visual inspection (`scripts/render_holdout_comparison.py`, mask-only GT-vs-prediction comparison) explained the split: `low_cell6`'s original problem was **under-detection** (the model was missing most of the cell in several frames) — scale augmentation fixed this directly, by teaching the model to accept a more modest-sized blob as valid. `high_cell9`'s problem is **over-detection** — a spatial artifact the model includes as if it were the cell — a structurally different bug that size tolerance doesn't touch, and arguably slightly worsens by making the model more permissive everywhere. **Lesson: always check the per-cell breakdown before calling a pooled-metric change a win** — the pooled number alone hid a real regression here, and will again with only two development cells.
+Visual inspection (`scripts/report/render_holdout_comparison.py`, mask-only GT-vs-prediction comparison) explained the split: `low_cell6`'s original problem was **under-detection** (the model was missing most of the cell in several frames) — scale augmentation fixed this directly, by teaching the model to accept a more modest-sized blob as valid. `high_cell9`'s problem is **over-detection** — a spatial artifact the model includes as if it were the cell — a structurally different bug that size tolerance doesn't touch, and arguably slightly worsens by making the model more permissive everywhere. **Lesson: always check the per-cell breakdown before calling a pooled-metric change a win** — the pooled number alone hid a real regression here, and will again with only two development cells.
 
 **3. Combined recipe (`bf64_allaug`) — current best, genuinely improves both cells.** All four `CellDataset` augmentation knobs at once (noise 0.02, cutout 0.3, brightness/contrast 0.5, scale 0.5), cosine scheduler, dropout left off (it's model regularization, not augmentation, and was already shown to hurt), and the internal validation split repurposed from the old, entirely unused `test_split` (see [Data Layout](data.md#trainval-split-01_annotate_pool)) — 90% of the pool goes to training instead of 69%.
 
@@ -241,7 +268,7 @@ Two configs isolate it — `configs/multiclass_experiment_256_base_cos.yaml` (no
 
 Also confirmed: **the internal validation split carried no signal on this comparison at all.** `bf64_base_cos` scored 0.9285 internally and `bf64_scale_cos` 0.9277 — a 0.001 spread — while the development set separated the same two checkpoints by 0.066.
 
-Both charts in the progress reports are generated from `results/holdout_eval_log.jsonl` by `scripts/plot_percell_metrics.py` and `scripts/plot_sweep_dsc.py`, so no figure can drift from the run that produced it.
+Both charts in the progress reports are generated from `results/preswap/preswap_eval_log.jsonl` by `scripts/report/plot_percell_metrics.py` and `scripts/report/plot_sweep_dsc.py`, so no figure can drift from the run that produced it.
 
 ---
 
@@ -287,7 +314,7 @@ The table below was the pre-Run-4 projection and undershot: 220 masks reached DS
 | 220 (historical) | 0.943 internal-val / 0.538 on 5 real cells — see [Domain Gap](#domain-gap) | n/a (multiclass, `class_weights=[1,3,3]`) |
 | 425, full development-set eval (current) | **0.605 (no augmentation) → 0.671 (scale augmentation) under the matched config — see [the controlled re-run](#the-controlled-augmentation-re-run)** | n/a |
 
-The thesis-reportable DSC comes from `scripts/evaluate_unet.py` on the `02_unet_holdout` pool, which is now fully annotated and has been evaluated against every checkpoint in the sweep above. See [Workflow Guide](workflow.md#step-5-evaluate-on-the-development-set).
+The thesis-reportable DSC comes from `scripts/training/evaluate_unet.py` on the `02_unet_holdout` pool, which is now fully annotated and has been evaluated against every checkpoint in the sweep above. See [Workflow Guide](workflow.md#step-5-evaluate-on-the-development-set).
 
 ---
 
@@ -299,7 +326,7 @@ Implemented, enabled on the train split only:
 - Vertical flip (50% chance)
 - Random 90° rotation (0°, 90°, 180°, or 270°)
 
-`CellDataset` in `scripts/train_unet.py` applies these via `augment=True` (train split only — there's no separate test loader; see [Data Layout](data.md#trainval-split-01_annotate_pool)).
+`CellDataset` in `scripts/training/train_unet.py` applies these via `augment=True` (train split only — there's no separate test loader; see [Data Layout](data.md#trainval-split-01_annotate_pool)).
 
 Four more augmentation knobs were added during the 2026-09 sweep, all configured under `training.augmentation` and all off by default:
 
@@ -318,7 +345,7 @@ Note this augmentation section only addresses spatial/intensity invariance withi
 
 ## Next Steps
 
-1. **Current priority — retrain on the completed 445-frame pool.** `low_cell5` was annotated on **2026-09-10**, taking `01_annotate_pool` to 445/445 and adding a twelfth training cell. More real cell identities is historically the only lever to produce a large real-generalization improvement (the 2026-08-27 domain-gap closure), and it has never been combined with the current best recipe. Re-run `scripts/preprocess_frames.py --masks` first — the preprocessed set is still at 425 — then train `configs/multiclass_experiment_256_scale_cos.yaml` on 445 frames across **23 groups**. `high_cell10` stays deliberately unannotated (see [Data Layout — Cell roles](data.md#cell-roles) for the full protocol and why).
+1. **Current priority — retrain on the completed 445-frame pool.** `low_cell5` was annotated on **2026-09-10**, taking `01_annotate_pool` to 445/445 and adding a twelfth training cell. More real cell identities is historically the only lever to produce a large real-generalization improvement (the 2026-08-27 domain-gap closure), and it has never been combined with the current best recipe. Re-run `scripts/data/preprocess_frames.py --masks` first — the preprocessed set is still at 425 — then train `configs/multiclass_experiment_256_scale_cos.yaml` on 445 frames across **23 groups**. `high_cell10` stays deliberately unannotated (see [Data Layout — Cell roles](data.md#cell-roles) for the full protocol and why).
 2. **Ablate `cutout_prob` and `brightness_contrast_prob` separately.** Combined augmentation costs 0.033 pooled DSC against no augmentation at all, while scale alone gains 0.066 — so one or both of those two knobs is actively harmful, but which is unknown. One run each settles it.
 2. Investigate `high_cell9`'s over-segmentation directly — overlay the predicted region on the *raw, non-CLAHE* frame across a few laser-power steps and check whether it visibly tracks a halo/glare shape. This is the one concrete diagnostic step from the augmentation experiments that hasn't been done yet, and the most direct route to closing `high_cell9`'s remaining gap.
 3. Once the recipe is genuinely settled (no more hyperparameter changes queued): fold `high_cell9` + `low_cell6` into the training pool, train the final/production checkpoint once on the enlarged pool, *then* annotate `high_cell10` and evaluate it exactly once — the blind test. See [Data Layout](data.md#cell-roles) for the exact sequence; do not annotate or evaluate `high_cell10` before this is triggered.

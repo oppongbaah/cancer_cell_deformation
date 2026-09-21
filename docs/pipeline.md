@@ -59,7 +59,7 @@ Each video produces a `<stem>_manifest.csv` recording frame index, timestamp, ce
 Each step can be toggled individually via the `enabled` dict for ablation experiments.
 
 !!! warning "Preprocessing is manual"
-    Preprocessing is **not** applied inside the training loop. Run `scripts/preprocess_frames.py --masks` before training. See [Workflow Guide](workflow.md).
+    Preprocessing is **not** applied inside the training loop. Run `scripts/data/preprocess_frames.py --masks` before training. See [Workflow Guide](workflow.md).
 
 ---
 
@@ -97,7 +97,7 @@ Both are set in `configs/default.yaml` under `training`. In multiclass mode (`ou
     Cancer cells occupy roughly 0.18% of a 256×256 frame (~118 pixels out of 65,536). Without `pos_weight`, the BCE loss is dominated by background pixels and the model learns to ignore the cell entirely. `pos_weight=100` tells BCE to treat each cell pixel as if it were 100 background pixels. Increase it if recall is low; decrease it if precision is low and recall is near 1.0.
 
 !!! note "Multiclass evaluation"
-    `SegmentationTrainer.evaluate()` returns a flat metrics dict in binary mode, or a dict keyed by class id (plus `"mean"`) in multiclass mode — see `SegmentationMetrics.per_class()`. `scripts/evaluate_unet.py` and `Visualizer.plot_training_curves()` both handle either shape.
+    `SegmentationTrainer.evaluate()` returns a flat metrics dict in binary mode, or a dict keyed by class id (plus `"mean"`) in multiclass mode — see `SegmentationMetrics.per_class()`. `scripts/training/evaluate_unet.py` and `Visualizer.plot_training_curves()` both handle either shape.
 
 **GPU:** The U-Net is the only stage that runs on the GPU. See [GPU & Hardware](gpu.md).
 
@@ -121,7 +121,7 @@ Both are set in `configs/default.yaml` under `training`. In multiclass mode (`ou
 | `hu_0` – `hu_6` | Log-scaled Hu moment invariants |
 
 !!! note "Feature ordering"
-    Features fed to the classifier must be sorted **alphabetically by name** — the same order `sorted(features.keys())` produces. Do not change this without updating `RealTimePipeline` and `scripts/infer.py`.
+    Features fed to the classifier must be sorted **alphabetically by name** — the same order `sorted(features.keys())` produces. Do not change this without updating `RealTimePipeline` and `scripts/inference/infer.py`.
 
 ---
 

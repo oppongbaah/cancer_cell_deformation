@@ -58,7 +58,7 @@ celldform-extract-frames --video experiment.mp4 --change-threshold 5.0
 
 ## `celldform-train-unet`
 
-Train the U-Net segmentation model. Delegates directly to `scripts/train_unet.py`.
+Train the U-Net segmentation model. Delegates directly to `scripts/training/train_unet.py`.
 
 ```bash
 celldform-train-unet --config configs/multiclass_experiment_256.yaml   # frozen scheme
