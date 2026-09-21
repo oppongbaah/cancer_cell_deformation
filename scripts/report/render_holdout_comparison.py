@@ -3,7 +3,7 @@
 Render the four-figure holdout comparison used in the thesis progress
 reports: a strip of N frames from one holdout cell, shown as (1) raw
 unannotated frames, (2) the multiclass ground-truth annotation (rendered via
-scripts/preview_masks.py's own color convention — not a re-drawn
+scripts/annotation/preview_masks.py's own color convention — not a re-drawn
 approximation), (3) ground truth vs. U-Net prediction on a black background
 (mask-only, no frame texture), and (4) the same comparison overlaid on the
 original frame.
@@ -54,7 +54,7 @@ import yaml
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))  # repo root
 from celldform.segmentation.unet import UNet
 
-sys.path.insert(0, str(Path(__file__).parent.parent))  # scripts/, for preview_masks
+sys.path.insert(0, str(Path(__file__).parent.parent / "annotation"))  # for preview_masks
 from preview_masks import _colorize  # the real color convention, not a re-implementation
 
 _EXTS = (".jpg", ".jpeg", ".png")
@@ -318,7 +318,7 @@ def main() -> None:
 
     print(f"\nDone. Legend: ground truth {args.gt_color} (R,G,B), "
           f"prediction {args.pred_color}, overlap {args.overlap_color}. "
-          "Labelled-mask panel uses scripts/preview_masks.py's own convention "
+          "Labelled-mask panel uses scripts/annotation/preview_masks.py's own convention "
           "(green=trapped cell, red=decoy) unaffected by --gt-color/--pred-color.")
 
 

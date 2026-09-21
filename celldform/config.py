@@ -39,7 +39,7 @@ class DataConfig:
     val_split: float = 0.15     # fraction held out for checkpoint-selection/early-stopping monitoring
                                  # during training. NOT the thesis-reportable evaluation — that's a
                                  # separate, external pool (data/frames/02_unet_holdout/), scored via
-                                 # scripts/evaluate_unet.py. A third internal "test" split used to also
+                                 # scripts/training/evaluate_unet.py. A third internal "test" split used to also
                                  # exist here but was removed 2026-09-04: it was computed every run and
                                  # printed in the split summary, but never actually built into a loader
                                  # or evaluated anywhere in train_unet.py — the external holdout already
@@ -138,7 +138,7 @@ class TrainingCfg:
                                            # changed the displayed metrics only, never the loss.
     domain_oversample_weight: float = 1.0  # sampling weight for domain_-prefixed (real-cell) train frames vs.
                                             # legacy frames; 1.0 = no oversampling (uniform, default). See
-                                            # scripts/train_unet.py's WeightedRandomSampler for how this is applied.
+                                            # scripts/training/train_unet.py's WeightedRandomSampler for how this is applied.
     # Set via a nested `training.augmentation:` block in the YAML (see _parse_training) —
     # e.g. `augmentation: {noise_std: 0.02, cutout_prob: 0.3}` — not top-level training: keys.
     # Old flat augment_noise_std/augment_cutout_prob YAML keys are still read as a fallback.
@@ -146,7 +146,7 @@ class TrainingCfg:
                                      # [0,1] train frame, on top of the existing flip/rotation augmentation;
                                      # 0.0 = off (default). Masks are never noised. Meant to help the
                                      # legacy-vs-real-domain gap in ways flip/rotation alone can't — see
-                                     # CellDataset in scripts/train_unet.py.
+                                     # CellDataset in scripts/training/train_unet.py.
     augment_cutout_prob: float = 0.0  # probability of erasing one random rectangular patch (8-25% of each
                                        # side, filled with the frame's own mean intensity) from the train
                                        # frame; 0.0 = off (default). Mask is untouched — the label still

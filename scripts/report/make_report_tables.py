@@ -161,7 +161,7 @@ def headline(log: Path, runs, baseline: str | None, emph: set[str], extra,
         hits = [r for r in rows if Path(r["checkpoint"]).parent.name == ck
                 and r.get("filter") is None and "1" in r.get("metrics", {})]
         if not hits:
-            sys.exit(f"No pooled eval-log entry for '{ck}'. Run scripts/evaluate_unet.py for it first.")
+            sys.exit(f"No pooled eval-log entry for '{ck}'. Run scripts/training/evaluate_unet.py for it first.")
         return max(hits, key=lambda r: r.get("timestamp", ""))["metrics"]["1"]
 
     base = pooled(baseline)["dsc"] if baseline else None

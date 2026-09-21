@@ -15,7 +15,7 @@ checkpoints both load correctly without manual flags.
 
 Usage
 -----
-python scripts/predict_single_frame.py \\
+python scripts/inference/predict_single_frame.py \\
     --checkpoint checkpoints/preswap/multiclass_experiment_256/unet_best.pt \\
     --frame data/frames/02_unet_holdout/high_cell9_005000.jpg
 """
@@ -140,7 +140,7 @@ def main() -> None:
         out_channels=conf.unet.out_channels,
     )
     # SegmentationTrainer._save_checkpoint wraps the state dict with epoch/val_dsc/
-    # optimizer/scheduler state (see scripts/evaluate_unet.py for the same pattern);
+    # optimizer/scheduler state (see scripts/training/evaluate_unet.py for the same pattern);
     # UNet.from_checkpoint expects a bare state dict, so load manually here instead.
     state = torch.load(ckpt_path, map_location=device)
     unet.load_state_dict(state["model_state_dict"] if "model_state_dict" in state else state)

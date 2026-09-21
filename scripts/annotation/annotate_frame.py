@@ -2,9 +2,9 @@
 """
 Annotate or correct specific frames in napari, one after the other.
 
-Unlike scripts/annotate.py (which walks a whole pool), this opens exactly the
+Unlike scripts/annotation/annotate.py (which walks a whole pool), this opens exactly the
 frames you name — full paths or bare names resolved against the pool — making
-it the tool for fixing masks flagged by scripts/validate_masks.py. Each frame
+it the tool for fixing masks flagged by scripts/annotation/validate_masks.py. Each frame
 shows a raw greyscale layer, a CLAHE-enhanced preview layer (toggle visibility
 in the layer list), and a Labels layer to paint on.
 
@@ -27,10 +27,10 @@ erase; saving while strays remain prints a warning.
 
 Usage
 -----
-python scripts/annotate_frame.py data/frames/01_annotate_pool/frame_0000.jpg
-python scripts/annotate_frame.py --multiclass \\
+python scripts/annotation/annotate_frame.py data/frames/01_annotate_pool/frame_0000.jpg
+python scripts/annotation/annotate_frame.py --multiclass \\
     domain_high_cell8_000000 domain_low_cell3_000000 domain_low_cell4_000000
-python scripts/annotate_frame.py frame_0000.jpg --mask-out custom/path.png
+python scripts/annotation/annotate_frame.py frame_0000.jpg --mask-out custom/path.png
 """
 
 from __future__ import annotations
@@ -55,7 +55,7 @@ from napari.utils.colormaps import DirectLabelColormap
 _EXTS = (".jpg", ".jpeg", ".png", ".tif", ".tiff")
 _VALID_MULTICLASS = {0, 1, 2}
 
-# Same fixed mapping as scripts/annotate.py, except unknown labels render
+# Same fixed mapping as scripts/annotation/annotate.py, except unknown labels render
 # magenta instead of transparent — this script's job is correcting flagged
 # masks, and invisible stray labels (e.g. an accidental 3 or 253) are exactly
 # what needs to be found and erased.
@@ -218,7 +218,7 @@ def main() -> None:
 
     # napari's Labels layer binds "B" to "toggle preserve labels" by default,
     # shadowing the viewer-level binding while the mask layer is active —
-    # reclaim it (same workaround as scripts/annotate.py).
+    # reclaim it (same workaround as scripts/annotation/annotate.py).
     @viewer.layers["mask"].bind_key("b", overwrite=True)
     def _prev_from_mask_layer(layer) -> None:
         _advance(-1)

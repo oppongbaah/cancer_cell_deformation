@@ -17,8 +17,8 @@ sweep's numbers the moment the terminal scrolled past them. Pass
 
 Usage
 -----
-python scripts/evaluate_unet.py --checkpoint checkpoints/unet_best.pt
-python scripts/evaluate_unet.py --checkpoint checkpoints/unet_best.pt \\
+python scripts/training/evaluate_unet.py --checkpoint checkpoints/unet_best.pt
+python scripts/training/evaluate_unet.py --checkpoint checkpoints/unet_best.pt \\
                                  --pool 02_unet_holdout
 """
 
@@ -34,7 +34,7 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))  # repo root
 
 from celldform.config import load as load_config
 from celldform.segmentation.trainer import SegmentationTrainer
@@ -73,12 +73,12 @@ def main() -> None:
     if not inputs_dir.exists():
         sys.exit(
             f"Preprocessed inputs not found: {inputs_dir}\n"
-            f"Run: python scripts/preprocess_frames.py --masks --pool {args.pool}"
+            f"Run: python scripts/data/preprocess_frames.py --masks --pool {args.pool}"
         )
     if not labels_dir.exists():
         sys.exit(
             f"Preprocessed labels not found: {labels_dir}\n"
-            f"Run: python scripts/preprocess_frames.py --masks --pool {args.pool}"
+            f"Run: python scripts/data/preprocess_frames.py --masks --pool {args.pool}"
         )
 
     frame_paths = sorted(inputs_dir.glob("*.png"))

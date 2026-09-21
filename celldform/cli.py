@@ -180,7 +180,7 @@ def infer() -> None:
     model = UNet.from_checkpoint(args.unet_ckpt, device=device)
     print(f"[celldform] Running inference on {args.input} ...")
     print(f"            Results will be saved to {args.output_dir}")
-    print("            See scripts/infer.py for a complete example.")
+    print("            See scripts/inference/infer.py for a complete example.")
 
 
 # ---------------------------------------------------------------------------

@@ -38,11 +38,11 @@ before painting a different class.
 
 Usage
 -----
-python scripts/annotate.py
-python scripts/annotate.py --image-dir data/frames/01_annotate_pool \\
+python scripts/annotation/annotate.py
+python scripts/annotation/annotate.py --image-dir data/frames/01_annotate_pool \\
                            --mask-dir  data/masks/01_annotate_pool
-python scripts/annotate.py --pool 02_unet_holdout   # annotate holdout set
-python scripts/annotate.py --multiclass             # 3-class experiment (same 40 images)
+python scripts/annotation/annotate.py --pool 02_unet_holdout   # annotate holdout set
+python scripts/annotation/annotate.py --multiclass             # 3-class experiment (same 40 images)
 """
 
 from __future__ import annotations

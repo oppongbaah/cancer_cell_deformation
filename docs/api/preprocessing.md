@@ -5,7 +5,7 @@
 Stage 2 of the pipeline — converts raw greyscale frames to normalised 256×256 float32 arrays ready for U-Net input.
 
 !!! warning "Preprocessing is manual"
-    Run `scripts/preprocess_frames.py --masks` before training. `PreprocessingPipeline` is **not** applied automatically inside the training loop.
+    Run `scripts/data/preprocess_frames.py --masks` before training. `PreprocessingPipeline` is **not** applied automatically inside the training loop.
 
 ---
 

@@ -148,7 +148,7 @@ them, then later runs inference on the full set of frames from those cells.
 
 All 220 frames are annotated in the experimental 3-class labeling in
 `masks/01_annotate_pool_multiclass/` (0=background, 1=trapped cell, 2=other/decoy
-object), created with `scripts/annotate.py --multiclass`. This is now the frozen
+object), created with `scripts/annotation/annotate.py --multiclass`. This is now the frozen
 label scheme for U-Net training (binary annotation stalled at 43/220 and is not
 being continued) — see the binary-vs-multiclass ablation in `docs/training.md`
 and the decision note in `CLAUDE.md`.

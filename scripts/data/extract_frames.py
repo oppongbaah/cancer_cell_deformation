@@ -3,19 +3,19 @@
 Data acquisition — extract frames from an optical tweezer video recording.
 
 Usage:
-    python scripts/extract_frames.py --video data/videos/experiment_01.mp4
+    python scripts/data/extract_frames.py --video data/videos/experiment_01.mp4
 
     # override output directory
-    python scripts/extract_frames.py --video experiment.mp4 --output-dir data/frames
+    python scripts/data/extract_frames.py --video experiment.mp4 --output-dir data/frames
 
     # keep every 5th frame
-    python scripts/extract_frames.py --video experiment.mp4 --every-n 5
+    python scripts/data/extract_frames.py --video experiment.mp4 --every-n 5
 
     # resample to a fixed frame rate
-    python scripts/extract_frames.py --video experiment.mp4 --target-fps 10.0
+    python scripts/data/extract_frames.py --video experiment.mp4 --target-fps 10.0
 
     # stop after 200 frames (useful for quick sanity checks)
-    python scripts/extract_frames.py --video experiment.mp4 --max-frames 200
+    python scripts/data/extract_frames.py --video experiment.mp4 --max-frames 200
 
 Outputs (written to output_dir):
     frame_000000.png, frame_000001.png, ...   — extracted grayscale frames
@@ -80,7 +80,7 @@ def main() -> None:
     parser.add_argument(
         "--dark-percentile", type=float, default=None,
         help=(
-            "Bottom X% of channel pixel intensities treated as candidate cells. "
+            "Bottom X%% of channel pixel intensities treated as candidate cells. "  # %% -- argparse interpolates help strings
             "Default: 20. Overrides config acquisition.dark_percentile."
         ),
     )

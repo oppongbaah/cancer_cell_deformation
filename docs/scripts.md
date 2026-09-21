@@ -1,17 +1,33 @@
 # Scripts Reference
 
-All scripts live under `scripts/` and are thin wrappers or standalone tools. They can be run directly with `python scripts/<name>.py`.
+!!! info "Layout — scripts are grouped by pipeline stage (reorganised 2026-09-17)"
+
+    ```
+    scripts/
+      data/        organize_dataset · extract_frames · preprocess_frames
+      annotation/  annotate · annotate_frame · preview_masks · validate_masks
+      training/    train_unet · evaluate_unet · compare_postswap · run_postswap.sh
+      inference/   infer · predict_single_frame
+      report/      build_report_assets and the figure/table generators it drives
+    ```
+
+    Scripts import `celldform` via `Path(__file__).parent.parent.parent`, so moving one
+    between folders means fixing that hop. `report/render_holdout_comparison.py`
+    additionally reaches into `annotation/` for `preview_masks`.
+
+
+All scripts live under `scripts/<stage>/` and are thin wrappers or standalone tools. Run them directly with `python scripts/<stage>/<name>.py`. The installed CLI (`celldform-*`, see [CLI Reference](cli.md)) targets `celldform.cli` and is unaffected by this layout.
 
 ---
 
-## `annotate.py` — napari annotation tool
+## `annotation/annotate.py` — napari annotation tool
 
 Opens every image in an annotation pool, in order, in napari — including already-annotated ones, so `N`/`B` can freely browse and correct earlier work rather than only stepping through what's left. The viewer opens on the first not-yet-annotated image (not the start of the pool); revisiting an annotated frame loads its saved mask instead of a blank one, and the window title shows `[saved]` for frames that already have a mask on disk. Paint the cell mask on the Labels layer, then press `S` to save and advance.
 
 ```bash
-python scripts/annotate.py                             # 01_annotate_pool (default)
-python scripts/annotate.py --pool 02_unet_holdout      # holdout set
-python scripts/annotate.py --multiclass                # experimental 3-class labels (same 40 images)
+python scripts/annotation/annotate.py                             # 01_annotate_pool (default)
+python scripts/annotation/annotate.py --pool 02_unet_holdout      # holdout set
+python scripts/annotation/annotate.py --multiclass                # experimental 3-class labels (same 40 images)
 ```
 
 | Option | Default | Description |
@@ -38,18 +54,18 @@ python scripts/annotate.py --multiclass                # experimental 3-class la
 !!! note "P vs. B"
     `P` used to mean "previous image" but napari's Labels layer binds it by default to "toggle preserve labels," which shadows any viewer-level binding while the mask layer is active. `B` is reclaimed for "previous" instead; `P` is left as napari's default paint-mode toggle.
 
-Binary mode: masks are saved as uint8 PNGs with values 0 (background) / 255 (cell). Multiclass mode: masks are saved with raw label values 0/1/2 (not binarized) — use `scripts/preview_masks.py` to view them, since label values 1–2 are visually indistinguishable from background in a plain image viewer.
+Binary mode: masks are saved as uint8 PNGs with values 0 (background) / 255 (cell). Multiclass mode: masks are saved with raw label values 0/1/2 (not binarized) — use `scripts/annotation/preview_masks.py` to view them, since label values 1–2 are visually indistinguishable from background in a plain image viewer.
 
 ---
 
-## `preview_masks.py` — colorized mask preview
+## `annotation/preview_masks.py` — colorized mask preview
 
 Renders saved masks as real color PNGs, mask alone against a black background — no napari needed, and no raw frame loaded or blended in. Multiclass masks (label ids 0/1/2) are nearly invisible in a plain image viewer; this renders background as black, label 1 (trapped cell) as green, and label 2 (other/decoy) as red. Legacy binary masks (0/255) also work — foreground renders green.
 
 ```bash
-python scripts/preview_masks.py                                    # 01_annotate_pool_multiclass (default)
-python scripts/preview_masks.py --pool 01_annotate_pool            # binary masks
-python scripts/preview_masks.py --limit 10
+python scripts/annotation/preview_masks.py                                    # 01_annotate_pool_multiclass (default)
+python scripts/annotation/preview_masks.py --pool 01_annotate_pool            # binary masks
+python scripts/annotation/preview_masks.py --limit 10
 ```
 
 | Option | Default | Description |
@@ -61,7 +77,7 @@ python scripts/preview_masks.py --limit 10
 
 ---
 
-## `build_report_assets.py` — rebuild every progress-report figure and table
+## `report/build_report_assets.py` — rebuild every progress-report figure and table
 
 Single entry point for the progress report's assets. It pins the arguments each figure was generated with and drives the individual plot scripts, so nothing in the report depends on remembering a command line.
 
@@ -95,7 +111,7 @@ python scripts/report/build_report_assets.py --compile   # assets, then compile,
 
 ---
 
-## `make_report_tables.py` — emit the report's LaTeX tables from the data
+## `report/make_report_tables.py` — emit the report's LaTeX tables from the data
 
 Generates `.tex` fragments the report `\input{}`s, so the tables can't drift from the pools the way hand-typed ones can.
 
@@ -112,7 +128,7 @@ python scripts/report/make_report_tables.py headline --output ../masters_thesis/
 
 ---
 
-## `plot_pool_flow.py` — frame-pool provenance diagram
+## `report/plot_pool_flow.py` — frame-pool provenance diagram
 
 Replaces a pool-summary table: shows which cells go where, that `01_annotate_pool` is *drawn from* `03_mask_factory` at different frame indices, and where the evaluation firewall sits. All counts are read off disk.
 
@@ -122,7 +138,7 @@ python scripts/report/plot_pool_flow.py --output results/pool_flow.png
 
 ---
 
-## `plot_cell_sizes.py` — per-cell trapped-cell size
+## `report/plot_cell_sizes.py` — per-cell trapped-cell size
 
 Measures mean label-1 area per cell from the annotation masks and plots every cell on one axis, with the training range as a band. Makes "the development cells are smaller than the training cells" checkable rather than asserted.
 
@@ -132,7 +148,7 @@ python scripts/report/plot_cell_sizes.py --output results/cell_sizes.png
 
 ---
 
-## `plot_split_change.py` — train/val split before and after
+## `report/plot_split_change.py` — train/val split before and after
 
 Two stacked bars showing the training pool growing by reclaiming an unused test split. **Counts are arguments, not derived** — the old split is historical and not reproducible from disk — and are printed on every run.
 
@@ -142,7 +158,7 @@ python scripts/report/plot_split_change.py --before 293 78 54 --after 371 54 0
 
 ---
 
-## `render_holdout_comparison.py` — raw/labelled/masks-only/overlay comparison strip
+## `report/render_holdout_comparison.py` — raw/labelled/masks-only/overlay comparison strip
 
 Renders the four-figure holdout comparison used in the thesis progress reports: N evenly-spaced frames from one holdout cell, shown as (1) raw unannotated frames, (2) the multiclass ground-truth annotation (via `preview_masks.py`'s own `_colorize()`, not a re-drawn approximation), (3) ground truth vs. U-Net prediction on a black background (mask-only), and (4) the same comparison overlaid on the original frame. All four share one auto-computed crop window and panel size, so the cell renders at the same scale in every figure. Every panel carries its own frame index in a label band above the image, so a figure printed in a report can be traced back to the exact files on disk — pass `--no-frame-labels` for bare panels.
 
@@ -175,15 +191,15 @@ python scripts/report/render_holdout_comparison.py \
 
 ---
 
-## `validate_masks.py` — mask validation gate
+## `annotation/validate_masks.py` — mask validation gate
 
 Validates the masks that are present in a pool, and (by default) that every frame in the pool has one. Use as a pre-training gate.
 
 ```bash
-python scripts/validate_masks.py                          # 01_annotate_pool
-python scripts/validate_masks.py --pool 02_unet_holdout
-python scripts/validate_masks.py --multiclass              # validates 01_annotate_pool_multiclass
-python scripts/validate_masks.py --no-completeness         # skip the "every frame has a mask" check
+python scripts/annotation/validate_masks.py                          # 01_annotate_pool
+python scripts/annotation/validate_masks.py --pool 02_unet_holdout
+python scripts/annotation/validate_masks.py --multiclass              # validates 01_annotate_pool_multiclass
+python scripts/annotation/validate_masks.py --no-completeness         # skip the "every frame has a mask" check
 ```
 
 | Option | Default | Description |
@@ -207,7 +223,7 @@ Exits with code `0` if all checks pass, `1` if any issues are found. Reports `Va
 
 ---
 
-## `preprocess_frames.py` — manual preprocessing
+## `data/preprocess_frames.py` — manual preprocessing
 
 Applies `PreprocessingPipeline` to frames and saves PNGs (256×256 by default). **Required before training.** Optionally resizes masks to match.
 
@@ -215,11 +231,11 @@ Applies `PreprocessingPipeline` to frames and saves PNGs (256×256 by default). 
     When `--masks` is passed, only frames that have a corresponding mask in `data/masks/<pool>/` are processed. Frames without a mask are skipped. The summary line reports how many were skipped.
 
 ```bash
-python scripts/preprocess_frames.py --masks                        # train pool
-python scripts/preprocess_frames.py --masks --pool 02_unet_holdout # evaluate pool
-python scripts/preprocess_frames.py --pool 03_mask_factory          # inference pool
-python scripts/preprocess_frames.py --masks --compare --n-compare 10
-python scripts/preprocess_frames.py --masks --target-size 128 128   # override output resolution
+python scripts/data/preprocess_frames.py --masks                        # train pool
+python scripts/data/preprocess_frames.py --masks --pool 02_unet_holdout # evaluate pool
+python scripts/data/preprocess_frames.py --pool 03_mask_factory          # inference pool
+python scripts/data/preprocess_frames.py --masks --compare --n-compare 10
+python scripts/data/preprocess_frames.py --masks --target-size 128 128   # override output resolution
 ```
 
 | Option | Default | Description |
@@ -245,15 +261,15 @@ python scripts/preprocess_frames.py --masks --target-size 128 128   # override o
 
 ---
 
-## `train_unet.py` — U-Net training
+## `training/train_unet.py` — U-Net training
 
 Trains the U-Net on preprocessed data. Expects already-preprocessed PNGs at whatever size was used for preprocessing (256×256 by default) — no preprocessing is applied internally. Reads `unet.out_channels` from the config: `1` (default) trains binary segmentation; `>1` trains multiclass (`CellDataset` loads raw integer label masks instead of binarising, and `_DiceCELoss` replaces `_DiceBCELoss`).
 
 ```bash
-python scripts/train_unet.py --config configs/multiclass_experiment_256.yaml   # frozen scheme
-python scripts/train_unet.py --config configs/default.yaml --seed 123
-python scripts/train_unet.py --config configs/multiclass_experiment_256.yaml --tag auto
-python scripts/train_unet.py --config configs/multiclass_experiment_256.yaml --domain-oversample-weight 8.0
+python scripts/training/train_unet.py --config configs/multiclass_experiment_256.yaml   # frozen scheme
+python scripts/training/train_unet.py --config configs/default.yaml --seed 123
+python scripts/training/train_unet.py --config configs/multiclass_experiment_256.yaml --tag auto
+python scripts/training/train_unet.py --config configs/multiclass_experiment_256.yaml --domain-oversample-weight 8.0
 ```
 
 | Option | Default | Description |
@@ -267,14 +283,14 @@ The script reads `data.frames_dir` and `data.masks_dir` from the config. Pairs f
 
 ---
 
-## `evaluate_unet.py` — holdout evaluation
+## `training/evaluate_unet.py` — holdout evaluation
 
 Evaluates a trained U-Net on `02_unet_holdout` and reports the thesis-reportable segmentation metrics.
 
 ```bash
-python scripts/evaluate_unet.py --checkpoint checkpoints/multiclass_experiment_256/unet_best.pt \
+python scripts/training/evaluate_unet.py --checkpoint checkpoints/multiclass_experiment_256/unet_best.pt \
     --config configs/multiclass_experiment_256.yaml   # frozen scheme — --config must match out_channels
-python scripts/evaluate_unet.py --checkpoint checkpoints/unet_best.pt --pool 02_unet_holdout  # binary baseline
+python scripts/training/evaluate_unet.py --checkpoint checkpoints/unet_best.pt --pool 02_unet_holdout  # binary baseline
 ```
 
 | Option | Default | Description |
@@ -292,41 +308,85 @@ python scripts/evaluate_unet.py --checkpoint checkpoints/unet_best.pt --pool 02_
 
 ---
 
-## `organize_dataset.py` — dataset organiser
+## `data/organize_dataset.py` — dataset organiser
 
 Thin wrapper around `celldform.acquisition.organiser.organise()`.
 
 ```bash
-python scripts/organize_dataset.py
-python scripts/organize_dataset.py --every-n 100 --domain-adapt-n 10
-python scripts/organize_dataset.py --no-clean --domain-adapt-n 20   # expand domain-adapt only, don't wipe data/frames/ — run 2026-08-19
+python scripts/data/organize_dataset.py
+python scripts/data/organize_dataset.py --every-n 100 --domain-adapt-n 10
+python scripts/data/organize_dataset.py --no-clean --domain-adapt-n 20   # expand domain-adapt only, don't wipe data/frames/ — run 2026-08-19
 ```
 
 Equivalent to `celldform-organize-dataset`. See [CLI Reference](cli.md). The `domain_adapt` cell list in `celldform/acquisition/organiser.py` covers all 11 `03_mask_factory` cells (as of 2026-08-10, extended from 4); `--domain-adapt-n` was raised 5→20/cell on 2026-08-19 — see [Training Results — Domain Gap](training.md#domain-gap) for why. Re-running with a larger N doesn't lose frames/masks from an earlier N — every `domain_*` file already on disk is kept and re-enumerated into the manifest, and legacy frames reserved in `02_unet_holdout/legacy_holdout/` are always excluded from the copy regardless of N (a contamination bug where this wasn't true was found and fixed the same day).
 
 ---
 
-## `extract_frames.py` — single video extraction
+## `data/extract_frames.py` — single video extraction
 
 Thin wrapper around `FrameExtractor` for a single video.
 
 ```bash
-python scripts/extract_frames.py --video data/raw/high/"cell 1 high 50 increments.mp4"
+python scripts/data/extract_frames.py --video data/raw/high/"cell 1 high 50 increments.mp4"
 ```
 
 Equivalent to `celldform-extract-frames`. See [CLI Reference](cli.md).
 
 ---
 
-## `infer.py` — full inference pipeline
+## `inference/infer.py` — full inference pipeline
 
 Runs stages 1–6 on a video or directory of preprocessed images.
 
 ```bash
-python scripts/infer.py \
+python scripts/inference/infer.py \
     --video data/raw/high/"cell 1 high 50 increments.mp4" \
     --unet-ckpt checkpoints/unet_best.pt \
     --classifier-ckpt checkpoints/svm.pkl
 ```
 
 Equivalent to `celldform-infer`. See [CLI Reference](cli.md).
+
+---
+
+## `training/compare_postswap.py` — enforce the noise floor on comparisons
+
+Reads `results/postswap/postswap_eval_log.jsonl` and compares runs against the series
+baseline, per development cell and pooled.
+
+```bash
+python scripts/training/compare_postswap.py                      # every run vs. baseline
+python scripts/training/compare_postswap.py --runs A B           # just these
+python scripts/training/compare_postswap.py --seeds A B C        # aggregate seeds: mean ± sd
+```
+
+It exists to stop a number that looks exciting being recorded as a finding. Measured
+seed-only spread on this pipeline is **sd 0.047 pooled**, so a difference between two
+single runs has SE ≈ 0.066 and needs roughly twice that to be believable. Anything
+below **0.133** prints as `INCONCLUSIVE`:
+
+```
+  => INCONCLUSIVE. Pooled delta +0.048 is inside the +/-0.133 noise floor.
+     Log as screened, not as a result. Three seeds on BOTH arms to decide it.
+```
+
+!!! warning "This is not a formality"
+    Two results in this project were recorded as findings and later retracted for
+    exactly this reason — the scale-augmentation recipe (+0.066) and Focal–Tversky
+    (+0.023, whose seed repeat came back −0.049). Both are smaller than the noise.
+
+---
+
+## `training/run_postswap.sh` — train + evaluate one run, filed correctly
+
+```bash
+scripts/training/run_postswap.sh postswap_ftl_cw142_res384_s42
+```
+
+Expects `configs/postswap/<run-name>.yaml`. Trains, evaluates on all four development
+cells plus pooled, writes the log to `logs/postswap/`, moves the training curve into
+`results/postswap/`, echoes the split assignment, and finishes by running
+`compare_postswap.py` against the baseline.
+
+Use it rather than calling `train_unet.py` directly, so artefacts land in the right
+folders and the comparison happens automatically.

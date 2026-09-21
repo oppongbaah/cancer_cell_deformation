@@ -18,8 +18,8 @@ The split below keeps large raw data local and only sends what the training loop
 
 | Step | Where |
 |------|--------|
-| Annotate masks | Local machine (`scripts/annotate.py`) |
-| Preprocess frames | Local machine (`scripts/preprocess_frames.py --masks`) |
+| Annotate masks | Local machine (`scripts/annotation/annotate.py`) |
+| Preprocess frames | Local machine (`scripts/data/preprocess_frames.py --masks`) |
 | Upload preprocessed data | Anvil OnDemand file browser |
 | Clone code | Anvil terminal (`git clone`) |
 | Train U-Net | Anvil (A100 GPU) |
@@ -168,12 +168,12 @@ scancel <jobid>                                   # cancel if needed
 ```
 Local                              Anvil
 ─────────────────────              ──────────────────────────────────
-scripts/annotate.py
-scripts/preprocess_frames.py
+scripts/annotation/annotate.py
+scripts/data/preprocess_frames.py
                       upload preprocessed/ via OnDemand file browser ──►
                                            celldform-train-unet
                       ◄── download unet_best.pt via OnDemand file browser
-scripts/evaluate_unet.py
+scripts/training/evaluate_unet.py
 ```
 
 Repeat after each annotation batch. Target DSC ≥ 0.80 before freezing the model.

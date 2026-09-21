@@ -45,6 +45,7 @@ plugins:
 
 nav:
   - Home: index.md
+  - Project Status: status.md
   - Pipeline Overview: pipeline.md
   - Workflow Guide: workflow.md
   - Training Results: training.md

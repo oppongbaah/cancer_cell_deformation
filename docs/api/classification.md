@@ -17,7 +17,7 @@ Stage 5 of the pipeline — classifies cells as low or high HER2 expression from
 
 ## Comparative classifiers
 
-The thesis requires comparative analysis of SVM, RF, and DT. All classifiers implement the same interface so they can be swapped in `scripts/infer.py` and `RealTimePipeline` without any code changes:
+The thesis requires comparative analysis of SVM, RF, and DT. All classifiers implement the same interface so they can be swapped in `scripts/inference/infer.py` and `RealTimePipeline` without any code changes:
 
 ```python
 clf = CellClassifier(model_type="svm")   # or "rf", "dt"

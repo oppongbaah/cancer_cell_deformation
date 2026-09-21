@@ -21,7 +21,7 @@ Stage 4 of the pipeline — extracts 15 morphological descriptors from a binary 
 | `hu_0` – `hu_6` | Log-scaled Hu moment invariants |
 
 !!! note "Feature ordering"
-    Features are always sorted **alphabetically by name** before being passed to the classifier. Do not change this ordering without updating `RealTimePipeline` and `scripts/infer.py`.
+    Features are always sorted **alphabetically by name** before being passed to the classifier. Do not change this ordering without updating `RealTimePipeline` and `scripts/inference/infer.py`.
 
 ---
 

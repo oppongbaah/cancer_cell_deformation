@@ -20,13 +20,13 @@ pre-train gate scripts).
 
 Usage
 -----
-python scripts/validate_masks.py                          # default: 01_annotate_pool
-python scripts/validate_masks.py --pool 02_unet_holdout
-python scripts/validate_masks.py --image-dir data/frames/01_annotate_pool \\
+python scripts/annotation/validate_masks.py                          # default: 01_annotate_pool
+python scripts/annotation/validate_masks.py --pool 02_unet_holdout
+python scripts/annotation/validate_masks.py --image-dir data/frames/01_annotate_pool \\
                                   --mask-dir  data/masks/01_annotate_pool
-python scripts/validate_masks.py --multiclass \\
+python scripts/annotation/validate_masks.py --multiclass \\
                                   --mask-dir  data/masks/01_annotate_pool_multiclass
-python scripts/annotate_frame.py --multiclass domain_high_cell8_000000 
+python scripts/annotation/annotate_frame.py --multiclass domain_high_cell8_000000 
 """
              
 from __future__ import annotations

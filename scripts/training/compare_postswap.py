@@ -12,9 +12,9 @@ a finding and had to retract it.
 
 Usage
 -----
-python scripts/compare_postswap.py                       # every run in the log
-python scripts/compare_postswap.py --runs A B            # just these, vs. baseline
-python scripts/compare_postswap.py --seeds 42 43 44      # pool seeds of one recipe
+python scripts/training/compare_postswap.py                       # every run in the log
+python scripts/training/compare_postswap.py --runs A B            # just these, vs. baseline
+python scripts/training/compare_postswap.py --seeds 42 43 44      # pool seeds of one recipe
 """
 from __future__ import annotations
 import argparse, json, statistics as st
@@ -30,7 +30,7 @@ THRESHOLD = 2 * SD * (2 ** 0.5) # ~0.133 -- smallest believable single-run diffe
 
 def load(log: Path) -> dict[str, dict[str, dict]]:
     if not log.exists():
-        raise SystemExit(f"No eval log at {log}. Run scripts/run_postswap.sh first.")
+        raise SystemExit(f"No eval log at {log}. Run scripts/training/run_postswap.sh first.")
     out: dict[str, dict[str, dict]] = defaultdict(dict)
     for line in log.read_text().splitlines():
         if not line.strip():

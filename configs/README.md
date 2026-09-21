@@ -72,7 +72,7 @@ order, e.g. `postswap_ftl_cw142_res384_s42.yaml`. The name is reused verbatim fo
 checkpoint directory and log file, so one string finds everything for a run. Then:
 
 ```bash
-scripts/run_postswap.sh postswap_ftl_cw142_res384_s42
+scripts/training/run_postswap.sh postswap_ftl_cw142_res384_s42
 ```
 
 Never rename an existing run — `results/postswap/postswap_eval_log.jsonl` keys results

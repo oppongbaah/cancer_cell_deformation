@@ -21,18 +21,18 @@ as both dimensions are divisible by 16 (4 encoder downsampling steps).
 
 Recommended pre-training workflow
 -----------------------------------
-  1. Annotate:   python scripts/annotate.py
-  2. Validate:   python scripts/validate_masks.py
-  3. Preprocess: python scripts/preprocess_frames.py --masks
-  4. Train:      python scripts/train_unet.py --config configs/default.yaml
+  1. Annotate:   python scripts/annotation/annotate.py
+  2. Validate:   python scripts/annotation/validate_masks.py
+  3. Preprocess: python scripts/data/preprocess_frames.py --masks
+  4. Train:      python scripts/training/train_unet.py --config configs/default.yaml
 
 Usage
 -----
-python scripts/preprocess_frames.py --masks
-python scripts/preprocess_frames.py --masks --compare --n-compare 5
-python scripts/preprocess_frames.py --pool 02_unet_holdout --masks
-python scripts/preprocess_frames.py --masks --target-size 128 128
-python scripts/preprocess_frames.py --image-dir data/frames/01_annotate_pool \\
+python scripts/data/preprocess_frames.py --masks
+python scripts/data/preprocess_frames.py --masks --compare --n-compare 5
+python scripts/data/preprocess_frames.py --pool 02_unet_holdout --masks
+python scripts/data/preprocess_frames.py --masks --target-size 128 128
+python scripts/data/preprocess_frames.py --image-dir data/frames/01_annotate_pool \\
                                      --output-dir data/preprocessed/frames/01_annotate_pool \\
                                      --mask-dir   data/masks/01_annotate_pool
 """
@@ -47,7 +47,7 @@ import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))  # repo root
 
 from celldform.preprocessing.pipeline import PreprocessingConfig, PreprocessingPipeline
 

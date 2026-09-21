@@ -3,7 +3,7 @@
 End-to-end inference on optical tweezers video data.
 
 Usage:
-    python scripts/infer.py \\
+    python scripts/inference/infer.py \\
         --video data/videos/experiment_01.mp4 \\
         --unet-ckpt checkpoints/unet_best.pt \\
         --classifier-ckpt checkpoints/svm_clf.pkl \\

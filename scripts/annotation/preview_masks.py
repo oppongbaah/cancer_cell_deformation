@@ -5,7 +5,7 @@ directly in any image viewer (no napari needed).
 
 Multiclass masks (label ids 0/1/2) look almost pure black in a plain image
 viewer, since a pixel value of 1 or 2 out of 0-255 is visually indistinguishable
-from background — see scripts/annotate.py's docstring for why. This renders
+from background — see scripts/annotation/annotate.py's docstring for why. This renders
 them as a visible colorized mask instead: background (label 0) = black,
 label 1 (trapped cell) = green, label 2 (other/decoy object) = red. Legacy
 binary masks (0/255) also work — the foreground is rendered green.
@@ -15,11 +15,11 @@ color-coded, not an overlay on top of the source image.
 
 Usage
 -----
-python scripts/preview_masks.py                                    # 01_annotate_pool_multiclass
-python scripts/preview_masks.py --pool 01_annotate_pool            # binary masks
-python scripts/preview_masks.py --mask-dir data/masks/01_annotate_pool_multiclass \\
+python scripts/annotation/preview_masks.py                                    # 01_annotate_pool_multiclass
+python scripts/annotation/preview_masks.py --pool 01_annotate_pool            # binary masks
+python scripts/annotation/preview_masks.py --mask-dir data/masks/01_annotate_pool_multiclass \\
                                  --output-dir data/masks/01_annotate_pool_multiclass_preview
-python scripts/preview_masks.py --limit 10
+python scripts/annotation/preview_masks.py --limit 10
 """
 
 from __future__ import annotations

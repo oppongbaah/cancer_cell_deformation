@@ -6,13 +6,13 @@ Preprocessing is NOT applied here — run preprocess_frames.py --masks first to
 produce the 256×256 PNGs that this script expects.
 
 Pre-training workflow:
-    1. python scripts/annotate.py
-    2. python scripts/validate_masks.py
-    3. python scripts/preprocess_frames.py --masks
-    4. python scripts/train_unet.py --config configs/default.yaml
+    1. python scripts/annotation/annotate.py
+    2. python scripts/annotation/validate_masks.py
+    3. python scripts/data/preprocess_frames.py --masks
+    4. python scripts/training/train_unet.py --config configs/default.yaml
 
 Usage (local):
-    python scripts/train_unet.py --config configs/default.yaml
+    python scripts/training/train_unet.py --config configs/default.yaml
 
 Usage (HPC / Anvil):
     sbatch scripts/hpc_train_unet.sh
@@ -405,12 +405,12 @@ def main():
     if not frames_dir.exists():
         raise FileNotFoundError(
             f"Frames directory not found: {frames_dir}\n"
-            "Run: python scripts/preprocess_frames.py --masks"
+            "Run: python scripts/data/preprocess_frames.py --masks"
         )
     if not masks_dir.exists():
         raise FileNotFoundError(
             f"Masks directory not found: {masks_dir}\n"
-            "Run: python scripts/preprocess_frames.py --masks"
+            "Run: python scripts/data/preprocess_frames.py --masks"
         )
 
     frame_paths = sorted(frames_dir.glob("*.png"))
