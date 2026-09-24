@@ -11,10 +11,10 @@
 > width 64 · no dropout · cosine · scale augmentation only · seed 42 ·
 > **split_seed pinned at 42** · 451-frame post-swap pool.
 >
-> **Development-set result: pooled DSC 0.800** (3-seed mean over s42/s43/s44,
-> sd 0.047). Seed 42 is the working seed because it is the median draw and lands
-> exactly on that mean — s43 (0.847) is the high draw and would anchor everything
-> optimistically.
+> **Development-set result (complete 203-frame set): single model 0.809 ± 0.049**
+> across four seeds, **ensemble of four 0.859**.
+> Seed 42 remains the working seed for iteration. Do not adopt whichever seed scores
+> highest — that is selection on the evaluation data.
 
 ---
 
@@ -35,12 +35,14 @@ set, so nothing in `preswap/` can be compared against anything in `postswap/`.
 
 | Config | Seed | Pooled DSC |
 |---|---|---|
-| **`postswap_ftl_cw142_s42.yaml`** | 42 | **0.800** ⭐ baseline |
-| `postswap_ftl_cw142_s43.yaml` | 43 | 0.847 |
-| `postswap_ftl_cw142_s44.yaml` | 44 | 0.754 |
+| **`postswap_ftl_cw142_s42.yaml`** | 42 | 0.830 ⭐ working seed |
+| `postswap_ftl_cw142_s43.yaml` | 43 | 0.864 |
+| `postswap_ftl_cw142_s44.yaml` | 44 | 0.753 — collapsed on high-1 |
+| `postswap_ftl_cw142_s45.yaml` | 45 | 0.787 — collapsed on high-9 |
 
-All three are identical except `seed`. The 0.093 spread across them **is the error
-bar** — see the rules in `configs/postswap/README.md`.
+All four are identical except `seed`. **Two of the four collapse on one cell, and which
+cell is unpredictable** — see `checkpoints/README.md`. The spread across them **is the
+error bar** — see the rules in `configs/postswap/README.md`.
 
 ## `preswap/` — historical, by era
 

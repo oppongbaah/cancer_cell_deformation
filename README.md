@@ -1,13 +1,15 @@
 # celldform
 
 > **Current model:** `checkpoints/postswap/postswap_ftl_cw142_s42/unet_best.pt` —
-> development-set pooled DSC **0.800 ± 0.047** (3-seed mean, 4 cells, 172 frames).
+> development-set pooled DSC **0.809 ± 0.049** single model (4 seeds), **0.859 as a 4-model ensemble** (4 cells, 203 frames).
 > Config: `configs/postswap/postswap_ftl_cw142_s42.yaml`.
 > See [docs/status.md](docs/status.md) for where the project stands, and
 > `configs/README.md` / `checkpoints/README.md` for what every other file is.
 >
-> ⚠️ **Measured run-to-run spread is sd 0.047 / range 0.093.** A single-run difference
-> below ~0.13 is not a result. Use `scripts/training/compare_postswap.py`.
+> ⚠️ **Two of four seeds collapse on a single cell — a different cell each time**, and
+> neither cell size nor internal validation predicts which. Ensembling removes it.
+> A single-run difference below ~0.14 is not a result; use
+> `scripts/training/compare_postswap.py` and `check_convergence.py`.
 
 **Real-Time Machine Learning Framework for Quantitative SKBR3 Cell Deformation Analysis in Dual-Beam Optical Tweezer Systems**
 

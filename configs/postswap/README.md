@@ -46,8 +46,8 @@ Seed 42 is the working seed because it is the median draw and lands exactly on t
 ## Rules for this series
 
 1. **One seed (42) while iterating.** `split_seed` stays pinned at 42 too.
-2. **A single-seed delta below ~0.13 is NOT a result.** Measured spread is sd 0.047,
-   so one run resolves only differences above roughly 2*sd*sqrt(2) ~ 0.13. Anything
+2. **A single-seed delta below ~0.16 is NOT a result.** Measured spread is sd 0.057,
+   so one run resolves only differences above roughly 2*sd*sqrt(2) ~ 0.16. Anything
    smaller is logged as "screened, inconclusive" -- never as a finding. This is the
    mistake that cost this project the `scale_cos` recipe (+0.066, unverifiable) and
    the Focal-Tversky "+0.023" (its repeat came back -0.049).

@@ -361,12 +361,12 @@ python scripts/training/compare_postswap.py --seeds A B C        # aggregate see
 ```
 
 It exists to stop a number that looks exciting being recorded as a finding. Measured
-seed-only spread on this pipeline is **sd 0.047 pooled**, so a difference between two
-single runs has SE ≈ 0.066 and needs roughly twice that to be believable. Anything
-below **0.133** prints as `INCONCLUSIVE`:
+seed-only spread on this pipeline is **sd 0.057 pooled**, so a difference between two
+single runs has SE ≈ 0.081 and needs roughly twice that to be believable. Anything
+below **0.161** prints as `INCONCLUSIVE`:
 
 ```
-  => INCONCLUSIVE. Pooled delta +0.048 is inside the +/-0.133 noise floor.
+  => INCONCLUSIVE. Pooled delta +0.048 is inside the +/-0.161 noise floor.
      Log as screened, not as a result. Three seeds on BOTH arms to decide it.
 ```
 

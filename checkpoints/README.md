@@ -10,10 +10,38 @@
 > Focal–Tversky · class weights [1, 4, 2] · width 64 · 451-frame post-swap pool ·
 > best epoch 87.
 >
-> **Development set (4 cells, 172 frames): pooled trapped-cell DSC 0.800**
-> — high-1 0.604 · high-9 0.825 · low-5 0.922 · low-6 0.718
+> **Development set (4 cells, 203 frames — fully annotated 23 Sept):**
 >
-> 3-seed mean 0.800, sd 0.047. Seed 42 is the median draw and equals the mean.
+> | | pooled DSC | spread |
+> |---|---|---|
+> | single model, 4-seed mean (s42/43/44/45) | 0.809 | sd 0.049 |
+> | **ensemble of all four** | **0.859** | — |
+>
+> ### ⚠ Two of four runs collapse on a single cell — a different cell each time
+>
+> | run | worst cell | its DSC | internal val | convergence check |
+> |---|---|---|---|---|
+> | s42 | low-6 | 0.718 | 0.9327 | passed |
+> | s43 | low-6 | 0.804 | 0.9398 | passed |
+> | s44 | **high-1** | **0.507** | 0.9050 | **FLAGGED** |
+> | s45 | **high-9** | **0.630** | 0.9357 | **passed** ✗ |
+>
+> Size does not predict it (`high-1` 678 px, `high-9` 704 px). Internal validation does
+> not either — it caught s44, which was behind everywhere, and missed s45, which trained
+> normally and then lost one cell. **Passing `check_convergence.py` is not evidence.**
+>
+> **Ensembling is what fixes it.** No per-cell collapse survives averaging: `high-1`
+> never below 0.823, `high-9` never below 0.822.
+>
+> | | high-1 | high-9 | low-5 | low-6 | **Pooled** |
+> |---|---|---|---|---|---|
+> | single model, 4-seed mean | 0.742 | 0.792 | 0.890 | 0.770 | 0.809 |
+> | **ensemble of 4** | **0.823** | **0.848** | **0.920** | **0.818** | **0.859** |
+>
+> An ensemble is an **inference-time construct, not a model** — no checkpoint, 4× GPU,
+> and `RealTimePipeline` takes one `UNet`. Averaging the *weights* instead gives
+> **DSC 0.000** (independently seeded nets sit in different loss basins). Distillation
+> is the route to one deployable checkpoint at ensemble quality — not yet done.
 
 ---
 
@@ -23,8 +51,10 @@
 > cannot be compared. The 17 September exchange moved `high-10` into training and
 > `high-1` into evaluation.
 >
-> **A single-run difference below ~0.13 is not a result.** Measured seed-only spread is
-> sd 0.047 — one config re-run at a different seed moved 0.691 → 0.619.
+> **A single-run difference below ~0.14 is not a result** (4-seed sd 0.049). Measured seed-only spread on
+> the complete 203-frame development set is **sd 0.057** (was 0.047 on 172 frames) —
+> and a pre-swap config re-run at a different seed moved 0.691 → 0.619.
+> `scripts/training/compare_postswap.py` prints this verdict for you.
 
 ## Layout
 
@@ -43,9 +73,14 @@ record of what each one scored is `results/preswap/preswap_eval_log.jsonl` and
 
 | Checkpoint | Seed | Pooled DSC |
 |---|---|---|
-| **`postswap_ftl_cw142_s42`** | 42 | **0.800** ⭐ |
-| `postswap_ftl_cw142_s43` | 43 | 0.847 |
-| `postswap_ftl_cw142_s44` | 44 | 0.754 |
+| `postswap_ftl_cw142_s42` | 42 | 0.830 |
+| **`postswap_ftl_cw142_s43`** | 43 | **0.864** (best single) |
+| `postswap_ftl_cw142_s44` | 44 | 0.753 — collapsed on high-1 |
+| `postswap_ftl_cw142_s45` | 45 | 0.787 — collapsed on high-9 |
+
+Scored on the complete 203-frame development set. Mean 0.809, sd 0.049; ensemble 0.859.
+**Do not adopt s43 because its number is highest** — picking a seed on the development
+set is selection on the evaluation data.
 
 Identical configs; only the seed differs. The spread is the error bar, not a ranking —
 do **not** adopt s43 because its number is highest.

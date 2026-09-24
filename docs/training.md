@@ -6,24 +6,26 @@
 
     Re-running one configuration changing **only the random seed** moved pooled
     development-set DSC from **0.691 to 0.619** — a swing of **0.072**. A three-seed
-    repeat with the train/val split pinned gave **sd 0.047, range 0.093**.
+    repeat with the train/val split pinned gave **sd 0.057, range 0.111** on the
+    complete 203-frame development set (0.047 / 0.093 on the 172-frame partial set).
 
     | Quantity | Magnitude |
     |---|---|
-    | Seed-only swing | **0.072–0.093** |
+    | Seed-only swing | **0.072–0.111** |
     | Focal–Tversky "gain" | 0.023 — swamped |
     | Scale augmentation (the settled recipe) | 0.066 — inside the band |
     | Regularisation sweep deltas | 0.005–0.02 — far inside |
 
     None of the single-run comparisons below are established. They are kept as the
     record of what was tried, not as evidence of what works. A single run resolves
-    differences above roughly **0.13**; report multi-seed means with spread instead.
+    differences above roughly **0.16**; report multi-seed means with spread instead.
 
     **Also note the development set changed on 17 September** (`high-10` into training,
     `high-1` into evaluation), so pre- and post-swap numbers are not comparable at all.
 
-    Current baseline: `postswap_ftl_cw142_s42`, **pooled DSC 0.800** (3-seed mean,
-    sd 0.047). See `configs/README.md` and `checkpoints/README.md`.
+    Current baseline: `postswap_ftl_cw142_s42`, **pooled DSC 0.816 ± 0.057**
+    (3-seed mean, 4 cells, 203 frames). See `configs/README.md` and
+    `checkpoints/README.md`.
 
 ---
 
@@ -203,6 +205,15 @@ Every checkpoint from the `base_features`/dropout/cutout/regularization sweep wa
 **Every single regularization lever tried — at either width — underperforms the plain, unregularized original on real, never-seen cells.** The internal-val overfitting signal was real; fixing it made real-world generalization worse, every time.
 
 **Root cause of the gap:** `high_cell9`'s and `low_cell6`'s true trapped-cell size (704 / 886 px²) falls at or below every one of the 11 training cells' (825-1549 px²) — a real train/development-set size mismatch, checked and confirmed *not* to be a laser-power-sampling artifact (training and holdout frames were verified to sample laser power near-identically). The model likely leans on an implicit learned "typical size" from training that doesn't transfer to a genuinely smaller novel cell — visible directly in the metrics as a **precision** problem, not a recall one: recall sits at 0.6-0.7 almost everywhere in the table above, while precision is the actual discriminator (0.454 for the unregularized original vs. 0.26-0.33 for every regularized variant). The model finds the cell fine; it predicts too much area around it, and regularization consistently made that worse.
+
+!!! warning "Superseded figure (23 September 2026)"
+    The `1549 px²` upper bound above is `high_cell1` **as annotated at the time**.
+    That cell was re-annotated on 23 September and now measures **678 px²** — the
+    smallest cell in the study, not the largest. The old masks no longer exist.
+    The size mismatch described here was real but **smaller than stated**, and part
+    of the gap was an annotation artifact. Current ranges: training 688–1449 px²,
+    development set 678–1033 px², interleaved. See `docs/status.md`.
+
 
 A largest-connected-component post-processing fix was tried and ruled out (made every checkpoint's DSC worse — the false theory was that oversized predictions were one correct blob plus small spurious fragments; the real finding was that 11% of frames get a completely empty raw prediction, and a `min_area_px` floor discards those small-but-correct low-power predictions while leaving the actual oversized high-power blobs untouched either way). The fix had to happen at the model/training level.
 

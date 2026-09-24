@@ -7,7 +7,7 @@ style preferences; two results have already been retracted for breaking them.
 
 1. **One seed (42) while iterating**, `split_seed` pinned at 42 too. Three seeds on
    **both arms** before anything is reported as a result.
-2. **A single-seed delta below ~0.13 is not a result.** Log it as *screened,
+2. **A single-seed delta below ~0.16 is not a result.** Log it as *screened,
    inconclusive*. `scripts/training/compare_postswap.py` prints this verdict for you.
 3. **Change one variable per run.** If a non-experimental setting moves — schedule,
    split, width, pool — re-run the baseline under it before quoting any delta.

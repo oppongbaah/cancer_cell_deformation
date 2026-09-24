@@ -123,6 +123,15 @@ The internal validation split tests generalization to **unseen frames of already
 
 **Root cause, once the full development set was evaluated:** both `high_cell9` and `low_cell6`'s true trapped-cell size (704 / 886 px²) falls at or below every one of the 11 training cells' (825-1549 px²) — a real train/development-set size mismatch that the internal split, drawn from the same size distribution as training, could never surface. See [Training Results](training.md#the-2026-09-full-evaluation-sweep) for the full sweep, the per-cell breakdown, and what fixed it (partially).
 
+!!! warning "Superseded figure (23 September 2026)"
+    The `1549 px²` upper bound above is `high_cell1` **as annotated at the time**.
+    That cell was re-annotated on 23 September and now measures **678 px²** — the
+    smallest cell in the study, not the largest. The old masks no longer exist.
+    The size mismatch described here was real but **smaller than stated**, and part
+    of the gap was an annotation artifact. Current ranges: training 688–1449 px²,
+    development set 678–1033 px², interleaved. See `docs/status.md`.
+
+
 ---
 
 ## Contamination firewall
