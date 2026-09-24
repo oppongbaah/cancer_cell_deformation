@@ -24,7 +24,10 @@ from pathlib import Path
 LOG = Path("results/postswap/postswap_eval_log.jsonl")
 BASELINE = "postswap_ftl_cw142_s42"
 CELLS = ["high_cell1", "high_cell9", "low_cell5", "low_cell6"]
-SD = 0.047                      # pooled sd, 3 seeds, split pinned (2026-09-17)
+SD = 0.057                      # pooled sd, 3 seeds, split pinned, measured on the
+                                # COMPLETE 203-frame development set (2026-09-23).
+                                # Was 0.047 on 172 frames; completing high-1's
+                                # annotation RAISED it -- that cell alone has sd 0.184.
 THRESHOLD = 2 * SD * (2 ** 0.5) # ~0.133 -- smallest believable single-run difference
 
 

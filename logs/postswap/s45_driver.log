@@ -1,0 +1,20 @@
+[postswap] training postswap_ftl_cw142_s45
+[celldform] Dataset split (group-aware, 22 groups) — train: 397  val: 54
+[celldform]   split assignment (seed=45, split_seed=42)
+[celldform]     val  : low_cell4(19), legacy_burst_5(18), legacy_burst_2(17)
+[celldform]     train: high_cell10(50), low_cell2(24), high_cell2(20), high_cell3(20), high_cell4(20), high_cell6(20), high_cell7(20), low_cell1(20), high_cell8(19), low_cell3(19), legacy(165)
+[postswap] evaluating postswap_ftl_cw142_s45 on the four development cells
+Baseline: postswap_ftl_cw142_s42
+Noise floor: single-run differences below 0.161 are not interpretable (pooled sd 0.057).
+
+--- postswap_ftl_cw142_s45 ---
+cell        baseline  this run    delta
+high-1         0.818     0.811   -0.007
+high-9         0.825     0.630   -0.195
+low-5          0.922     0.910   -0.012
+low-6          0.718     0.782   +0.064
+POOLED         0.830     0.787   -0.043
+
+  => INCONCLUSIVE. Pooled delta -0.043 is inside the +/-0.161 noise floor.
+     Log as screened, not as a result. Three seeds on BOTH arms to decide it.
+

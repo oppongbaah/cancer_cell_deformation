@@ -4,7 +4,9 @@
 #   e.g. scripts/training/run_postswap.sh postswap_ftl_cw142_res384_s42
 # Expects configs/postswap/<run-name>.yaml to exist.
 set -euo pipefail
-cd "$(dirname "$0")/.."
+# two levels: this script lives in scripts/training/, so the repo root is ../..
+# (it was scripts/ before the 2026-09-17 reorganisation — one level was right then)
+cd "$(dirname "$0")/../.."
 RUN="${1:?usage: run_postswap.sh <run-name> [extra train args]}"; shift || true
 CFG="configs/postswap/${RUN}.yaml"
 [ -f "$CFG" ] || { echo "no such config: $CFG"; exit 1; }
