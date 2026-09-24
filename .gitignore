@@ -40,12 +40,13 @@ checkpoints/**
 *.pth
 *.ckpt
 
-# Jupyter — scratch notebooks stay out, but notebooks/ is documentation: a runnable
-# walkthrough of the pipeline. Outputs are stripped before committing so the diffs stay
-# readable (a notebook with outputs diffs as one enormous blob).
+# Jupyter — scratch notebooks anywhere stay out, but notebooks/ is tracked: it is the
+# runnable pipeline walkthrough. Strip outputs before committing (see below) or the
+# diff becomes an unreadable blob of base64 PNGs.
 .ipynb_checkpoints/
 *.ipynb
 !notebooks/**/*.ipynb
+
 
 # IDE
 .vscode/
@@ -84,3 +85,15 @@ CLAUDE.md
 results/**
 !results/**/
 !results/**/*.jsonl
+
+# Notebook sandbox -- LAST ON PURPOSE. Later rules win, so these must come after
+# the !results/**/*.jsonl and !logs/**/*.log exceptions above or they are overridden.
+# Runs launched from a notebook write here instead of preswap/ or
+# postswap/, so exploratory output never enters the experimental record that
+# compare_postswap.py and the report tables are generated from. Scratch by definition,
+# so none of it is tracked -- including its eval log, which the results/**/*.jsonl rule
+# would otherwise pick up.
+configs/notebook/
+checkpoints/notebook/
+logs/notebook/
+results/notebook/

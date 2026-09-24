@@ -420,25 +420,31 @@ They print what they *would* do while the flag is `False`.
 
 `nbstripout` is installed as a git **clean filter**, so outputs and `execution_count`
 never reach a commit — the working file keeps them, git stores only the source. Without
-this a single re-run produces a multi-megabyte diff of base64 PNGs in which nothing
+it a single re-run produces a multi-megabyte diff of base64 PNGs in which nothing
 meaningful changed.
 
 `.gitattributes` is committed, but the filter command lives in `.git/config`, which is
 not. **After cloning, run it once:**
 
 ```bash
-pip install -e ".[dev]"      # brings in nbstripout
+pip install -e ".[dev]"
 nbstripout --install --attributes .gitattributes
-```
-
-Verify it took effect:
-
-```bash
-git config --local --get filter.nbstripout.clean      # should print a command
+git config --local --get filter.nbstripout.clean    # should print a command
 ```
 
 If you skip this, git silently does nothing — an undefined filter is not an error — and
 outputs go into history as normal.
+
+### The notebook sandbox
+
+Runs launched from the notebook write to `configs/notebook/`, `checkpoints/notebook/`,
+`logs/notebook/` and `results/notebook/`, never into `preswap/` or `postswap/`. That
+keeps exploratory output out of the experimental record that `compare_postswap.py` and
+the report tables are generated from. All four are gitignored.
+
+`promote()` moves a sandbox run up into `configs/postswap/` when it turns out to matter.
+It verifies the run against the config snapshot saved inside its checkpoint directory —
+so a run whose config was edited afterwards is refused rather than silently promoted.
 
 !!! tip "Appendix"
     The last section lists the traps this pipeline has actually fallen into — stale
