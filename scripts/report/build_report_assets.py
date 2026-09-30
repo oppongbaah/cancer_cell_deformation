@@ -17,7 +17,7 @@ Outputs land in the report repo, not here:
     <report-root>/main_work/tables/*.tex    \\input{}-able LaTeX tables
 
 After running, recompile the report:
-    cd <report-root>/main_work && pdflatex -interaction=nonstopmode progress_report_9_17_26.tex
+    cd <report-root>/main_work && pdflatex -interaction=nonstopmode progress_report_9_24_26.tex
 
 Run it after ANY change to the pools, the masks, or results/preswap/preswap_eval_log.jsonl.
 The comparison-strip jobs additionally need the two checkpoints they name to be
@@ -81,7 +81,7 @@ STRIP_COLORS = ["--gt-color", "0,200,0", "--pred-color", "170,95,40",
 
 
 def jobs(img: Path, tab: Path) -> dict[str, list[str]]:
-    """Assets for progress_report_9_17_26.tex.
+    """Assets for progress_report_9_24_26.tex.
 
     The 2026-09-10 report is closed; its assets are frozen in place and are not
     rebuilt here. Jobs are added to this dict as each experiment in that report
@@ -90,56 +90,23 @@ def jobs(img: Path, tab: Path) -> dict[str, list[str]]:
     CELLS = ["high_cell9=high-9", "high_cell10=high-10", "low_cell6=low-6", "low_cell5=low-5"]
     return {
         # ── Dataset Organization ────────────────────────────────────────────
-        "pools": ["scripts/report/plot_pool_flow.py", "--output", str(img / "pool_flow_9_17.png")],
+        "pools": ["scripts/report/plot_pool_flow.py", "--output", str(img / "pool_flow_9_24.png")],
         "table-percell": ["scripts/report/make_report_tables.py", "percell",
                           "--output", str(tab / "percell.tex")],
-
-        # ── Baseline on the restructured four-cell development set ──────────
-        "table-baseline": ["scripts/report/make_report_tables.py", "baseline",
-                           "--checkpoint", SCALE,
-                           "--cell", "high_cell9=high-9", "--cell", "low_cell6=low-6",
-                           "--cell", "low_cell5=low-5", "--cell", "high_cell10=high-10",
-                           "--output", str(tab / "baseline.tex")],
-
-        # ── high-9 false-positive diagnosis ─────────────────────────────────
-        "fp-diagnosis": ["scripts/report/diagnose_false_positives.py", "--cell", "high_cell9",
-                         "--checkpoint", f"checkpoints/preswap/{SCALE}/unet_best.pt",
-                         "--output", str(img / "fp_diagnosis_9_17.png")],
         # ── Experiment 1: the three loss interventions, + the seed repeat ───
+        # Two rows only: the Dice+CE baseline against Focal-Tversky. The 1a
+        # (class-weight) and 1b (background-exclusion) arms and the seed repeat were
+        # dropped from the report on 2026-09-24 -- they remain in
+        # results/preswap/preswap_eval_log.jsonl and can be re-added by listing them here.
         "table-loss": ["scripts/report/make_report_tables.py", "headline",
-                       "--run", f"{SCALE}=Baseline — Dice+CE, class weights [1,4,2]",
-                       "--run", f"{CW133}=1a  class weights [1,3,3]",
-                       "--run", f"{NOBG}=1b  Dice excludes background",
-                       "--run", f"{FTL}=1c  Focal-Tversky (a=0.7, b=0.3, g=0.75)",
-                       "--run", f"{FTL43}=1c repeated, seed 43",
+                       "--run", f"{SCALE}=Baseline --- Dice ${chr(43)}$ cross-entropy",
+                       "--run", f"{FTL}=Focal--Tversky ${chr(43)}$ cross-entropy",
                        "--baseline", SCALE, "--emph", FTL,
                        "--label", "loss", "--delta-header", r"vs.\ baseline",
-                       "--caption", ("Experiment 1: three interventions on the loss, all measured on the "
-                                     "four-cell development set as it stood before the 17 September "
-                                     "reshuffle. Every run is identical to the baseline except the field "
-                                     "named. The final row repeats run 1c changing nothing but the random "
-                                     "seed, and is the error bar for the whole column."),
+                       "--caption", ("Loss comparison on the four-cell development set as it stood "
+                                     "before the 17 September reshuffle. Identical configs apart from "
+                                     "the region term."),
                        "--output", str(tab / "loss.tex")],
-
-        # ── high-9 FP diagnosis, rendered as masks on a black background ────
-        # Same renderer and visual convention as the 2026-09-10 report's comparison
-        # strips, so the figure reads consistently across the report series.
-        # Colours are NOT the script defaults: ground truth is green and prediction
-        # brown, deliberately swapped so ground truth matches the trapped-cell green
-        # of the labelled-mask convention. These must stay in step with \masklegend's
-        # swatches in the report preamble (gtgreen 0,200,0 / predbrown 170,95,40) —
-        # rendering with the defaults silently mislabels every colour in the caption.
-        "strip-fp": ["scripts/report/render_holdout_comparison.py",
-                     "--pool", "02_unet_holdout", "--cell", "high_cell9",
-                     "--checkpoint", f"checkpoints/preswap/{SCALE}/unet_best.pt",
-                     "--base-features", "64", "--n-frames", "6",
-                     "--gt-color", "0,200,0", "--pred-color", "170,95,40",
-                     "--output-dir", str(STRIP_BUILD / "high_cell9_fp"),
-                     "--output-prefix", "high_cell9_fp"],
-
-        "table-decoy": ["scripts/report/make_report_tables.py", "decoy", "--checkpoint", SCALE,
-                        *sum([["--cell", c] for c in CELLS], []),
-                        "--output", str(tab / "decoy.tex")],
     }
 
 
@@ -153,7 +120,7 @@ def main() -> None:
     p.add_argument("--compile", action="store_true",
                    help="After building assets, run pdflatex the required number of times "
                         "and delete the temp files")
-    p.add_argument("--tex", default="progress_report_9_17_26.tex",
+    p.add_argument("--tex", default="progress_report_9_24_26.tex",
                    help="Report .tex to compile with --compile")
     args = p.parse_args()
 
@@ -207,6 +174,19 @@ def main() -> None:
         if fp.exists():
             (img / "fp_masks_9_17.png").write_bytes(fp.read_bytes())
         print("\n  comparison strips copied to their report filenames")
+
+    # Training-curve figures are produced by the training runs, not by a generator here.
+    # Copy the postswap series into the report under stable names so the .tex can
+    # reference curves_s42..s45 without embedding the volatile v-number.
+    if not args.dry_run:
+        copied = 0
+        for s in (42, 43, 44, 45):
+            src = sorted((REPO / "results" / "postswap").glob(
+                f"unet_training_curves_v*_postswap_ftl_cw142_s{s}.png"))
+            if src:
+                (img / f"curves_s{s}.png").write_bytes(src[-1].read_bytes())
+                copied += 1
+        print(f"  {copied}/4 training-curve figures copied to {img.name}/")
 
     print(f"\n{'DRY RUN — nothing written' if args.dry_run else 'Done'}: "
           f"{len(names) - len(failed)}/{len(names)} jobs succeeded")

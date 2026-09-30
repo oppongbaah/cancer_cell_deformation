@@ -2,10 +2,20 @@
 """
 Evaluate an ensemble of checkpoints on the development set.
 
-Averages the per-class **softmax probabilities** across models, then takes the
-argmax once. Averaging probabilities rather than voting on argmaxed masks keeps
-each model's confidence, so a model that is unsure about a pixel does not get the
-same say as one that is certain.
+Scores :class:`celldform.segmentation.ensemble.EnsembleUNet` -- the same class
+``RealTimePipeline`` and ``infer.py`` run -- so the number reported here is the
+number the deployed model produces. The combination rule (average the per-class
+**softmax probabilities**, then argmax once) lives in that class and nowhere else;
+changing it there changes what this script measures, by construction.
+
+Averaging probabilities rather than voting on argmaxed masks keeps each model's
+confidence, so a model that is unsure about a pixel does not get the same say as
+one that is certain.
+
+The per-member columns re-run each member through its own ``UNet.predict``, which
+costs a second set of forward passes per frame (~2x). That is deliberate: both the
+ensemble row and the member rows then come from shipped inference code rather than
+from a copy of it written for this script.
 
 Why this exists: on the 2026-09-23 three-seed baseline, `high-1` scored 0.818 /
 0.833 / 0.507 across seeds (sd 0.184) while `high-9` sat at 0.043. That spread
@@ -38,32 +48,28 @@ import torch
 
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-from celldform.segmentation.unet import UNet
+from celldform.segmentation.ensemble import EnsembleUNet
 
 DEV_IN = Path("data/preprocessed/evaluate/postswap_devset/inputs")
 DEV_LB = Path("data/preprocessed/evaluate/postswap_devset/labels")
 CKPT_ROOT = Path("checkpoints/postswap")
 EVAL_LOG = Path("results/postswap/postswap_eval_log.jsonl")
 
-
-def load_models(names, device):
-    out = []
-    for n in names:
-        ck = CKPT_ROOT / n / "unet_best.pt"
-        if not ck.exists():
-            raise SystemExit(f"missing checkpoint: {ck}")
-        m = UNet.from_checkpoint(ck, in_channels=1, out_channels=3,
-                                 base_features=64, device=device)
-        m.eval()
-        out.append((n, m))
-    return out
+# Named explicitly, not globbed. The headline number in the report must not depend
+# on what happens to be sitting in checkpoints/postswap/ -- globbing silently swept
+# in postswap_distilled (an invalid run: its student saw no augmentation) and moved
+# ALL CELLS from 0.859 to 0.856. Pass --runs to score anything else.
+DEFAULT_RUNS = [f"postswap_ftl_cw142_s{s}" for s in (42, 43, 44, 45)]
 
 
-@torch.no_grad()
-def probs(model, img, device):
-    """Softmax probabilities for one preprocessed frame, shape (C, H, W)."""
-    x = torch.from_numpy(img.astype(np.float32) / 255.0)[None, None].to(device)
-    return torch.softmax(model(x), dim=1)[0]
+def load_ensemble(names, device):
+    """Wrap every named run's best checkpoint in one EnsembleUNet."""
+    paths = [CKPT_ROOT / n / "unet_best.pt" for n in names]
+    missing = [p for p in paths if not p.exists()]
+    if missing:
+        raise SystemExit(f"missing checkpoint(s): {missing}")
+    return EnsembleUNet.from_checkpoints(paths, in_channels=1, out_channels=3,
+                                         base_features=64, device=device)
 
 
 def dice(pred_bin, gt_bin):
@@ -85,7 +91,8 @@ def metrics(pred_bin, gt_bin):
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--runs", nargs="*", default=None)
+    p.add_argument("--runs", nargs="*", default=None,
+                   help=f"Run names under {CKPT_ROOT}. Default: {' '.join(DEFAULT_RUNS)}")
     p.add_argument("--inputs", type=Path, default=DEV_IN)
     p.add_argument("--labels", type=Path, default=DEV_LB)
     p.add_argument("--save-log", action="store_true",
@@ -94,34 +101,36 @@ def main() -> None:
     args = p.parse_args()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    names = args.runs or sorted(d.name for d in CKPT_ROOT.iterdir()
-                                if d.is_dir() and (d / "unet_best.pt").exists())
-    models = load_models(names, device)
-    name = args.name or f"ENSEMBLE({len(models)})[{'+'.join(n.split('_')[-1] for n in names)}]"
-    print(f"ensemble of {len(models)}: {', '.join(names)}\n")
+    names = args.runs or DEFAULT_RUNS
+    ens = load_ensemble(names, device)
+    name = args.name or f"ENSEMBLE({len(ens)})[{'+'.join(n.split('_')[-1] for n in names)}]"
+    print(f"ensemble of {len(ens)}: {', '.join(names)}\n")
 
     frames = sorted(args.inputs.glob("*.png"))
     # accumulate confusion counts per cell so pooled == concatenate-then-score,
     # matching evaluate_unet.py rather than averaging per-frame Dice
     acc = defaultdict(lambda: {"tp": 0, "fp": 0, "fn": 0, "n": 0})
-    per_model_acc = {n: defaultdict(lambda: {"tp": 0, "fp": 0, "fn": 0}) for n, _ in models}
+    per_model_acc = {n: defaultdict(lambda: {"tp": 0, "fp": 0, "fn": 0}) for n in names}
 
     for f in frames:
         img = cv2.imread(str(f), cv2.IMREAD_GRAYSCALE)
         gt = cv2.imread(str(args.labels / f.name), cv2.IMREAD_GRAYSCALE) == 1
         cell = re.sub(r"_\d+$", "", f.stem)
 
-        stack = torch.stack([probs(m, img, device) for _, m in models])   # (M, C, H, W)
-        ens = stack.mean(0).argmax(0).cpu().numpy() == 1
-        for scope in (cell, "POOLED"):
+        # EnsembleUNet.predict expects float in [0, 1], the same contract
+        # UNet.predict documents; the PNGs on disk are uint8.
+        norm = img.astype(np.float32) / 255.0
+
+        pred = ens.predict(norm, binary_output=True).astype(bool)
+        for scope in (cell, "ALL CELLS"):
             a = acc[scope]
-            a["tp"] += int(np.logical_and(ens, gt).sum())
-            a["fp"] += int(np.logical_and(ens, ~gt).sum())
-            a["fn"] += int(np.logical_and(~ens, gt).sum())
+            a["tp"] += int(np.logical_and(pred, gt).sum())
+            a["fp"] += int(np.logical_and(pred, ~gt).sum())
+            a["fn"] += int(np.logical_and(~pred, gt).sum())
             a["n"] += 1
-        for i, (n, _) in enumerate(models):
-            pm = stack[i].argmax(0).cpu().numpy() == 1
-            for scope in (cell, "POOLED"):
+        for n, m in zip(names, ens.models):
+            pm = m.predict(norm, binary_output=True).astype(bool)
+            for scope in (cell, "ALL CELLS"):
                 b = per_model_acc[n][scope]
                 b["tp"] += int(np.logical_and(pm, gt).sum())
                 b["fp"] += int(np.logical_and(pm, ~gt).sum())
@@ -134,20 +143,20 @@ def main() -> None:
                 "precision": tp/(tp+fp) if (tp+fp) else 1.0,
                 "recall": tp/(tp+fn) if (tp+fn) else 1.0}
 
-    scopes = [s for s in acc if s != "POOLED"] + ["POOLED"]
-    hdr = f"  {'cell':<11}{'n':>4}" + "".join(f"{n.split('_')[-1]:>9}" for n, _ in models) \
+    scopes = [s for s in acc if s != "ALL CELLS"] + ["ALL CELLS"]
+    hdr = f"  {'cell':<11}{'n':>4}" + "".join(f"{n.split('_')[-1]:>9}" for n in names) \
           + f"{'mean':>9}{'sd':>8}{'ENSEMBLE':>11}{'vs mean':>10}{'vs best':>10}"
     print(hdr); print("  " + "-" * (len(hdr) - 2))
     for s in scopes:
-        singles = [score(per_model_acc[n][s])["dsc"] for n, _ in models]
+        singles = [score(per_model_acc[n][s])["dsc"] for n in names]
         e = score(acc[s])["dsc"]
-        lbl = s.replace("_cell", "-") if s != "POOLED" else "POOLED"
+        lbl = s.replace("_cell", "-") if s != "ALL CELLS" else "ALL CELLS"
         print(f"  {lbl:<11}{acc[s]['n']:>4}" + "".join(f"{x:>9.3f}" for x in singles)
               + f"{st.mean(singles):>9.3f}{st.stdev(singles):>8.3f}"
               + f"{e:>11.3f}{e-st.mean(singles):>+10.3f}{e-max(singles):>+10.3f}")
 
-    em = score(acc["POOLED"])
-    print(f"\n  ensemble pooled: DSC {em['dsc']:.3f}  IoU {em['iou']:.3f}  "
+    em = score(acc["ALL CELLS"])
+    print(f"\n  ensemble, all cells: DSC {em['dsc']:.3f}  IoU {em['iou']:.3f}  "
           f"prec {em['precision']:.3f}  rec {em['recall']:.3f}")
 
     if args.save_log:
@@ -159,7 +168,7 @@ def main() -> None:
                     "timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
                     "checkpoint": f"checkpoints/postswap/{name}/unet_best.pt",
                     "config": "ensemble", "pool": "postswap_devset",
-                    "filter": None if s == "POOLED" else s,
+                    "filter": None if s == "ALL CELLS" else s,
                     "n_images": acc[s]["n"], "multiclass": True,
                     "ensemble_members": names,
                     "metrics": {"1": m}}) + "\n")

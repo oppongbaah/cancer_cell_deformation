@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
 Horizontal bar chart ranking every checkpoint in results/preswap/preswap_eval_log.jsonl
-by its pooled trapped-cell DSC on the development set.
+by its evaluated DSC on the development set.
 
 Companion to scripts/report/plot_percell_metrics.py: that one compares a handful of
 runs in detail, this one places all of them on a single scale so a new result
 can be read against the whole history at once.
 
 Numbers come out of the eval log, never typed in, so the ranking always
-reflects the runs that actually happened. Checkpoints with no pooled entry
+reflects the runs that actually happened. Checkpoints with no all-cells entry
 (evaluated per-cell only) are skipped rather than guessed at.
 
 Usage
@@ -43,7 +43,7 @@ def _pair(spec: str) -> tuple[str, str]:
 
 
 def main() -> None:
-    p = argparse.ArgumentParser(description="Rank all checkpoints by pooled holdout DSC")
+    p = argparse.ArgumentParser(description="Rank all checkpoints by evaluated DSC")
     p.add_argument("--log", type=Path, default=Path("results/preswap/preswap_eval_log.jsonl"))
     p.add_argument("--class-id", default="1")
     p.add_argument("--metric", default="dsc")
@@ -73,7 +73,7 @@ def main() -> None:
         sys.exit(f"Eval log not found: {args.log}")
     labels = dict(_pair(x) for x in args.label)
 
-    # Newest pooled entry per checkpoint directory.
+    # Newest all-cells entry per checkpoint directory.
     best: dict[str, dict] = {}
     for line in args.log.read_text().splitlines():
         line = line.strip()
@@ -89,7 +89,7 @@ def main() -> None:
             best[name] = r
 
     if not best:
-        sys.exit("No pooled evaluations found in the log.")
+        sys.exit("No all-cells evaluations found in the log.")
 
     rows = sorted(((n, r["metrics"][args.class_id][args.metric]) for n, r in best.items()),
                   key=lambda t: t[1])

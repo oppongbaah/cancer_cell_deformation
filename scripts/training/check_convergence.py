@@ -10,7 +10,7 @@ simply trained badly, and that is a different question.
 The case this exists for: `postswap_ftl_cw142_s44` reached internal val 0.905
 against its siblings' 0.933 and 0.940, and went on to score 0.507 on `high-1`
 against their 0.818 and 0.833 — dragging the 3-seed mean down and roughly
-tripling the pooled error bar. The bad run announced itself on a number that was
+tripling the evaluated error bar. The bad run announced itself on a number that was
 already being printed; nothing was looking at it.
 
 Usage
@@ -74,7 +74,7 @@ def main() -> None:
 
     bad = [r for r in runs if r["suspect"]]
     if not bad:
-        print("\n  All runs converged comparably. Their development-set numbers can be pooled.")
+        print("\n  All runs converged comparably. Their evaluated numbers can be compared.")
         return
 
     print(f"\n  {len(bad)} run(s) converged materially worse than the rest:")
