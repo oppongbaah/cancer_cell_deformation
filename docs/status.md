@@ -13,7 +13,7 @@ Focal–Tversky loss (α 0.7, β 0.3, γ 0.75, [Abraham & Khan 2019](https://arx
 
 **Development set (4 cells, 203 annotated frames, fully annotated 23 September):**
 
-| | pooled DSC | spread |
+| | evaluated DSC | spread |
 |---|---|---|
 | single model, 4-seed mean | 0.809 | sd 0.049 |
 | **ensemble of four** | **0.859** | — |
@@ -35,7 +35,7 @@ Focal–Tversky loss (α 0.7, β 0.3, γ 0.75, [Abraham & Khan 2019](https://arx
     **Ensembling is what fixes this.** No per-cell collapse survives averaging: `high-1`
     never falls below 0.823, `high-9` never below 0.822.
 
-    | | high-1 | high-9 | low-5 | low-6 | Pooled |
+    | | high-1 | high-9 | low-5 | low-6 | All cells |
     |---|---|---|---|---|---|
     | single model, 4-seed mean | 0.742 | 0.792 | 0.890 | 0.770 | 0.809 |
     | **ensemble of 4** | **0.823** | **0.848** | **0.920** | **0.818** | **0.859** |

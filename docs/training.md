@@ -4,8 +4,8 @@
 
     **Every tuning delta on this page is smaller than the measured noise.**
 
-    Re-running one configuration changing **only the random seed** moved pooled
-    development-set DSC from **0.691 to 0.619** — a swing of **0.072**. A three-seed
+    Re-running one configuration changing **only the random seed** moved the
+    evaluated DSC from **0.691 to 0.619** — a swing of **0.072**. A three-seed
     repeat with the train/val split pinned gave **sd 0.057, range 0.111** on the
     complete 203-frame development set (0.047 / 0.093 on the 172-frame partial set).
 
@@ -23,7 +23,7 @@
     **Also note the development set changed on 17 September** (`high-10` into training,
     `high-1` into evaluation), so pre- and post-swap numbers are not comparable at all.
 
-    Current baseline: `postswap_ftl_cw142_s42`, **pooled DSC 0.816 ± 0.057**
+    Current baseline: `postswap_ftl_cw142_s42`, **evaluated DSC 0.816 ± 0.057**
     (3-seed mean, 4 cells, 203 frames). See `configs/README.md` and
     `checkpoints/README.md`.
 
@@ -31,7 +31,7 @@
 
 Training results from the first 39-mask smoke test through the current best checkpoint. Runs 1-4 below (2026-07/08) established the label scheme (multiclass, 256×256, frozen 2026-08-10) and surfaced a real legacy/real-cell domain gap. **If you only read one section, read [The 2026-09 full evaluation sweep](#the-2026-09-full-evaluation-sweep)** — it's the most consequential finding in this document: an internal-validation-optimized checkpoint that looked excellent turned out to generalize roughly 2.6× worse than a "worse-looking" one, once evaluated against genuinely novel cells for the first time.
 
-**Current state (2026-09-10):** `02_unet_holdout`'s development set (`high_cell9` + `low_cell6`) is fully annotated and has been evaluated against every checkpoint. Best real-generalization checkpoint: **`checkpoints/multiclass_experiment_256_bf64_scale_cos/unet_best.pt`, pooled DSC 0.671** — scale augmentation alone, under the cosine schedule and 90% training split. A third cell, `high_cell10`, is reserved as a blind test and deliberately not yet annotated — see [Next Steps](#next-steps).
+**Current state (2026-09-10):** `02_unet_holdout`'s development set (`high_cell9` + `low_cell6`) is fully annotated and has been evaluated against every checkpoint. Best real-generalization checkpoint: **`checkpoints/multiclass_experiment_256_bf64_scale_cos/unet_best.pt`, evaluated DSC 0.671** — scale augmentation alone, under the cosine schedule and 90% training split. A third cell, `high_cell10`, is reserved as a blind test and deliberately not yet annotated — see [Next Steps](#next-steps).
 
 !!! warning "The `bf64_allaug` result (0.572) was retracted on 2026-09-10"
     That run was reported as "+0.047 from combining all augmentations," but it had also switched to a cosine schedule and folded the unused test split into training (293 → 371 frames). A controlled re-run with those two changes held fixed and **no** augmentation scores **0.605** — above the combined recipe. The gain was the schedule and the extra data. Under a matched config, scale augmentation alone reaches 0.671 and combined augmentation lands at 0.572, *below* doing nothing. See [The controlled augmentation re-run](#the-controlled-augmentation-re-run) below.
@@ -223,7 +223,7 @@ Three tried, in order, each testing one new lever against the same unregularized
 
 **1. Brightness/contrast jitter (`bf64_bc`) — no effect.** Random global brightness shift (±0.15) and contrast scale (0.8-1.2×) on the train frame — hypothesis was that CLAHE's local contrast normalization doesn't erase the *global* exposure level a frame was captured at, which plausibly tracks laser power. Result: DSC 0.501 vs. 0.525 baseline (within noise), and — the more telling number — precision barely moved (0.447 vs. 0.454), the specific thing this was meant to fix. Global intensity jitter doesn't address the over-segmentation; the extra predicted area is more likely a spatial artifact (a halo/glare shape near the cell) than a pure intensity-level effect.
 
-**2. Scale/zoom augmentation (`bf64_scale`) — helped one cell, hurt the other.** Random resize (0.7-1.3×) of frame+mask together, then center-crop/pad back to 256×256 — directly targets the size-mismatch finding above. Pooled DSC improved (0.525 → 0.541) but the per-cell breakdown told a different story:
+**2. Scale/zoom augmentation (`bf64_scale`) — helped one cell, hurt the other.** Random resize (0.7-1.3×) of frame+mask together, then center-crop/pad back to 256×256 — directly targets the size-mismatch finding above. Evaluated DSC improved (0.525 → 0.541) but the per-cell breakdown told a different story:
 
 | | Original | Scale augmentation |
 |---|---|---|
@@ -232,7 +232,7 @@ Three tried, in order, each testing one new lever against the same unregularized
 | `low_cell6` DSC | 0.650 | **0.719** (better) |
 | `low_cell6` recall | 0.600 | **0.935** |
 
-Visual inspection (`scripts/report/render_holdout_comparison.py`, mask-only GT-vs-prediction comparison) explained the split: `low_cell6`'s original problem was **under-detection** (the model was missing most of the cell in several frames) — scale augmentation fixed this directly, by teaching the model to accept a more modest-sized blob as valid. `high_cell9`'s problem is **over-detection** — a spatial artifact the model includes as if it were the cell — a structurally different bug that size tolerance doesn't touch, and arguably slightly worsens by making the model more permissive everywhere. **Lesson: always check the per-cell breakdown before calling a pooled-metric change a win** — the pooled number alone hid a real regression here, and will again with only two development cells.
+Visual inspection (`scripts/report/render_holdout_comparison.py`, mask-only GT-vs-prediction comparison) explained the split: `low_cell6`'s original problem was **under-detection** (the model was missing most of the cell in several frames) — scale augmentation fixed this directly, by teaching the model to accept a more modest-sized blob as valid. `high_cell9`'s problem is **over-detection** — a spatial artifact the model includes as if it were the cell — a structurally different bug that size tolerance doesn't touch, and arguably slightly worsens by making the model more permissive everywhere. **Lesson: always check the per-cell breakdown before calling an all-cells change a win** — the evaluated number alone hid a real regression here, and will again with only two development cells.
 
 **3. Combined recipe (`bf64_allaug`) — current best, genuinely improves both cells.** All four `CellDataset` augmentation knobs at once (noise 0.02, cutout 0.3, brightness/contrast 0.5, scale 0.5), cosine scheduler, dropout left off (it's model regularization, not augmentation, and was already shown to hurt), and the internal validation split repurposed from the old, entirely unused `test_split` (see [Data Layout](data.md#trainval-split-01_annotate_pool)) — 90% of the pool goes to training instead of 69%.
 
@@ -242,7 +242,7 @@ Visual inspection (`scripts/report/render_holdout_comparison.py`, mask-only GT-v
 | `high_cell9` precision | 0.319 | 0.259 | **0.365** |
 | `low_cell6` DSC | 0.650 | 0.719 | **0.693** |
 | `low_cell6` precision | 0.708 | 0.584 | **0.837** |
-| **Pooled DSC** | 0.525 | 0.541 | **0.572** |
+| **Evaluated DSC** | 0.525 | 0.541 | **0.572** |
 
 `checkpoints/multiclass_experiment_256_bf64_scale_cos/unet_best.pt` is the current best on the development set — the first checkpoint all sweep to improve *both* cells over the original baseline rather than trading one for the other. Not yet understood: why the combination lifts `high_cell9`'s precision specifically when `scale_prob` alone didn't (worth an ablation — e.g. drop `brightness_contrast_prob`, which showed nothing alone, and check whether the win holds without it).
 
@@ -260,7 +260,7 @@ The `bf64_allaug` run was reported as "+0.047 from combining all four augmentati
 
 Two configs isolate it — `configs/multiclass_experiment_256_base_cos.yaml` (no augmentation beyond the settled `noise_std=0.02`) and `configs/multiclass_experiment_256_scale_cos.yaml` (`scale_prob=0.5` only). Both match `bf64_allaug` on every other training-relevant field, and both logged `train: 371  val: 54` — the identical split.
 
-| Run (identical config except augmentation) | `high_cell9` DSC / prec | `low_cell6` DSC / prec | **Pooled DSC** / prec / rec |
+| Run (identical config except augmentation) | `high_cell9` DSC / prec | `low_cell6` DSC / prec | **Evaluated DSC** / prec / rec |
 |---|---|---|---|
 | `bf64_base_cos` — no augmentation | 0.601 / 0.501 | 0.611 / 0.862 | **0.605** / 0.617 / 0.594 |
 | **`bf64_scale_cos` — scale augmentation** | 0.594 / 0.503 | **0.754** / 0.857 | **0.671** / 0.649 / 0.695 |
@@ -357,7 +357,7 @@ Note this augmentation section only addresses spatial/intensity invariance withi
 ## Next Steps
 
 1. **Current priority — retrain on the completed 445-frame pool.** `low_cell5` was annotated on **2026-09-10**, taking `01_annotate_pool` to 445/445 and adding a twelfth training cell. More real cell identities is historically the only lever to produce a large real-generalization improvement (the 2026-08-27 domain-gap closure), and it has never been combined with the current best recipe. Re-run `scripts/data/preprocess_frames.py --masks` first — the preprocessed set is still at 425 — then train `configs/multiclass_experiment_256_scale_cos.yaml` on 445 frames across **23 groups**. `high_cell10` stays deliberately unannotated (see [Data Layout — Cell roles](data.md#cell-roles) for the full protocol and why).
-2. **Ablate `cutout_prob` and `brightness_contrast_prob` separately.** Combined augmentation costs 0.033 pooled DSC against no augmentation at all, while scale alone gains 0.066 — so one or both of those two knobs is actively harmful, but which is unknown. One run each settles it.
+2. **Ablate `cutout_prob` and `brightness_contrast_prob` separately.** Combined augmentation costs 0.033 evaluated DSC against no augmentation at all, while scale alone gains 0.066 — so one or both of those two knobs is actively harmful, but which is unknown. One run each settles it.
 2. Investigate `high_cell9`'s over-segmentation directly — overlay the predicted region on the *raw, non-CLAHE* frame across a few laser-power steps and check whether it visibly tracks a halo/glare shape. This is the one concrete diagnostic step from the augmentation experiments that hasn't been done yet, and the most direct route to closing `high_cell9`'s remaining gap.
 3. Once the recipe is genuinely settled (no more hyperparameter changes queued): fold `high_cell9` + `low_cell6` into the training pool, train the final/production checkpoint once on the enlarged pool, *then* annotate `high_cell10` and evaluate it exactly once — the blind test. See [Data Layout](data.md#cell-roles) for the exact sequence; do not annotate or evaluate `high_cell10` before this is triggered.
 4. Train with full determinism (`cudnn_deterministic=True`, `cudnn_benchmark=False`, `strict_deterministic=True`) once more compute is available, and re-run the legacy-vs-domain-adapt breakdown from [Domain Gap](#domain-gap) against whatever checkpoint is current at that point — the 0.910/0.939 figure has been unreproducible since 2026-08-29 and is still purely historical.

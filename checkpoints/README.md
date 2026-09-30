@@ -12,7 +12,7 @@
 >
 > **Development set (4 cells, 203 frames — fully annotated 23 Sept):**
 >
-> | | pooled DSC | spread |
+> | | evaluated DSC | spread |
 > |---|---|---|
 > | single model, 4-seed mean (s42/43/44/45) | 0.809 | sd 0.049 |
 > | **ensemble of all four** | **0.859** | — |
@@ -33,7 +33,7 @@
 > **Ensembling is what fixes it.** No per-cell collapse survives averaging: `high-1`
 > never below 0.823, `high-9` never below 0.822.
 >
-> | | high-1 | high-9 | low-5 | low-6 | **Pooled** |
+> | | high-1 | high-9 | low-5 | low-6 | **All cells** |
 > |---|---|---|---|---|---|
 > | single model, 4-seed mean | 0.742 | 0.792 | 0.890 | 0.770 | 0.809 |
 > | **ensemble of 4** | **0.823** | **0.848** | **0.920** | **0.818** | **0.859** |
@@ -71,7 +71,7 @@ record of what each one scored is `results/preswap/preswap_eval_log.jsonl` and
 
 ## `postswap/` — active
 
-| Checkpoint | Seed | Pooled DSC |
+| Checkpoint | Seed | Evaluated DSC |
 |---|---|---|
 | `postswap_ftl_cw142_s42` | 42 | 0.830 |
 | **`postswap_ftl_cw142_s43`** | 43 | **0.864** (best single) |
@@ -87,7 +87,7 @@ do **not** adopt s43 because its number is highest.
 
 ## `preswap/` — historical, best first
 
-| Checkpoint | Pooled DSC | What it was |
+| Checkpoint | Evaluated DSC | What it was |
 |---|---|---|
 | `..._bf64_scale_cos_ftl` | 0.691 | Focal–Tversky; best pre-swap |
 | `..._bf64_scale_cos_445` | 0.680 | 445-frame pool — ⚠️ **invalid**, trained on `low_cell5` which is a development cell |

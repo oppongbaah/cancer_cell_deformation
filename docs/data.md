@@ -57,7 +57,7 @@ There is **no `04_clf_arena` anymore** — it was collapsed into `03_mask_factor
 
 ## Three-tier evaluation terminology
 
-Three genuinely different things get called "validation" or "test" informally — worth being precise, since a pooled score from the wrong tier is easy to over-trust:
+Three genuinely different things get called "validation" or "test" informally — worth being precise, since an evaluated score from the wrong tier is easy to over-trust:
 
 | Tier | What it is | Where | Used for |
 |---|---|---|---|

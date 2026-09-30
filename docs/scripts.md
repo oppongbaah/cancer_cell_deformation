@@ -352,7 +352,7 @@ Equivalent to `celldform-infer`. See [CLI Reference](cli.md).
 ## `training/compare_postswap.py` — enforce the noise floor on comparisons
 
 Reads `results/postswap/postswap_eval_log.jsonl` and compares runs against the series
-baseline, per development cell and pooled.
+baseline, per development cell and over all cells together.
 
 ```bash
 python scripts/training/compare_postswap.py                      # every run vs. baseline
@@ -361,12 +361,12 @@ python scripts/training/compare_postswap.py --seeds A B C        # aggregate see
 ```
 
 It exists to stop a number that looks exciting being recorded as a finding. Measured
-seed-only spread on this pipeline is **sd 0.057 pooled**, so a difference between two
+seed-only spread on this pipeline is **evaluated sd 0.057**, so a difference between two
 single runs has SE ≈ 0.081 and needs roughly twice that to be believable. Anything
 below **0.161** prints as `INCONCLUSIVE`:
 
 ```
-  => INCONCLUSIVE. Pooled delta +0.048 is inside the +/-0.161 noise floor.
+  => INCONCLUSIVE. Evaluated delta +0.048 is inside the +/-0.161 noise floor.
      Log as screened, not as a result. Three seeds on BOTH arms to decide it.
 ```
 
@@ -384,7 +384,7 @@ scripts/training/run_postswap.sh postswap_ftl_cw142_res384_s42
 ```
 
 Expects `configs/postswap/<run-name>.yaml`. Trains, evaluates on all four development
-cells plus pooled, writes the log to `logs/postswap/`, moves the training curve into
+cells plus all cells together, writes the log to `logs/postswap/`, moves the training curve into
 `results/postswap/`, echoes the split assignment, and finishes by running
 `compare_postswap.py` against the baseline.
 

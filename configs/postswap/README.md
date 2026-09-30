@@ -38,7 +38,7 @@ Development-set results, 3 seeds (42/43/44), split pinned at 42:
 | high-9   | 0.825 | 0.895 | 0.816 | 0.845 | 0.043 |
 | low-5    | 0.922 | 0.913 | 0.814 | 0.883 | 0.060 |
 | low-6    | 0.718 | 0.804 | 0.777 | 0.766 | 0.044 |
-| **Pooled** | **0.800** | 0.847 | 0.754 | **0.800** | 0.046 |
+| **All cells** | **0.800** | 0.847 | 0.754 | **0.800** | 0.046 |
 
 Seed 42 is the working seed because it is the median draw and lands exactly on the
 3-seed mean; seed 43 is the high draw and would anchor everything optimistically.

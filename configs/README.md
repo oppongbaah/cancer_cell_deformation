@@ -33,7 +33,7 @@ set, so nothing in `preswap/` can be compared against anything in `postswap/`.
 
 ## `postswap/` — the active series
 
-| Config | Seed | Pooled DSC |
+| Config | Seed | Evaluated DSC |
 |---|---|---|
 | **`postswap_ftl_cw142_s42.yaml`** | 42 | 0.830 ⭐ working seed |
 | `postswap_ftl_cw142_s43.yaml` | 43 | 0.864 |
@@ -48,7 +48,7 @@ error bar** — see the rules in `configs/postswap/README.md`.
 
 **The 17 Sept loss experiments** (four-cell development set as it stood that morning):
 
-| Config | Pooled DSC | Outcome |
+| Config | Evaluated DSC | Outcome |
 |---|---|---|
 | `multiclass_experiment_256_scale_cos_ftl.yaml` | 0.691 | Focal–Tversky; best pre-swap |
 | `multiclass_experiment_256_scale_cos_cw133.yaml` | 0.676 | class weights → [1,3,3]; no real effect |
