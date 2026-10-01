@@ -16,6 +16,9 @@ import argparse
 from pathlib import Path
 
 import cv2
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
 import numpy as np
 
 ROWS = [("evaluate", "postswap_devset", "high_cell9_005000"),
@@ -27,24 +30,32 @@ COLS = [("_512", "resize 512"), ("_crop512", "crop 512"), ("_crop384", "crop 384
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--output", type=Path, required=True)
-    ap.add_argument("--tile", type=int, default=300)
     args = ap.parse_args()
-    rows = []
-    for split, pool, name in ROWS:
-        tiles = []
-        for suffix, label in COLS:
+    # Names are set OUTSIDE the images, dark on white, with white space around every
+    # tile (2026-10-01: labels printed on the grey frames were unreadable in print).
+    fig, axes = plt.subplots(len(ROWS), len(COLS), figsize=(9.6, 9.9), facecolor="white",
+                             gridspec_kw={"wspace": 0.08, "hspace": 0.16})
+    row_names = ["high-9, step 25", "low-6, step 25", "legacy 2021 frame"]
+    for r, (split, pool, name) in enumerate(ROWS):
+        for k, (suffix, label) in enumerate(COLS):
             base = Path("data/preprocessed") / split / f"{pool}{suffix}"
-            im = cv2.cvtColor(cv2.imread(str(base / "inputs" / f"{name}.png"), 0), cv2.COLOR_GRAY2BGR)
+            im = cv2.cvtColor(cv2.imread(str(base / "inputs" / f"{name}.png"), 0), cv2.COLOR_GRAY2RGB)
             lb = cv2.imread(str(base / "labels" / f"{name}.png"), 0)
-            for cls, colour in ((1, (0, 200, 0)), (2, (0, 0, 220))):
+            t = max(1, im.shape[0] // 256)
+            for cls, colour in ((1, (0, 200, 0)), (2, (220, 0, 0))):
                 cs, _ = cv2.findContours((lb == cls).astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-                cv2.drawContours(im, cs, -1, colour, 1)
-            im = cv2.resize(im, (args.tile, args.tile), interpolation=cv2.INTER_AREA)
-            cv2.putText(im, label, (6, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 220, 255), 1)
-            tiles.append(im)
-        rows.append(np.hstack(tiles))
+                cv2.drawContours(im, cs, -1, colour, t)
+            ax = axes[r, k]
+            ax.imshow(im)
+            ax.set_xticks([]); ax.set_yticks([])
+            for sp in ax.spines.values():
+                sp.set_color("#c9c8c3"); sp.set_linewidth(0.8)
+            if r == 0:
+                ax.set_title(label, fontsize=12, color="#0b0b0b", pad=8)
+            if k == 0:
+                ax.set_ylabel(row_names[r], fontsize=11, color="#0b0b0b", labelpad=8)
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    cv2.imwrite(str(args.output), np.vstack(rows))
+    fig.savefig(args.output, dpi=170, bbox_inches="tight", pad_inches=0.15, facecolor="white")
     print(f"-> {args.output}")
 
 

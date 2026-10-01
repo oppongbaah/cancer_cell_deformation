@@ -271,9 +271,9 @@ def _build_groups(pairs: list[tuple[Path, Path]]) -> list[str]:
 
     groups = []
     for stem in stems:
-        if stem.startswith("domain_"):
-            parts = stem.split("_")
-            groups.append("_".join(parts[1:-1]))  # domain_high_cell1_002042 -> high_cell1
+        cell = parse_stem(stem)[0]   # domain_high_cell1_002042 and high_cell1_000200 -> high_cell1
+        if cell is not None:
+            groups.append(cell)
         elif stem in legacy_bursts:
             groups.append(legacy_bursts[stem])
         else:

@@ -48,6 +48,12 @@ All preswap evaluations are in one ledger, `results/preswap/preswap_eval_log.jso
 Baseline for experiment 1 is `postswap_ftl_cw142_s43` — **0.864, the best of the four
 seeds**. One run resolves only ±0.139, so a delta against it is a screen, not a result.
 
+## Randswap (from 1 October): testing cells drawn at random
+
+| Experiment | Question | Runs | What it found |
+|---|---|---|---|
+| `experiment_0_cv_baseline` | How does the 384-crop configuration do on randomly drawn cells? | 5 CV rounds | Stratified 5-fold over all 15 cells (11 : 1 : 3, seed 42, config committed `ada18ff` before the draw). **Per-cell mean DSC 0.855 ± 0.114, Test DSC 0.861** (native) — vs 0.897 on the hand-picked 4 cells, so the old testing set was optimistic. **High HER2 0.802 vs low 0.934**; worst high-4 0.625 (over-predicts), high-8 0.712 and low-6 0.762 (under-predict). Internal val 0.946–0.978 every round. Median best epoch 29 → final model length. Results: `results/randswap/experiment_0_cv_baseline/cv_baseline_cv_*`. |
+
 ## Randswap baseline (2026-10-01)
 
 **Lovász-softmax loss + native 384×384 crop** — `configs/postswap/experiment_3_cropping/e3b_crop384_b4.yaml`

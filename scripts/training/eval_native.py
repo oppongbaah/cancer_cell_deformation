@@ -33,6 +33,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from celldform.config import load as load_config
 from celldform.integration.realtime import feature_mask
 from celldform.preprocessing.pipeline import crop_box
+from celldform.segmentation.ensemble import EnsembleUNet
 from celldform.segmentation.unet import UNet
 from celldform.splits import parse_stem
 
@@ -47,13 +48,16 @@ def _cell(stem: str) -> str:
 
 
 def _scores(tp: int, fp: int, fn: int) -> dict:
+    # Raw pixel counts are logged too, so scores can be pooled across CV folds exactly.
     return {"dsc": 2 * tp / max(2 * tp + fp + fn, 1), "precision": tp / max(tp + fp, 1),
-            "recall": tp / max(tp + fn, 1)}
+            "recall": tp / max(tp + fn, 1), "tp": tp, "fp": fp, "fn": fn}
 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("--checkpoint", type=Path, required=True)
+    ap.add_argument("--checkpoint", type=Path, nargs="+", required=True,
+                    help="one checkpoint, or several to score as an ensemble (averaged softmax)")
+    ap.add_argument("--name", default=None, help="run name in the log (default: checkpoint folder)")
     ap.add_argument("--config", type=Path, required=True)
     ap.add_argument("--inputs", type=Path, default=None,
                     help="preprocessed testing-set inputs at the MODEL's resolution")
@@ -74,8 +78,11 @@ def main() -> None:
             conf.preprocessing.crop_center = tuple(rec["crop_center"])
     if args.inputs is None:
         raise SystemExit("give --inputs or --fold-dir")
-    model = UNet.from_checkpoint(args.checkpoint, in_channels=1, out_channels=conf.unet.out_channels,
-                                 base_features=conf.unet.base_features)
+    kw = dict(in_channels=1, out_channels=conf.unet.out_channels, base_features=conf.unet.base_features)
+    if len(args.checkpoint) == 1:
+        model = UNet.from_checkpoint(args.checkpoint[0], **kw)
+    else:
+        model = EnsembleUNet.from_checkpoints(args.checkpoint, **kw)
     acc: dict[str, list[int]] = defaultdict(lambda: [0, 0, 0])
     frames = sorted(args.inputs.glob("*.png"))
     for f in frames:
@@ -95,7 +102,9 @@ def main() -> None:
     per_cell = {c: _scores(*acc[c]) for c in cells}
     pooled = _scores(*acc["ALL CELLS"])
     mean_cell = st.mean(m["dsc"] for m in per_cell.values())
-    run = args.checkpoint.parent.name
+    run = args.name or args.checkpoint[0].parent.name
+    ck_record = (str(args.checkpoint[0]) if len(args.checkpoint) == 1
+                 else str(args.checkpoint[0].parent.parent / run / "unet_best.pt"))
     print(f"{run}  (native {gt_raw.shape[1]}x{gt_raw.shape[0]}, {len(frames)} frames, "
           f"input {x.shape[1]}x{x.shape[0]})")
     for c in cells:
@@ -110,7 +119,9 @@ def main() -> None:
         with args.log.open("a") as fh:
             for scope, m in [*per_cell.items(), ("ALL CELLS", pooled)]:
                 fh.write(json.dumps({
-                    "timestamp": stamp, "checkpoint": str(args.checkpoint), "config": str(args.config),
+                    "timestamp": stamp, "checkpoint": ck_record,
+                    "members": [str(c) for c in args.checkpoint] if len(args.checkpoint) > 1 else None,
+                    "config": str(args.config),
                     "resolution": "native", "input": f"{x.shape[1]}x{x.shape[0]}",
                     "filter": None if scope == "ALL CELLS" else scope, "metrics": {"1": m},
                     "per_cell_mean_dsc": mean_cell if scope == "ALL CELLS" else None}) + "\n")

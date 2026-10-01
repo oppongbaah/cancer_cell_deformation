@@ -94,6 +94,12 @@ def jobs(img: Path, tab: Path) -> dict[str, list[str]]:
     return {
         # ── Dataset Organization ────────────────────────────────────────────
         "pools": ["scripts/report/plot_pool_flow.py", "--output", str(img / "pool_flow_10_1.png")],
+        "experiments": ["scripts/report/plot_experiments.py", "--out", str(img),
+                        "--tables", str(tab)],
+        "data-map": ["scripts/report/plot_data_map.py", "--exp", "randswap/experiment_0_cv_baseline",
+                     "--run", "cv_baseline", "--output", str(img / "data_map.png")],
+        "cv": ["scripts/report/plot_cv.py", "--exp", "randswap/experiment_0_cv_baseline",
+               "--run", "cv_baseline", "--out", str(img), "--tables", str(tab)],
         "exp3-crop-example": ["scripts/report/plot_resize_vs_crop.py",
                               "--output", str(img / "exp3_resize_vs_crop.jpg")],
         "table-percell": ["scripts/report/make_report_tables.py", "percell",
