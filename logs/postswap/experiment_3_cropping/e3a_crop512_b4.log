@@ -1,0 +1,116 @@
+[celldform] Dataset split (group-aware, 22 groups) — train: 397  val: 54
+[celldform]   split assignment (seed=42)
+[celldform]     val  : low_cell4(19), legacy_burst_5(18), legacy_burst_2(17)
+[celldform]     train: high_cell10(50), low_cell2(24), high_cell2(20), high_cell3(20), high_cell4(20), high_cell6(20), high_cell7(20), low_cell1(20), high_cell8(19), low_cell3(19), legacy(165)
+[celldform]   note: cell group(s) held out of training this run: low_cell4
+[celldform] Config snapshot → checkpoints/postswap/experiment_3_cropping/e3a_crop512_b4/config.yaml
+
+============================================================
+  Platform info [before training]
+============================================================
+  OS          : Linux 6.18.40.1-microsoft-standard-WSL2 (x86_64)
+  Python      : 3.12.3
+  PyTorch     : 2.12.0+cu130
+  Device      : NVIDIA GeForce RTX 4060 Laptop GPU (GPU 0)
+  CUDA        : 13.0
+  VRAM        : 8.0 GB
+============================================================
+
+Epoch 001/100  train_loss=1.0051  train_DSC=0.1721  val_loss=0.9082  val_DSC=0.4414  (41.3s)
+  → Checkpoint saved: checkpoints/postswap/experiment_3_cropping/e3a_crop512_b4/unet_best.pt  (DSC=0.4414)
+Epoch 002/100  train_loss=0.8771  train_DSC=0.5246  val_loss=0.8201  val_DSC=0.7852  (37.5s)
+  → Checkpoint saved: checkpoints/postswap/experiment_3_cropping/e3a_crop512_b4/unet_best.pt  (DSC=0.7852)
+Epoch 003/100  train_loss=0.8153  train_DSC=0.7358  val_loss=0.7978  val_DSC=0.6242  (37.3s)
+Epoch 004/100  train_loss=0.7545  train_DSC=0.8396  val_loss=0.7130  val_DSC=0.8838  (37.1s)
+  → Checkpoint saved: checkpoints/postswap/experiment_3_cropping/e3a_crop512_b4/unet_best.pt  (DSC=0.8838)
+Epoch 005/100  train_loss=0.7246  train_DSC=0.8702  val_loss=0.7310  val_DSC=0.7544  (37.2s)
+Epoch 006/100  train_loss=0.6904  train_DSC=0.8995  val_loss=0.7223  val_DSC=0.7528  (37.2s)
+Epoch 007/100  train_loss=0.6743  train_DSC=0.8933  val_loss=0.6768  val_DSC=0.8701  (37.2s)
+Epoch 008/100  train_loss=0.6508  train_DSC=0.9151  val_loss=0.6404  val_DSC=0.9462  (37.2s)
+  → Checkpoint saved: checkpoints/postswap/experiment_3_cropping/e3a_crop512_b4/unet_best.pt  (DSC=0.9462)
+Epoch 009/100  train_loss=0.6335  train_DSC=0.9187  val_loss=0.6425  val_DSC=0.9089  (37.5s)
+Epoch 010/100  train_loss=0.6109  train_DSC=0.9373  val_loss=0.6027  val_DSC=0.9580  (37.4s)
+  → Checkpoint saved: checkpoints/postswap/experiment_3_cropping/e3a_crop512_b4/unet_best.pt  (DSC=0.9580)
+Epoch 011/100  train_loss=0.5981  train_DSC=0.9369  val_loss=0.6201  val_DSC=0.9316  (37.3s)
+Epoch 012/100  train_loss=0.5883  train_DSC=0.9392  val_loss=0.6112  val_DSC=0.8776  (37.2s)
+Epoch 013/100  train_loss=0.5747  train_DSC=0.9365  val_loss=0.5834  val_DSC=0.9381  (37.2s)
+Epoch 014/100  train_loss=0.5622  train_DSC=0.9421  val_loss=0.5630  val_DSC=0.9447  (37.2s)
+Epoch 015/100  train_loss=0.5483  train_DSC=0.9448  val_loss=0.5592  val_DSC=0.9452  (37.2s)
+Epoch 016/100  train_loss=0.5451  train_DSC=0.9336  val_loss=0.5478  val_DSC=0.9469  (37.3s)
+Epoch 017/100  train_loss=0.5412  train_DSC=0.9347  val_loss=0.5407  val_DSC=0.9458  (37.3s)
+Epoch 018/100  train_loss=0.5187  train_DSC=0.9458  val_loss=0.5199  val_DSC=0.9569  (37.2s)
+Epoch 019/100  train_loss=0.5056  train_DSC=0.9531  val_loss=0.5082  val_DSC=0.9553  (37.5s)
+Epoch 020/100  train_loss=0.4950  train_DSC=0.9500  val_loss=0.5101  val_DSC=0.9507  (37.4s)
+Epoch 021/100  train_loss=0.4912  train_DSC=0.9462  val_loss=0.4921  val_DSC=0.9370  (37.3s)
+Epoch 022/100  train_loss=0.4791  train_DSC=0.9471  val_loss=0.5036  val_DSC=0.9477  (37.3s)
+Epoch 023/100  train_loss=0.4664  train_DSC=0.9463  val_loss=0.4723  val_DSC=0.9524  (37.3s)
+Epoch 024/100  train_loss=0.4570  train_DSC=0.9487  val_loss=0.4775  val_DSC=0.9569  (37.3s)
+Epoch 025/100  train_loss=0.4454  train_DSC=0.9494  val_loss=0.5551  val_DSC=0.7594  (37.3s)
+Epoch 026/100  train_loss=0.4374  train_DSC=0.9425  val_loss=0.4609  val_DSC=0.9506  (37.3s)
+Epoch 027/100  train_loss=0.4188  train_DSC=0.9538  val_loss=0.4501  val_DSC=0.9551  (37.2s)
+Epoch 028/100  train_loss=0.4065  train_DSC=0.9576  val_loss=0.4349  val_DSC=0.9597  (37.3s)
+  → Checkpoint saved: checkpoints/postswap/experiment_3_cropping/e3a_crop512_b4/unet_best.pt  (DSC=0.9597)
+Epoch 029/100  train_loss=0.4001  train_DSC=0.9515  val_loss=0.4177  val_DSC=0.9567  (37.5s)
+Epoch 030/100  train_loss=0.3862  train_DSC=0.9541  val_loss=0.4262  val_DSC=0.9458  (37.5s)
+Epoch 031/100  train_loss=0.3734  train_DSC=0.9573  val_loss=0.4162  val_DSC=0.9541  (37.2s)
+Epoch 032/100  train_loss=0.3627  train_DSC=0.9567  val_loss=0.4037  val_DSC=0.9349  (37.3s)
+Epoch 033/100  train_loss=0.3540  train_DSC=0.9541  val_loss=0.3859  val_DSC=0.9601  (37.2s)
+  → Checkpoint saved: checkpoints/postswap/experiment_3_cropping/e3a_crop512_b4/unet_best.pt  (DSC=0.9601)
+Epoch 034/100  train_loss=0.3374  train_DSC=0.9593  val_loss=0.3787  val_DSC=0.9505  (37.2s)
+Epoch 035/100  train_loss=0.3301  train_DSC=0.9558  val_loss=0.3625  val_DSC=0.9603  (37.3s)
+  → Checkpoint saved: checkpoints/postswap/experiment_3_cropping/e3a_crop512_b4/unet_best.pt  (DSC=0.9603)
+Epoch 036/100  train_loss=0.3182  train_DSC=0.9586  val_loss=0.3511  val_DSC=0.9555  (37.3s)
+Epoch 037/100  train_loss=0.3071  train_DSC=0.9557  val_loss=0.3472  val_DSC=0.9564  (37.3s)
+Epoch 038/100  train_loss=0.2960  train_DSC=0.9606  val_loss=0.3601  val_DSC=0.9571  (37.5s)
+Epoch 039/100  train_loss=0.2877  train_DSC=0.9566  val_loss=0.3342  val_DSC=0.9609  (37.5s)
+  → Checkpoint saved: checkpoints/postswap/experiment_3_cropping/e3a_crop512_b4/unet_best.pt  (DSC=0.9609)
+Epoch 040/100  train_loss=0.2803  train_DSC=0.9607  val_loss=0.3321  val_DSC=0.9547  (37.4s)
+Epoch 041/100  train_loss=0.2715  train_DSC=0.9619  val_loss=0.3416  val_DSC=0.9560  (37.2s)
+Epoch 042/100  train_loss=0.2649  train_DSC=0.9600  val_loss=0.3375  val_DSC=0.9575  (37.2s)
+Epoch 043/100  train_loss=0.2610  train_DSC=0.9596  val_loss=0.3099  val_DSC=0.9559  (37.2s)
+Epoch 044/100  train_loss=0.2556  train_DSC=0.9586  val_loss=0.3263  val_DSC=0.9582  (37.2s)
+Epoch 045/100  train_loss=0.2443  train_DSC=0.9621  val_loss=0.3164  val_DSC=0.9653  (37.3s)
+  → Checkpoint saved: checkpoints/postswap/experiment_3_cropping/e3a_crop512_b4/unet_best.pt  (DSC=0.9653)
+Epoch 046/100  train_loss=0.2421  train_DSC=0.9621  val_loss=0.3199  val_DSC=0.9568  (37.3s)
+Epoch 047/100  train_loss=0.2335  train_DSC=0.9626  val_loss=0.3064  val_DSC=0.9632  (37.3s)
+Epoch 048/100  train_loss=0.2247  train_DSC=0.9626  val_loss=0.2910  val_DSC=0.9607  (37.4s)
+Epoch 049/100  train_loss=0.2194  train_DSC=0.9641  val_loss=0.3071  val_DSC=0.9610  (37.4s)
+Epoch 050/100  train_loss=0.2211  train_DSC=0.9615  val_loss=0.3084  val_DSC=0.9589  (37.4s)
+Epoch 051/100  train_loss=0.2145  train_DSC=0.9640  val_loss=0.2972  val_DSC=0.9616  (37.3s)
+Epoch 052/100  train_loss=0.2122  train_DSC=0.9637  val_loss=0.2980  val_DSC=0.9639  (37.2s)
+Epoch 053/100  train_loss=0.2105  train_DSC=0.9586  val_loss=0.2905  val_DSC=0.9651  (37.3s)
+Epoch 054/100  train_loss=0.2055  train_DSC=0.9618  val_loss=0.2812  val_DSC=0.9638  (37.3s)
+Epoch 055/100  train_loss=0.2042  train_DSC=0.9613  val_loss=0.2800  val_DSC=0.9616  (37.2s)
+Epoch 056/100  train_loss=0.1997  train_DSC=0.9640  val_loss=0.3004  val_DSC=0.9568  (37.2s)
+Epoch 057/100  train_loss=0.1964  train_DSC=0.9639  val_loss=0.2819  val_DSC=0.9625  (37.4s)
+Epoch 058/100  train_loss=0.1936  train_DSC=0.9637  val_loss=0.2669  val_DSC=0.9611  (37.5s)
+Epoch 059/100  train_loss=0.1937  train_DSC=0.9652  val_loss=0.2891  val_DSC=0.9606  (37.4s)
+Epoch 060/100  train_loss=0.1899  train_DSC=0.9663  val_loss=0.2852  val_DSC=0.9629  (37.2s)
+Epoch 061/100  train_loss=0.1844  train_DSC=0.9660  val_loss=0.2845  val_DSC=0.9624  (37.2s)
+Epoch 062/100  train_loss=0.1821  train_DSC=0.9671  val_loss=0.2702  val_DSC=0.9627  (37.2s)
+Epoch 063/100  train_loss=0.1797  train_DSC=0.9655  val_loss=0.2887  val_DSC=0.9617  (38.1s)
+Epoch 064/100  train_loss=0.1799  train_DSC=0.9658  val_loss=0.2883  val_DSC=0.9608  (37.6s)
+Epoch 065/100  train_loss=0.1767  train_DSC=0.9671  val_loss=0.2861  val_DSC=0.9625  (37.2s)
+Early stopping: no val_DSC improvement > 0.001 for 20 epochs (best=0.9653 at epoch 45). Stopping at epoch 65/100.
+
+[celldform] Reloaded best checkpoint for final evaluation: epoch 45
+
+Final validation metrics:
+  [trapped_cell]
+    dsc: 0.9650
+    iou: 0.9324
+    precision: 0.9511
+    recall: 0.9793
+  [class_2]
+    dsc: 0.6609
+    iou: 0.4935
+    precision: 0.8353
+    recall: 0.5467
+  [mean]
+    dsc: 0.8129
+    iou: 0.7129
+    precision: 0.8932
+    recall: 0.7630
+/home/mega/work/thesis/cancer_cell_deformation/celldform/utils/visualization.py:155: UserWarning: This figure includes Axes that are not compatible with tight_layout, so results might be incorrect.
+  fig.tight_layout()
+Training curves saved to results/postswap/experiment_3_cropping/unet_training_curves_v1_e3a_crop512_b4.png

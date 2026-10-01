@@ -31,8 +31,11 @@ grep -E 'Early stopping|Reloaded best' "logs/${EXP}/${RUN}.log" || true
 
 # Score on the testing set at the config's own input size, then at native resolution
 # (one grid for every model, so runs at different sizes compare like with like).
-SIZE=$(.venv/bin/python -c "from celldform.config import load; print(load('$CFG').preprocessing.target_size[0])")
-POOL=postswap_devset; [ "$SIZE" = 256 ] || POOL="postswap_devset_${SIZE}"
+# The testing set matching the training data: postswap_multiclass<_v> -> postswap_devset<_v>
+# (_256 -> plain postswap_devset, which predates the suffixes).
+VARIANT=$(.venv/bin/python -c "from celldform.config import load; d=load('$CFG').data.frames_dir; print(d.split('postswap_multiclass')[1].split('/')[0])")
+POOL="postswap_devset${VARIANT}"; [ "$VARIANT" = "_256" ] && POOL=postswap_devset
+[ -d "data/preprocessed/evaluate/${POOL}" ] || { echo "no testing set data/preprocessed/evaluate/${POOL}"; exit 1; }
 scripts/training/eval_testing_set.sh "$CK" "$CFG" "results/${EXP}/eval_log.jsonl" "$POOL"
 .venv/bin/python scripts/training/eval_native.py --checkpoint "$CK" --config "$CFG" \
     --inputs "data/preprocessed/evaluate/${POOL}/inputs" --log "results/${EXP}/eval_log_native.jsonl" \

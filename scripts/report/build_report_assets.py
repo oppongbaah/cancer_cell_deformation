@@ -94,6 +94,8 @@ def jobs(img: Path, tab: Path) -> dict[str, list[str]]:
     return {
         # ── Dataset Organization ────────────────────────────────────────────
         "pools": ["scripts/report/plot_pool_flow.py", "--output", str(img / "pool_flow_10_1.png")],
+        "exp3-crop-example": ["scripts/report/plot_resize_vs_crop.py",
+                              "--output", str(img / "exp3_resize_vs_crop.jpg")],
         "table-percell": ["scripts/report/make_report_tables.py", "percell",
                           "--output", str(tab / "percell_10_1.tex")],
         # ── Experiment 1: the three loss interventions, + the seed repeat ───
@@ -190,12 +192,14 @@ def main() -> None:
                 (img / f"curves_s{s}.png").write_bytes(src[-1].read_bytes())
                 copied += 1
         print(f"  {copied}/4 training-curve figures copied to {img.name}/")
-        # Experiments 1 and 2 (2026-09-30): copied under the same stable-name scheme.
+        # Experiments 1-3 (2026-09-30/10-01): copied under the same stable-name scheme.
         for exp, run, stable in (
                 ("experiment_1a_optimizer", "e1a_sgd_nesterov", "curves_e1a_sgd.png"),
                 ("experiment_1b_loss", "e1b_lovasz_s43", "curves_e1b_lovasz_s43.png"),
                 ("experiment_2_resolution", "e2a_res256_b4", "curves_e2a_res256.png"),
-                ("experiment_2_resolution", "e2b_res512_b4", "curves_e2b_res512.png")):
+                ("experiment_2_resolution", "e2b_res512_b4", "curves_e2b_res512.png"),
+                ("experiment_3_cropping", "e3a_crop512_b4", "curves_e3a_crop512.png"),
+                ("experiment_3_cropping", "e3b_crop384_b4", "curves_e3b_crop384.png")):
             src = sorted((REPO / "results/postswap" / exp).glob(f"unet_training_curves_v*_{run}.png"))
             if src:
                 (img / stable).write_bytes(src[-1].read_bytes())

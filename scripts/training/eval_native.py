@@ -32,6 +32,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from celldform.config import load as load_config
 from celldform.integration.realtime import feature_mask
+from celldform.preprocessing.pipeline import crop_box
 from celldform.segmentation.unet import UNet
 
 GT_DIR = Path("data/masks/02_unet_holdout_multiclass")
@@ -67,7 +68,9 @@ def main() -> None:
         if gt_raw is None:
             raise SystemExit(f"no native ground truth for {f.name} in {args.gt_dir}")
         x = cv2.imread(str(f), cv2.IMREAD_GRAYSCALE).astype(np.float32) / 255.0
-        pred = feature_mask(model, x, (gt_raw.shape[1], gt_raw.shape[0])).astype(bool)
+        box = (crop_box(conf.preprocessing.crop_center, conf.preprocessing.crop_size, *gt_raw.shape)
+               if conf.preprocessing.crop_size else None)
+        pred = feature_mask(model, x, (gt_raw.shape[1], gt_raw.shape[0]), box).astype(bool)
         gt = gt_raw == 1
         for key in (_cell(f.stem), "ALL CELLS"):
             a = acc[key]

@@ -60,7 +60,8 @@ FEATURE_SIZE: Tuple[int, int] = (1228, 922)
 
 
 def feature_mask(model: Any, processed: np.ndarray,
-                 size: Tuple[int, int] = FEATURE_SIZE) -> np.ndarray:
+                 size: Tuple[int, int] = FEATURE_SIZE,
+                 crop_box: Optional[Tuple[int, int, int, int]] = None) -> np.ndarray:
     """Trapped-cell mask at *size* ``(width, height)`` for feature extraction.
 
     Resamples the model's per-class **probabilities** (bilinear) and argmaxes at the
@@ -69,8 +70,22 @@ def feature_mask(model: Any, processed: np.ndarray,
     with :class:`UNet` and :class:`~celldform.segmentation.ensemble.EnsembleUNet`.
     Decoy pixels (class 2) are never foreground, the same contract as
     ``predict(binary_output=True)``.
+
+    ``crop_box`` (x0, y0, x1, y1), in full-frame pixels, is for models fed a crop of the
+    frame (preprocessing ``crop_size``): the prediction is resampled to the box and pasted
+    back, and everything outside it is background.
     """
     probs = model.predict_proba(processed)                          # (C, h, w)
+    if crop_box is None:
+        return _fg_from_probs(probs, size)
+    x0, y0, x1, y1 = crop_box
+    full = np.zeros((size[1], size[0]), dtype=np.uint8)
+    full[y0:y1, x0:x1] = _fg_from_probs(probs, (x1 - x0, y1 - y0))
+    return full
+
+
+def _fg_from_probs(probs: np.ndarray, size: Tuple[int, int]) -> np.ndarray:
+    """Trapped-cell foreground at *size* (w, h) from (C, h, w) class probabilities."""
     if probs.shape[0] == 1:
         up = cv2.resize(probs[0], size, interpolation=cv2.INTER_LINEAR)
         return (up >= 0.5).astype(np.uint8)
@@ -78,6 +93,7 @@ def feature_mask(model: Any, processed: np.ndarray,
     # linear, so each margin p1 - pk can be resampled in place of p1 and pk separately --
     # the min over k must come AFTER resampling (min is not linear). Skips a full-size
     # argmax (15 ms at 1228x922, measured). Identical to argmax(resized) == 1 up to ties.
+    # At a 1:1 crop the resize is the identity.
     fg = None
     for k in range(probs.shape[0]):
         if k == 1:
@@ -177,7 +193,9 @@ class RealTimePipeline:
         t_start = time.perf_counter()
 
         processed = self.preprocessor(frame)
-        mask = feature_mask(self.unet, processed, self.feature_size)
+        box = (self.preprocessor.crop_box(self.feature_size[1], self.feature_size[0])
+               if self.preprocessor.cfg.crop_size else None)
+        mask = feature_mask(self.unet, processed, self.feature_size, box)
         features = self.extractor.extract(mask)
         cell_found = not np.isnan(features["area"])
 

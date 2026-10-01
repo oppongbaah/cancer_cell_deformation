@@ -60,6 +60,13 @@ class PreprocessingCfg:
     morphology: bool = True
     resize: bool = True
     normalize: bool = True
+    # Native-resolution crop instead of a whole-frame resize (2026-10-01, experiment 3).
+    # crop_center is (x, y) in full-frame pixels for the real-cell setup, derived from the
+    # TRAINING cells' masks only; legacy_crop_center is the same for the 2021 frames,
+    # whose trap sits elsewhere (they are training-only). None = no crop.
+    crop_size: Optional[int] = None
+    crop_center: Optional[Tuple[int, int]] = None
+    legacy_crop_center: Optional[Tuple[int, int]] = None
 
 
 @dataclass
@@ -338,6 +345,10 @@ def _parse_preprocessing(p: dict) -> PreprocessingCfg:
         clahe_clip_limit=float(p.get("clahe_clip_limit", 2.0)),
         clahe_tile_grid=clahe_tile,
         morph_kernel_size=int(p.get("morph_kernel_size", 3)),
+        crop_size=(int(p["crop_size"]) if p.get("crop_size") else None),
+        crop_center=(tuple(int(v) for v in p["crop_center"]) if p.get("crop_center") else None),
+        legacy_crop_center=(tuple(int(v) for v in p["legacy_crop_center"])
+                            if p.get("legacy_crop_center") else None),
         denoise=bool(enabled.get("denoise", True)),
         enhance=bool(enabled.get("enhance", True)),
         morphology=bool(enabled.get("morphology", True)),
