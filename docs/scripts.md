@@ -351,7 +351,7 @@ Equivalent to `celldform-infer`. See [CLI Reference](cli.md).
 
 ## `training/compare_postswap.py` — enforce the noise floor on comparisons
 
-Reads `results/postswap/postswap_eval_log.jsonl` and compares runs against the series
+Reads `results/postswap/experiment_0a_seed_baseline/eval_log.jsonl` and compares runs against the series
 baseline, per development cell and over all cells together.
 
 ```bash

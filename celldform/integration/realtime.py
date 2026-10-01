@@ -14,7 +14,7 @@ Architecture position
   PreprocessingPipeline.__call__()
        │
        ▼
-  UNet.predict()  ← segmentation mask
+  feature_mask()  ← class probabilities at 256, resampled to FEATURE_SIZE
        │
        ▼
   MorphologyExtractor.extract()  ← feature dict
@@ -37,8 +37,9 @@ from __future__ import annotations
 
 import time
 from pathlib import Path
-from typing import Any, Callable, Dict, Generator, Optional, Union
+from typing import Any, Callable, Dict, Generator, Optional, Tuple, Union
 
+import cv2
 import numpy as np
 
 from celldform.acquisition.extractor import FrameExtractor
@@ -47,6 +48,43 @@ from celldform.classification.classifiers import CellClassifier
 from celldform.features.extractor import MorphologyExtractor
 from celldform.preprocessing.pipeline import PreprocessingPipeline
 from celldform.segmentation.unet import UNet
+
+#: ``(width, height)`` at which masks are handed to MorphologyExtractor: the size every
+#: frame pool was extracted at, and the size ``min_area_px`` is written in. The network
+#: sees 256x256, reached by a non-uniform stretch (x / 4.80, y / 3.60), so features taken
+#: at 256 describe a cell squashed ~1.33:1 along the beam axis -- the axis the trap
+#: stretches it along. Measured 2026-09-30 on the mask factory: that squash inverts the
+#: high/low HER2 ordering of aspect ratio, and the 50 px floor rejects 74 of 555 frames
+#: at 256 against 0 here.
+FEATURE_SIZE: Tuple[int, int] = (1228, 922)
+
+
+def feature_mask(model: Any, processed: np.ndarray,
+                 size: Tuple[int, int] = FEATURE_SIZE) -> np.ndarray:
+    """Trapped-cell mask at *size* ``(width, height)`` for feature extraction.
+
+    Resamples the model's per-class **probabilities** (bilinear) and argmaxes at the
+    target size, rather than upsampling the argmaxed 256 mask, which would leave a
+    4.8 x 3.6 px staircase on the boundary and bias perimeter and circularity. Works
+    with :class:`UNet` and :class:`~celldform.segmentation.ensemble.EnsembleUNet`.
+    Decoy pixels (class 2) are never foreground, the same contract as
+    ``predict(binary_output=True)``.
+    """
+    probs = model.predict_proba(processed)                          # (C, h, w)
+    if probs.shape[0] == 1:
+        up = cv2.resize(probs[0], size, interpolation=cv2.INTER_LINEAR)
+        return (up >= 0.5).astype(np.uint8)
+    # "class 1 wins the argmax" == "p1 - pk > 0 for every other k". Bilinear resampling is
+    # linear, so each margin p1 - pk can be resampled in place of p1 and pk separately --
+    # the min over k must come AFTER resampling (min is not linear). Skips a full-size
+    # argmax (15 ms at 1228x922, measured). Identical to argmax(resized) == 1 up to ties.
+    fg = None
+    for k in range(probs.shape[0]):
+        if k == 1:
+            continue
+        m = cv2.resize(probs[1] - probs[k], size, interpolation=cv2.INTER_LINEAR) > 0
+        fg = m if fg is None else fg & m
+    return fg.astype(np.uint8)
 
 
 class RealTimePipeline:
@@ -74,6 +112,10 @@ class RealTimePipeline:
         Optional callback invoked with the result dict after each frame.
         Use this to stream results to the C++ application via shared memory
         or a socket (without blocking the Python loop).
+    feature_size:
+        ``(width, height)`` of the mask features are measured on -- see
+        :data:`FEATURE_SIZE`. Video is also streamed at this size, so preprocessing
+        (median blur, CLAHE) runs at the resolution the training frames saw it at.
     """
 
     def __init__(
@@ -86,6 +128,7 @@ class RealTimePipeline:
         meganet: Optional[Any] = None,  # MegaNet, avoids circular import
         device: Optional[str] = None,
         on_result: Optional[Callable[[Dict[str, Any]], None]] = None,
+        feature_size: Tuple[int, int] = FEATURE_SIZE,
     ) -> None:
         self.unet = unet
         self.preprocessor = preprocessor
@@ -94,6 +137,7 @@ class RealTimePipeline:
         self.analyzer = analyzer
         self.meganet = meganet
         self.on_result = on_result
+        self.feature_size = feature_size
 
         import torch
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
@@ -122,38 +166,38 @@ class RealTimePipeline:
         Returns
         -------
         Dict with keys:
-          frame_index, timestamp, mask (H×W uint8), features (Dict),
-          label (int), label_proba (float), latency_ms (float),
-          and optionally meganet_preds (array).
+          frame_index, timestamp, mask (uint8 at ``feature_size``), features (Dict),
+          cell_found (bool), label (int, or None when no cell was found),
+          label_proba (float), latency_ms (float), and optionally meganet_preds.
+
+        When the mask holds no region of ``min_area_px`` the features are NaN, the
+        classifier is **not** called and ``cell_found`` is False -- a missing cell is
+        reported as missing, never imputed into a feature vector.
         """
         t_start = time.perf_counter()
 
         processed = self.preprocessor(frame)
-        # binary_output=True: downstream (MorphologyExtractor, the returned mask) must only
-        # ever see the trapped cell, never decoy/class-2 pixels — see UNet.predict() docstring.
-        mask = self.unet.predict(processed, device=self.device, binary_output=True)
+        mask = feature_mask(self.unet, processed, self.feature_size)
         features = self.extractor.extract(mask)
+        cell_found = not np.isnan(features["area"])
 
-        label_arr = self.classifier.predict(
-            np.array([[features[k] for k in sorted(features)]], dtype=np.float32)
-        )
-        label = int(label_arr[0])
-
-        try:
-            proba = float(
-                self.classifier.predict_proba(
-                    np.array([[features[k] for k in sorted(features)]], dtype=np.float32)
-                )[0, 1]
-            )
-        except Exception:
-            proba = float("nan")
+        label: Optional[int] = None
+        proba = float("nan")
+        if cell_found:
+            x = np.array([[features[k] for k in sorted(features)]], dtype=np.float32)
+            label = int(self.classifier.predict(x)[0])
+            try:
+                proba = float(self.classifier.predict_proba(x)[0, 1])
+            except Exception:
+                pass
 
         result: Dict[str, Any] = {
             "frame_index": frame_index,
             "timestamp": timestamp,
             "mask": mask,
             "features": features,
-            "label": label,                  # 0 = low HER2, 1 = high HER2
+            "cell_found": cell_found,
+            "label": label,                  # 0 = low HER2, 1 = high HER2, None = no cell
             "label_proba": proba,
             "latency_ms": (time.perf_counter() - t_start) * 1000.0,
         }
@@ -187,7 +231,8 @@ class RealTimePipeline:
         ------
         Result dict for each processed frame (same schema as :meth:`process_frame`).
         """
-        extractor = FrameExtractor(video_path, output_dir=None)  # stream mode
+        extractor = FrameExtractor(video_path, output_dir=None,  # stream mode
+                                   target_size=self.feature_size)
         n_processed = 0
 
         for frame_index, timestamp, frame in extractor.stream(every_n=every_n):

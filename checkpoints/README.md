@@ -2,7 +2,7 @@
 
 > # ⭐ CURRENT / BEST
 >
-> ## **`checkpoints/postswap/postswap_ftl_cw142_s42/unet_best.pt`**
+> ## **`checkpoints/postswap/experiment_0a_seed_baseline/postswap_ftl_cw142_s42/unet_best.pt`**
 >
 > **This is the checkpoint to load** for inference, feature extraction, or as the
 > comparison baseline for any new run.
@@ -60,14 +60,22 @@
 
 ```
 checkpoints/
-  postswap/     the active series, 451-frame pool (17 Sept onward)
-  preswap/      26 historical runs, 101/202-frame development sets
-  _retired/     weights deliberately deleted; kept for the record
+  postswap/<experiment>/   the active series, 451-frame pool (17 Sept onward)
+      experiment_0a_seed_baseline/   s42 s43 s44 s45
+      experiment_0b_distillation/    postswap_distilled (failed, 0.537)
+      experiment_1a_optimizer/          e1a_sgd_nesterov (not an improvement)
+      experiment_1b_loss/               e1b_lovasz_s42..s45 (the working loss)
+      experiment_2_resolution/          e2a_res256_b4, e2b_res512_b4
+  preswap/<stage>/         26 historical runs in stage_1 ... stage_5, 101/202-frame sets
+  _retired/                weights deliberately deleted; kept for the record
 ```
+
+Grouped by experiment on 2026-09-30; `EXPERIMENTS.md` at the repo root lists every
+experiment and what it found.
 
 Checkpoint weights are **not** in git (`*.pt`, 7 GB). This README is. The durable
 record of what each one scored is `results/preswap/preswap_eval_log.jsonl` and
-`results/postswap/postswap_eval_log.jsonl`, which **are** tracked.
+`results/postswap/experiment_0a_seed_baseline/eval_log.jsonl`, which **are** tracked.
 
 ## `postswap/` — active
 

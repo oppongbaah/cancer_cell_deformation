@@ -56,7 +56,8 @@ from train_unet import _build_groups, _group_split
 
 REPO = Path(__file__).parent.parent.parent
 TEACHERS = [f"postswap_ftl_cw142_s{s}" for s in (42, 43, 44, 45)]
-CKPT_ROOT = REPO / "checkpoints/postswap"
+CKPT_ROOT = REPO / "checkpoints/postswap/experiment_0a_seed_baseline"            # the four teachers
+OUT_ROOT = REPO / "checkpoints/postswap/experiment_0b_distillation"             # the student
 CACHE = REPO / "data/preprocessed/train/postswap_soft_targets"
 
 
@@ -141,7 +142,7 @@ def main() -> None:
     p = argparse.ArgumentParser(description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--config", type=Path,
-                   default=REPO / "configs/postswap/postswap_ftl_cw142_s42.yaml")
+                   default=REPO / "configs/postswap/experiment_0a_seed_baseline/postswap_ftl_cw142_s42.yaml")
     p.add_argument("--teachers", nargs="*", default=TEACHERS)
     p.add_argument("--cache", type=Path, default=CACHE)
     p.add_argument("--rebuild-cache", action="store_true")
@@ -192,7 +193,7 @@ def main() -> None:
         if conf.training.class_weights else None
     metrics = SegmentationMetrics()
 
-    out_dir = CKPT_ROOT / args.run_name
+    out_dir = OUT_ROOT / args.run_name
     out_dir.mkdir(parents=True, exist_ok=True)
     hist = {"train_loss": [], "train_dsc": [], "val_loss": [], "val_dsc": []}
     best, best_ep, patience = -1.0, 0, conf.training.early_stopping_patience or 20
@@ -243,7 +244,7 @@ def main() -> None:
             break
 
     print(f"[distill] best epoch {best_ep}  val_DSC {best:.4f}  -> {out_dir}/unet_best.pt")
-    curve = REPO / "results/postswap" / f"unet_training_curves_{args.run_name}.png"
+    curve = REPO / "results/postswap/experiment_0b_distillation" / f"unet_training_curves_{args.run_name}.png"
     Visualizer().plot_training_curves(hist, best_epoch=best_ep, save_path=str(curve), n_classes=3)
     print(f"[distill] curves -> {curve.relative_to(REPO)}")
 

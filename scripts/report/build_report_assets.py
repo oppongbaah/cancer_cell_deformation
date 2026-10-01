@@ -17,7 +17,7 @@ Outputs land in the report repo, not here:
     <report-root>/main_work/tables/*.tex    \\input{}-able LaTeX tables
 
 After running, recompile the report:
-    cd <report-root>/main_work && pdflatex -interaction=nonstopmode progress_report_9_24_26.tex
+    cd <report-root>/main_work && pdflatex -interaction=nonstopmode progress_report_10_1_26.tex
 
 Run it after ANY change to the pools, the masks, or results/preswap/preswap_eval_log.jsonl.
 The comparison-strip jobs additionally need the two checkpoints they name to be
@@ -81,7 +81,10 @@ STRIP_COLORS = ["--gt-color", "0,200,0", "--pred-color", "170,95,40",
 
 
 def jobs(img: Path, tab: Path) -> dict[str, list[str]]:
-    """Assets for progress_report_9_24_26.tex.
+    """Assets for progress_report_10_1_26.tex.
+
+    The 2026-09-24 report is closed too; pool_flow_9_24.png stays as presented (it
+    carried the factory->annotate-pool arrow corrected on 2026-09-30).
 
     The 2026-09-10 report is closed; its assets are frozen in place and are not
     rebuilt here. Jobs are added to this dict as each experiment in that report
@@ -90,9 +93,9 @@ def jobs(img: Path, tab: Path) -> dict[str, list[str]]:
     CELLS = ["high_cell9=high-9", "high_cell10=high-10", "low_cell6=low-6", "low_cell5=low-5"]
     return {
         # ── Dataset Organization ────────────────────────────────────────────
-        "pools": ["scripts/report/plot_pool_flow.py", "--output", str(img / "pool_flow_9_24.png")],
+        "pools": ["scripts/report/plot_pool_flow.py", "--output", str(img / "pool_flow_10_1.png")],
         "table-percell": ["scripts/report/make_report_tables.py", "percell",
-                          "--output", str(tab / "percell.tex")],
+                          "--output", str(tab / "percell_10_1.tex")],
         # ── Experiment 1: the three loss interventions, + the seed repeat ───
         # Two rows only: the Dice+CE baseline against Focal-Tversky. The 1a
         # (class-weight) and 1b (background-exclusion) arms and the seed repeat were
@@ -120,7 +123,7 @@ def main() -> None:
     p.add_argument("--compile", action="store_true",
                    help="After building assets, run pdflatex the required number of times "
                         "and delete the temp files")
-    p.add_argument("--tex", default="progress_report_9_24_26.tex",
+    p.add_argument("--tex", default="progress_report_10_1_26.tex",
                    help="Report .tex to compile with --compile")
     args = p.parse_args()
 
@@ -181,12 +184,22 @@ def main() -> None:
     if not args.dry_run:
         copied = 0
         for s in (42, 43, 44, 45):
-            src = sorted((REPO / "results" / "postswap").glob(
+            src = sorted((REPO / "results/postswap/experiment_0a_seed_baseline").glob(
                 f"unet_training_curves_v*_postswap_ftl_cw142_s{s}.png"))
             if src:
                 (img / f"curves_s{s}.png").write_bytes(src[-1].read_bytes())
                 copied += 1
         print(f"  {copied}/4 training-curve figures copied to {img.name}/")
+        # Experiments 1 and 2 (2026-09-30): copied under the same stable-name scheme.
+        for exp, run, stable in (
+                ("experiment_1a_optimizer", "e1a_sgd_nesterov", "curves_e1a_sgd.png"),
+                ("experiment_1b_loss", "e1b_lovasz_s43", "curves_e1b_lovasz_s43.png"),
+                ("experiment_2_resolution", "e2a_res256_b4", "curves_e2a_res256.png"),
+                ("experiment_2_resolution", "e2b_res512_b4", "curves_e2b_res512.png")):
+            src = sorted((REPO / "results/postswap" / exp).glob(f"unet_training_curves_v*_{run}.png"))
+            if src:
+                (img / stable).write_bytes(src[-1].read_bytes())
+                print(f"  {stable} <- {src[-1].name}")
 
     print(f"\n{'DRY RUN — nothing written' if args.dry_run else 'Done'}: "
           f"{len(names) - len(failed)}/{len(names)} jobs succeeded")

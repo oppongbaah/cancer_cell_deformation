@@ -72,7 +72,7 @@ resume:
   load_scheduler: true
 
 # ─── Checkpointing ───────────────────────────────────────────────────────────
-checkpoint_dir: "checkpoints/binary_experiment_256"
+checkpoint_dir: "checkpoints/preswap/stage_1_labels_and_resolution/binary_experiment_256"
 keep_n_checkpoints: 3
 
 # ─── Feature extraction ──────────────────────────────────────────────────────

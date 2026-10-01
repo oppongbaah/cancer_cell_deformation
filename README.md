@@ -1,8 +1,8 @@
 # celldform
 
-> **Current model:** `checkpoints/postswap/postswap_ftl_cw142_s42/unet_best.pt` —
+> **Current model:** `checkpoints/postswap/experiment_0a_seed_baseline/postswap_ftl_cw142_s42/unet_best.pt` —
 > development-set evaluated DSC **0.809 ± 0.049** single model (4 seeds), **0.859 as a 4-model ensemble** (4 cells, 203 frames).
-> Config: `configs/postswap/postswap_ftl_cw142_s42.yaml`.
+> Config: `configs/postswap/experiment_0a_seed_baseline/postswap_ftl_cw142_s42.yaml`.
 > See [docs/status.md](docs/status.md) for where the project stands, and
 > `configs/README.md` / `checkpoints/README.md` for what every other file is.
 >

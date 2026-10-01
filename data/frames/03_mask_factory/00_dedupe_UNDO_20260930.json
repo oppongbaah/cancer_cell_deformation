@@ -1,0 +1,291 @@
+{
+ "date": "2026-09-30",
+ "reason": "factory frames byte-identical to U-Net training frames removed (user decision); restore by copying 'twin' to 'removed'",
+ "removed": [
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_000000.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_000000.jpg",
+   "md5": "59ce3d1e18b1ab2af305ab9fa1759023"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_000200.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_000200.jpg",
+   "md5": "bc452ecb0080b33d2bf1b6402a45e27a"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_000400.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_000400.jpg",
+   "md5": "3e1bb7eb24d29e689d33aa3ede8ecd1c"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_000600.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_000600.jpg",
+   "md5": "cbfed468335c4f52bab6c14a0a094073"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_000800.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_000800.jpg",
+   "md5": "3a0f5bbfbbf739b34e5b18715c6ea0d6"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_001000.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_001000.jpg",
+   "md5": "9e4fab07c912c7227f3424b1326b5e9e"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_001200.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_001200.jpg",
+   "md5": "ed204244396b458aa69491ae3153dff1"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_001400.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_001400.jpg",
+   "md5": "ef8be76a9238cf8c0e7967618245f9e5"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_001600.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_001600.jpg",
+   "md5": "6007dab5c3fb82427efde91757d8d0dc"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_001800.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_001800.jpg",
+   "md5": "909a5ce312dcac6faa7d92db25deb22f"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_002000.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_002000.jpg",
+   "md5": "349bf1af63069d56bceec3231a597142"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_002200.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_002200.jpg",
+   "md5": "6642d81fa8d0978499072c735d447165"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_002400.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_002400.jpg",
+   "md5": "5bc78a7411746aaccd40561a0f4eb5a1"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_002600.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_002600.jpg",
+   "md5": "a5f53f5b3063709948b2dab9224b4668"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_002800.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_002800.jpg",
+   "md5": "f6d997b79e44b483abc0add78348110f"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_003000.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_003000.jpg",
+   "md5": "63701d956e423eba2520a66b4c296cd4"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_003200.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_003200.jpg",
+   "md5": "f13140263a47d92a3a2ad85469bc3e7d"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_003400.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_003400.jpg",
+   "md5": "1efa36423c5b058377ecd25f074ac03c"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_003600.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_003600.jpg",
+   "md5": "01d0ea3ee7d66994466064ac4c50eec3"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_003800.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_003800.jpg",
+   "md5": "01931e5d84afacda748a18279e1f0be7"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_004000.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_004000.jpg",
+   "md5": "2b38e47154781e456997ea3b707b673d"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_004200.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_004200.jpg",
+   "md5": "0220e497d6c0eb361dc7a34e629268be"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_004400.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_004400.jpg",
+   "md5": "d8add89e48ca98220fe9eaf20cac7609"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_004600.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_004600.jpg",
+   "md5": "a87e2543f157056145e1067975ea5707"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_004800.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_004800.jpg",
+   "md5": "b1af791a39e87f4e9f531b3848cf8424"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_005000.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_005000.jpg",
+   "md5": "589ff9e3f7e856e8e02245fa28b18183"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_005200.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_005200.jpg",
+   "md5": "51c09ad014c2941469de34baced325c6"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_005400.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_005400.jpg",
+   "md5": "2b97ed24a600a54fd48ccced496ecbd5"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_005600.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_005600.jpg",
+   "md5": "2d2f72d55a4c206fd6ce254d6d6f9c4c"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_005800.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_005800.jpg",
+   "md5": "4b7e2a3c73a9c6af5741d0db0ccaa644"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_006000.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_006000.jpg",
+   "md5": "aec40824415a90eb018821e47488bbf2"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_006200.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_006200.jpg",
+   "md5": "0b55d564522f1a876d5e4bc6066a3331"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_006400.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_006400.jpg",
+   "md5": "c2ac2084e282228643bfa7acbe0c8634"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_006600.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_006600.jpg",
+   "md5": "7c6d0add88d33de0cdc7e22fdf36d46e"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_006800.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_006800.jpg",
+   "md5": "f6fce171d8fc31dab6e2420a9a148734"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_007000.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_007000.jpg",
+   "md5": "a429948a6e040c649868b68d639b0574"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_007200.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_007200.jpg",
+   "md5": "6103d62aec7ff53b056b050ebe351e75"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_007400.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_007400.jpg",
+   "md5": "51c886308f7aa23a134b90c8bb5bc4c4"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_007600.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_007600.jpg",
+   "md5": "1e94517f98eb9dad4b2f5f7aaf958349"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_007800.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_007800.jpg",
+   "md5": "5847d8f40c1caf7a40d19413e6ef65c8"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_008000.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_008000.jpg",
+   "md5": "c84cc12e7490703b650318fec469ef78"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_008200.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_008200.jpg",
+   "md5": "26839bf34de6fbc70cc4ab7daa9287c8"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_008400.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_008400.jpg",
+   "md5": "73ee506228cde3abf1002c2c2cc0e4eb"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_008600.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_008600.jpg",
+   "md5": "4ca78249d98128a1ee5a249b95b4f295"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_008800.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_008800.jpg",
+   "md5": "5df6505e1df5e01abe3d65b1f5ae4cff"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_009000.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_009000.jpg",
+   "md5": "a96d7544601fbebd7e41c5a092f77bb8"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_009200.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_009200.jpg",
+   "md5": "2705155a886e2b51b43adc586f8b73a8"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_009400.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_009400.jpg",
+   "md5": "cf05115f7972af1830fd4ded43cc52e6"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_009600.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_009600.jpg",
+   "md5": "ea5723519bcf0afe9d0d832d47571b35"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell10_009800.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell10_009800.jpg",
+   "md5": "4ded0a03b1a784bc57adabe687cbec22"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell2_000000.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell2_000000.jpg",
+   "md5": "5e9d73ca7bad86c9e930d904e613fadc"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell3_000000.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell3_000000.jpg",
+   "md5": "859e24fc37c496eba399ce91d12af6bb"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell4_000000.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell4_000000.jpg",
+   "md5": "59a412b8802e443fa88b88c5bd7bd628"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell6_000000.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell6_000000.jpg",
+   "md5": "9da1af8a4616944ad7b6296054b5791d"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/high_cell7_000000.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_high_cell7_000000.jpg",
+   "md5": "48b395b8cb7e2ea6b0713bd7a43b169d"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/low_cell1_000000.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_low_cell1_000000.jpg",
+   "md5": "d8e4f2f2115e0fc7126827ac3f467040"
+  },
+  {
+   "removed": "data/frames/03_mask_factory/low_cell2_000000.jpg",
+   "twin": "data/frames/01_annotate_pool/domain_low_cell2_000000.jpg",
+   "md5": "6ed526fce00a50e9f6aa167f9a9f4d5f"
+  }
+ ]
+}

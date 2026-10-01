@@ -28,7 +28,7 @@ from pathlib import Path
 
 import torch
 
-CKPT_ROOT = Path("checkpoints/postswap")
+CKPT_ROOT = Path("checkpoints/postswap/experiment_0a_seed_baseline")
 TOLERANCE = 0.02   # how far below the best sibling a run may sit before it is suspect
 
 

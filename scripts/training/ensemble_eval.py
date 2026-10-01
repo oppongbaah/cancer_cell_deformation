@@ -52,8 +52,8 @@ from celldform.segmentation.ensemble import EnsembleUNet
 
 DEV_IN = Path("data/preprocessed/evaluate/postswap_devset/inputs")
 DEV_LB = Path("data/preprocessed/evaluate/postswap_devset/labels")
-CKPT_ROOT = Path("checkpoints/postswap")
-EVAL_LOG = Path("results/postswap/postswap_eval_log.jsonl")
+CKPT_ROOT = Path("checkpoints/postswap/experiment_0a_seed_baseline")
+EVAL_LOG = Path("results/postswap/experiment_0a_seed_baseline/eval_log.jsonl")
 
 # Named explicitly, not globbed. The headline number in the report must not depend
 # on what happens to be sitting in checkpoints/postswap/ -- globbing silently swept
@@ -62,9 +62,9 @@ EVAL_LOG = Path("results/postswap/postswap_eval_log.jsonl")
 DEFAULT_RUNS = [f"postswap_ftl_cw142_s{s}" for s in (42, 43, 44, 45)]
 
 
-def load_ensemble(names, device):
+def load_ensemble(names, device, root=CKPT_ROOT):
     """Wrap every named run's best checkpoint in one EnsembleUNet."""
-    paths = [CKPT_ROOT / n / "unet_best.pt" for n in names]
+    paths = [root / n / "unet_best.pt" for n in names]
     missing = [p for p in paths if not p.exists()]
     if missing:
         raise SystemExit(f"missing checkpoint(s): {missing}")
@@ -95,6 +95,9 @@ def main() -> None:
                    help=f"Run names under {CKPT_ROOT}. Default: {' '.join(DEFAULT_RUNS)}")
     p.add_argument("--inputs", type=Path, default=DEV_IN)
     p.add_argument("--labels", type=Path, default=DEV_LB)
+    p.add_argument("--ckpt-root", type=Path, default=CKPT_ROOT,
+                   help="Experiment folder holding the runs (default: the seed baseline)")
+    p.add_argument("--log", type=Path, default=EVAL_LOG, help="Eval log --save-log appends to")
     p.add_argument("--save-log", action="store_true",
                    help="Append the ensemble's metrics to the postswap eval log")
     p.add_argument("--name", default=None, help="Name recorded in the log")
@@ -102,7 +105,7 @@ def main() -> None:
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     names = args.runs or DEFAULT_RUNS
-    ens = load_ensemble(names, device)
+    ens = load_ensemble(names, device, args.ckpt_root)
     name = args.name or f"ENSEMBLE({len(ens)})[{'+'.join(n.split('_')[-1] for n in names)}]"
     print(f"ensemble of {len(ens)}: {', '.join(names)}\n")
 
@@ -160,19 +163,19 @@ def main() -> None:
           f"prec {em['precision']:.3f}  rec {em['recall']:.3f}")
 
     if args.save_log:
-        EVAL_LOG.parent.mkdir(parents=True, exist_ok=True)
-        with EVAL_LOG.open("a") as fh:
+        args.log.parent.mkdir(parents=True, exist_ok=True)
+        with args.log.open("a") as fh:
             for s in scopes:
                 m = score(acc[s])
                 fh.write(json.dumps({
                     "timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-                    "checkpoint": f"checkpoints/postswap/{name}/unet_best.pt",
+                    "checkpoint": f"{args.ckpt_root}/{name}/unet_best.pt",
                     "config": "ensemble", "pool": "postswap_devset",
                     "filter": None if s == "ALL CELLS" else s,
                     "n_images": acc[s]["n"], "multiclass": True,
                     "ensemble_members": names,
                     "metrics": {"1": m}}) + "\n")
-        print(f"\n  appended to {EVAL_LOG} as '{name}'")
+        print(f"\n  appended to {args.log} as '{name}'")
 
 
 if __name__ == "__main__":

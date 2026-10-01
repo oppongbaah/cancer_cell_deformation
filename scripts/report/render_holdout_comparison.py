@@ -29,21 +29,21 @@ Usage
 -----
 python scripts/report/render_holdout_comparison.py \\
     --pool 02_unet_holdout --cell high_cell9 \\
-    --checkpoint checkpoints/preswap/multiclass_experiment_256_bf32_reg2_cos/unet_best.pt
+    --checkpoint checkpoints/preswap/stage_3_regularisation/multiclass_experiment_256_bf32_reg2_cos/unet_best.pt
 
 python scripts/report/render_holdout_comparison.py \\
     --pool 02_unet_holdout --cell low_cell6 \\
-    --checkpoint checkpoints/preswap/multiclass_experiment_256/unet_best.pt \\
+    --checkpoint checkpoints/preswap/stage_1_labels_and_resolution/multiclass_experiment_256/unet_best.pt \\
     --base-features 64 --n-frames 5 --output-dir results/holdout_comparisons/low_cell6
 
 python scripts/report/render_holdout_comparison.py --pool 02_unet_holdout --cell high_cell9 \\
-    --checkpoint checkpoints/preswap/multiclass_experiment_256_bf32_reg2_cos/unet_best.pt \\
+    --checkpoint checkpoints/preswap/stage_3_regularisation/multiclass_experiment_256_bf32_reg2_cos/unet_best.pt \\
     --gt-color 0,60,255 --half-width 140 --half-height 140   # pin crop + palette explicitly
 
 # The deployed configuration: four checkpoints run as one EnsembleUNet, panels
 # labelled by laser increment rather than frame index.
 python scripts/report/render_holdout_comparison.py --pool 02_unet_holdout --cell high_cell1 \\
-    --checkpoint checkpoints/postswap/postswap_ftl_cw142_s4{2,3,4,5}/unet_best.pt \\
+    --checkpoint checkpoints/postswap/experiment_0a_seed_baseline/postswap_ftl_cw142_s4{2,3,4,5}/unet_best.pt \\
     --power-labels 200 --n-frames 6
 """
 

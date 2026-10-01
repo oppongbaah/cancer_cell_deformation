@@ -86,6 +86,13 @@ class TestFrameExtractor:
         assert isinstance(ts, float)
         assert isinstance(frame, np.ndarray)
 
+    def test_stream_without_output_dir(self, dummy_video):
+        # RealTimePipeline.run_on_video and infer.py stream with output_dir=None; this
+        # raised TypeError until 2026-09-30, so neither could ever have run.
+        fe = FrameExtractor(dummy_video, output_dir=None, target_size=(48, 32))
+        frames = [f for _, _, f in fe.stream(every_n=1)]
+        assert len(frames) == 5 and frames[0].shape == (32, 48)
+
     def test_extract_saves_frames_and_manifest(self, dummy_video, tmp_path):
         fe = FrameExtractor(
             dummy_video, output_dir=tmp_path / "frames",

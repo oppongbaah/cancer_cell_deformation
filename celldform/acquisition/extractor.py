@@ -55,7 +55,8 @@ class FrameExtractor:
     video_path:
         Path to the source video (AVI, MP4, …).
     output_dir:
-        Directory where extracted frames will be saved.
+        Directory where extracted frames will be saved. *None* for stream-only use
+        (:meth:`stream`), which writes nothing; the saving methods then raise.
     target_size:
         ``(width, height)`` to resize each frame.  Default ``(256, 256)``
         matches the U-Net input resolution.
@@ -79,7 +80,7 @@ class FrameExtractor:
     def __init__(
         self,
         video_path: str | os.PathLike,
-        output_dir: str | os.PathLike = "data/frames",
+        output_dir: Optional[str | os.PathLike] = "data/frames",
         target_size: Tuple[int, int] = (256, 256),
         image_format: str = "png",
         change_threshold: Optional[float] = None,
@@ -88,7 +89,7 @@ class FrameExtractor:
         min_circularity: float = 0.60,
     ) -> None:
         self.video_path = Path(video_path)
-        self.output_dir = Path(output_dir)
+        self.output_dir = Path(output_dir) if output_dir is not None else None
         self.target_size = target_size
         self.image_format = image_format.lstrip(".")
         self.change_threshold = change_threshold
@@ -96,7 +97,8 @@ class FrameExtractor:
         self.channel_width = channel_width
         self.min_circularity = min_circularity
 
-        self.output_dir.mkdir(parents=True, exist_ok=True)
+        if self.output_dir is not None:
+            self.output_dir.mkdir(parents=True, exist_ok=True)
 
     # ------------------------------------------------------------------
     # Public API

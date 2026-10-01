@@ -170,7 +170,7 @@ resume:
 # three-way comparison in the 2026-09-10 progress report isolates augmentation
 # instead of confounding it with the schedule and split changes that landed in the
 # same run on 2026-09-04.
-checkpoint_dir: "checkpoints/postswap/postswap_ftl_cw142_s45"
+checkpoint_dir: "checkpoints/postswap/experiment_0a_seed_baseline/postswap_ftl_cw142_s45"
 keep_n_checkpoints: 3
 
 # ─── Feature extraction ──────────────────────────────────────────────────────

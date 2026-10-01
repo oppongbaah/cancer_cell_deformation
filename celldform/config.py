@@ -75,9 +75,13 @@ class UNetCfg:
 class TrainingCfg:
     epochs: int = 50
     batch_size: int = 16
+    grad_accum_steps: int = 1             # micro-batches per optimizer step; effective batch =
+                                          # batch_size * grad_accum_steps. 1 = off.
     lr: float = 1e-4
     weight_decay: float = 1e-4
     optimizer: str = "adamw"              # "adamw" | "adam" | "sgd"
+    momentum: float = 0.9                 # SGD only. 0.9 is the historical hardcoded value.
+    nesterov: bool = False                # SGD only. nnU-Net uses momentum 0.99 + Nesterov.
     scheduler: str = "reduce_on_plateau"  # "reduce_on_plateau" | "cosine" | "none"
     scheduler_patience: int = 5
     scheduler_factor: float = 0.5
@@ -125,6 +129,11 @@ class TrainingCfg:
     tversky_beta: float = 0.3      # FN penalty. tversky_alpha + tversky_beta = 1.0 is the usual convention.
     focal_gamma: float = 0.75      # exponent on (1 - TI). 1.0 = plain Tversky, no focal reshaping.
                                    # 0.75 corresponds to Abraham & Khan (2019)'s 1/gamma with gamma=4/3.
+    lovasz_weight: float = 0.0     # focal_tversky only. > 0 ADDS a Lovasz-softmax term (Berman et al.
+                                   # 2018, arXiv 1705.08790), computed per image over the classes
+                                   # present: loss = a*CE + (1-a)*FTL + lovasz_weight*Lovasz. It is a
+                                   # convex surrogate of 1 - IoU, so a frame whose cell is lost entirely
+                                   # scores ~1 and is punished hard -- the per-cell collapse. 0 = off.
     dice_exclude_background: bool = False  # multiclass only. False (default) keeps the historical
                                            # behaviour: _DiceCELoss averages Dice over ALL classes,
                                            # background included. Background Dice sits at ~0.9996 from
@@ -374,9 +383,12 @@ def _parse_training(t: dict) -> TrainingCfg:
     return TrainingCfg(
         epochs=int(t.get("epochs", 50)),
         batch_size=int(t.get("batch_size", 16)),
+        grad_accum_steps=int(t.get("grad_accum_steps", 1)),
         lr=float(t.get("lr", 1e-4)),
         weight_decay=float(t.get("weight_decay", 1e-4)),
         optimizer=optimizer,
+        momentum=float(t.get("momentum", 0.9)),
+        nesterov=bool(t.get("nesterov", False)),
         scheduler=scheduler,
         scheduler_patience=patience,
         scheduler_factor=factor,
@@ -394,6 +406,7 @@ def _parse_training(t: dict) -> TrainingCfg:
         tversky_alpha=float(t.get("tversky_alpha", 0.7)),
         tversky_beta=float(t.get("tversky_beta", 0.3)),
         focal_gamma=float(t.get("focal_gamma", 0.75)),
+        lovasz_weight=float(t.get("lovasz_weight", 0.0)),
         dice_exclude_background=bool(t.get("dice_exclude_background", False)),
         domain_oversample_weight=float(t.get("domain_oversample_weight", 1.0)),
         augment_noise_std=float(noise_std),

@@ -5,8 +5,8 @@ short answer to "where are we?"; the other pages are reference.
 
 ## Current model
 
-**`checkpoints/postswap/postswap_ftl_cw142_s42/unet_best.pt`**
-· config `configs/postswap/postswap_ftl_cw142_s42.yaml`
+**`checkpoints/postswap/experiment_0a_seed_baseline/postswap_ftl_cw142_s42/unet_best.pt`**
+· config `configs/postswap/experiment_0a_seed_baseline/postswap_ftl_cw142_s42.yaml`
 
 Focal–Tversky loss (α 0.7, β 0.3, γ 0.75, [Abraham & Khan 2019](https://arxiv.org/abs/1810.07842))
 · class weights [1, 4, 2] · width 64 · cosine · scale augmentation only · 451-frame pool.

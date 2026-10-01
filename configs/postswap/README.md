@@ -3,13 +3,16 @@
 Everything after the 17 September cell exchange lives here. Runs from before it are
 **not comparable** and stay where they were.
 
-## Layout — one folder per stage, same `postswap/` name in each
+## Layout — one folder per experiment, same name under each root (since 2026-09-30)
 
 ```
-configs/postswap/        this folder: one YAML per run
-checkpoints/postswap/    <run-name>/unet_best.pt + config.yaml snapshot
-logs/postswap/           <run-name>.log  (training stdout, incl. the split assignment)
-results/postswap/        postswap_eval_log.jsonl + training-curve PNGs
+configs/postswap/<experiment>/        one YAML per run
+checkpoints/postswap/<experiment>/    <run-name>/unet_best.pt + config.yaml snapshot
+logs/postswap/<experiment>/           <run-name>.log  (training stdout, incl. the split assignment)
+results/postswap/<experiment>/        eval_log.jsonl + training-curve PNGs
+
+experiments: experiment_0a_seed_baseline, experiment_0b_distillation, experiment_1a_optimizer, experiment_1b_loss, experiment_2_resolution
+run one:     scripts/training/run_experiment.sh postswap/<experiment> <run-name>
 data/preprocessed/train/postswap_multiclass_256/     451 frames, 22 groups
 data/preprocessed/evaluate/postswap_devset/          172 annotated dev frames
 ```
@@ -21,7 +24,7 @@ Extend it for new variables, keeping the same order, e.g. `postswap_ftl_cw142_re
 The name is reused verbatim as the config filename, the checkpoint directory and the
 log filename, so one string finds everything belonging to a run.
 
-Do **not** rename an existing run: `results/postswap/postswap_eval_log.jsonl` keys
+Do **not** rename an existing run: `results/postswap/experiment_0a_seed_baseline/eval_log.jsonl` keys
 results by the checkpoint's parent directory name, so a rename orphans its results.
 
 ## Baseline

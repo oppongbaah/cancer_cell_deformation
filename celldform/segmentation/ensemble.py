@@ -88,6 +88,25 @@ class EnsembleUNet:
         return len(self.models)
 
     @torch.no_grad()
+    def predict_proba(self, image: "np.ndarray", device: Optional[str] = None) -> "np.ndarray":
+        """Member-averaged per-class probabilities, shape (C, H, W) float32.
+
+        The same average :meth:`predict` argmaxes -- matches :meth:`UNet.predict_proba`.
+        """
+        import numpy as np
+
+        dev = device or self.device
+        if dev != self.device:
+            self.to(dev)
+        arr = np.asarray(image, dtype=np.float32)
+        if arr.ndim == 2:
+            arr = arr[None]
+        x = torch.from_numpy(arr)[None].to(dev)
+        act = torch.sigmoid if self.out_channels == 1 else (lambda t: torch.softmax(t, dim=1))
+        probs = torch.stack([act(m(x)) for m in self.models]).mean(0)
+        return probs[0].cpu().numpy()
+
+    @torch.no_grad()
     def predict(self, image: "np.ndarray", threshold: float = 0.5,
                 device: Optional[str] = None, binary_output: bool = False) -> "np.ndarray":
         """Segment one preprocessed frame, averaging across members.

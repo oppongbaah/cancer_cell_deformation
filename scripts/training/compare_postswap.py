@@ -21,14 +21,13 @@ import argparse, json, statistics as st
 from collections import defaultdict
 from pathlib import Path
 
-LOG = Path("results/postswap/postswap_eval_log.jsonl")
+LOG = Path("results/postswap/experiment_0a_seed_baseline/eval_log.jsonl")
 BASELINE = "postswap_ftl_cw142_s42"
 CELLS = ["high_cell1", "high_cell9", "low_cell5", "low_cell6"]
-SD = 0.057                      # evaluated sd, 3 seeds, split pinned, measured on the
-                                # COMPLETE 203-frame development set (2026-09-23).
-                                # Was 0.047 on 172 frames; completing high-1's
-                                # annotation RAISED it -- that cell alone has sd 0.184.
-THRESHOLD = 2 * SD * (2 ** 0.5) # ~0.133 -- smallest believable single-run difference
+SD = 0.049                      # evaluated sd over FOUR seeds (s42-s45), split pinned, complete
+                                # 203-frame testing set (2026-09-24). Was 0.057 over three seeds
+                                # (and 0.047 on 172 frames); updated 2026-09-30.
+THRESHOLD = 2 * SD * (2 ** 0.5) # ~0.139 -- smallest believable single-run difference
 
 
 def load(log: Path) -> dict[str, dict[str, dict]]:

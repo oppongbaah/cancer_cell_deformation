@@ -1,0 +1,150 @@
+[celldform] Dataset split (group-aware, 22 groups) — train: 397  val: 54
+[celldform]   split assignment (seed=42)
+[celldform]     val  : low_cell4(19), legacy_burst_5(18), legacy_burst_2(17)
+[celldform]     train: high_cell10(50), low_cell2(24), high_cell2(20), high_cell3(20), high_cell4(20), high_cell6(20), high_cell7(20), low_cell1(20), high_cell8(19), low_cell3(19), legacy(165)
+[celldform]   note: cell group(s) held out of training this run: low_cell4
+[celldform] Config snapshot → checkpoints/postswap/experiment_2_resolution/e2a_res256_b4/config.yaml
+
+============================================================
+  Platform info [before training]
+============================================================
+  OS          : Linux 6.18.40.1-microsoft-standard-WSL2 (x86_64)
+  Python      : 3.12.3
+  PyTorch     : 2.12.0+cu130
+  Device      : NVIDIA GeForce RTX 4060 Laptop GPU (GPU 0)
+  CUDA        : 13.0
+  VRAM        : 8.0 GB
+============================================================
+
+Epoch 001/100  train_loss=1.0298  train_DSC=0.0357  val_loss=0.9219  val_DSC=0.1186  (13.2s)
+  → Checkpoint saved: checkpoints/postswap/experiment_2_resolution/e2a_res256_b4/unet_best.pt  (DSC=0.1186)
+Epoch 002/100  train_loss=0.9230  train_DSC=0.2074  val_loss=0.8671  val_DSC=0.5473  (10.7s)
+  → Checkpoint saved: checkpoints/postswap/experiment_2_resolution/e2a_res256_b4/unet_best.pt  (DSC=0.5473)
+Epoch 003/100  train_loss=0.8669  train_DSC=0.4874  val_loss=0.8383  val_DSC=0.5180  (10.7s)
+Epoch 004/100  train_loss=0.8253  train_DSC=0.6577  val_loss=0.7972  val_DSC=0.7763  (10.7s)
+  → Checkpoint saved: checkpoints/postswap/experiment_2_resolution/e2a_res256_b4/unet_best.pt  (DSC=0.7763)
+Epoch 005/100  train_loss=0.7927  train_DSC=0.7378  val_loss=0.7919  val_DSC=0.6841  (10.5s)
+Epoch 006/100  train_loss=0.7707  train_DSC=0.7767  val_loss=0.7582  val_DSC=0.7024  (10.4s)
+Epoch 007/100  train_loss=0.7483  train_DSC=0.8138  val_loss=0.7364  val_DSC=0.8454  (10.5s)
+  → Checkpoint saved: checkpoints/postswap/experiment_2_resolution/e2a_res256_b4/unet_best.pt  (DSC=0.8454)
+Epoch 008/100  train_loss=0.7288  train_DSC=0.8407  val_loss=0.7434  val_DSC=0.7757  (10.6s)
+Epoch 009/100  train_loss=0.7103  train_DSC=0.8551  val_loss=0.6993  val_DSC=0.9070  (10.4s)
+  → Checkpoint saved: checkpoints/postswap/experiment_2_resolution/e2a_res256_b4/unet_best.pt  (DSC=0.9070)
+Epoch 010/100  train_loss=0.6995  train_DSC=0.8574  val_loss=0.6873  val_DSC=0.9129  (10.5s)
+  → Checkpoint saved: checkpoints/postswap/experiment_2_resolution/e2a_res256_b4/unet_best.pt  (DSC=0.9129)
+Epoch 011/100  train_loss=0.6802  train_DSC=0.8692  val_loss=0.6814  val_DSC=0.8827  (10.8s)
+Epoch 012/100  train_loss=0.6719  train_DSC=0.8742  val_loss=0.6661  val_DSC=0.9255  (10.8s)
+  → Checkpoint saved: checkpoints/postswap/experiment_2_resolution/e2a_res256_b4/unet_best.pt  (DSC=0.9255)
+Epoch 013/100  train_loss=0.6564  train_DSC=0.8901  val_loss=0.6733  val_DSC=0.9136  (10.8s)
+Epoch 014/100  train_loss=0.6472  train_DSC=0.8888  val_loss=0.6651  val_DSC=0.9014  (10.9s)
+Epoch 015/100  train_loss=0.6401  train_DSC=0.8919  val_loss=0.6745  val_DSC=0.8695  (10.7s)
+Epoch 016/100  train_loss=0.6316  train_DSC=0.8914  val_loss=0.6589  val_DSC=0.8840  (10.8s)
+Epoch 017/100  train_loss=0.6196  train_DSC=0.8948  val_loss=0.6470  val_DSC=0.9284  (10.8s)
+  → Checkpoint saved: checkpoints/postswap/experiment_2_resolution/e2a_res256_b4/unet_best.pt  (DSC=0.9284)
+Epoch 018/100  train_loss=0.6148  train_DSC=0.8916  val_loss=0.6282  val_DSC=0.9189  (10.7s)
+Epoch 019/100  train_loss=0.6036  train_DSC=0.9116  val_loss=0.6176  val_DSC=0.8986  (10.6s)
+Epoch 020/100  train_loss=0.5976  train_DSC=0.9022  val_loss=0.6313  val_DSC=0.9256  (11.0s)
+Epoch 021/100  train_loss=0.5913  train_DSC=0.8965  val_loss=0.6283  val_DSC=0.8399  (10.5s)
+Epoch 022/100  train_loss=0.5876  train_DSC=0.9036  val_loss=0.6063  val_DSC=0.9188  (10.7s)
+Epoch 023/100  train_loss=0.5829  train_DSC=0.9027  val_loss=0.6253  val_DSC=0.8201  (10.6s)
+Epoch 024/100  train_loss=0.5790  train_DSC=0.8983  val_loss=0.6088  val_DSC=0.9005  (10.5s)
+Epoch 025/100  train_loss=0.5755  train_DSC=0.8990  val_loss=0.5926  val_DSC=0.9388  (10.5s)
+  → Checkpoint saved: checkpoints/postswap/experiment_2_resolution/e2a_res256_b4/unet_best.pt  (DSC=0.9388)
+Epoch 026/100  train_loss=0.5593  train_DSC=0.9109  val_loss=0.5952  val_DSC=0.9194  (10.5s)
+Epoch 027/100  train_loss=0.5519  train_DSC=0.9179  val_loss=0.5785  val_DSC=0.9196  (10.4s)
+Epoch 028/100  train_loss=0.5446  train_DSC=0.9185  val_loss=0.5845  val_DSC=0.9325  (10.5s)
+Epoch 029/100  train_loss=0.5385  train_DSC=0.9233  val_loss=0.5911  val_DSC=0.9292  (10.5s)
+Epoch 030/100  train_loss=0.5394  train_DSC=0.9175  val_loss=0.5860  val_DSC=0.9147  (10.4s)
+Epoch 031/100  train_loss=0.5328  train_DSC=0.9171  val_loss=0.5902  val_DSC=0.9218  (10.6s)
+Epoch 032/100  train_loss=0.5226  train_DSC=0.9260  val_loss=0.5696  val_DSC=0.9271  (10.6s)
+Epoch 033/100  train_loss=0.5175  train_DSC=0.9232  val_loss=0.5518  val_DSC=0.9289  (10.6s)
+Epoch 034/100  train_loss=0.5126  train_DSC=0.9221  val_loss=0.5382  val_DSC=0.9257  (10.5s)
+Epoch 035/100  train_loss=0.5077  train_DSC=0.9221  val_loss=0.5239  val_DSC=0.9365  (10.6s)
+Epoch 036/100  train_loss=0.4999  train_DSC=0.9249  val_loss=0.5163  val_DSC=0.9268  (10.4s)
+Epoch 037/100  train_loss=0.4921  train_DSC=0.9255  val_loss=0.5329  val_DSC=0.9235  (10.5s)
+Epoch 038/100  train_loss=0.4868  train_DSC=0.9247  val_loss=0.5252  val_DSC=0.9225  (10.5s)
+Epoch 039/100  train_loss=0.4784  train_DSC=0.9241  val_loss=0.5412  val_DSC=0.9111  (10.5s)
+Epoch 040/100  train_loss=0.4720  train_DSC=0.9314  val_loss=0.5181  val_DSC=0.9314  (10.5s)
+Epoch 041/100  train_loss=0.4653  train_DSC=0.9274  val_loss=0.5001  val_DSC=0.9282  (10.5s)
+Epoch 042/100  train_loss=0.4580  train_DSC=0.9321  val_loss=0.4841  val_DSC=0.9342  (10.5s)
+Epoch 043/100  train_loss=0.4516  train_DSC=0.9279  val_loss=0.4684  val_DSC=0.9213  (10.5s)
+Epoch 044/100  train_loss=0.4443  train_DSC=0.9265  val_loss=0.4738  val_DSC=0.9402  (10.5s)
+  → Checkpoint saved: checkpoints/postswap/experiment_2_resolution/e2a_res256_b4/unet_best.pt  (DSC=0.9402)
+Epoch 045/100  train_loss=0.4318  train_DSC=0.9322  val_loss=0.4771  val_DSC=0.9347  (10.8s)
+Epoch 046/100  train_loss=0.4262  train_DSC=0.9299  val_loss=0.4612  val_DSC=0.9348  (11.0s)
+Epoch 047/100  train_loss=0.4174  train_DSC=0.9320  val_loss=0.4500  val_DSC=0.9297  (10.9s)
+Epoch 048/100  train_loss=0.4079  train_DSC=0.9309  val_loss=0.4498  val_DSC=0.9306  (10.8s)
+Epoch 049/100  train_loss=0.4010  train_DSC=0.9308  val_loss=0.4441  val_DSC=0.9318  (10.8s)
+Epoch 050/100  train_loss=0.3929  train_DSC=0.9310  val_loss=0.4307  val_DSC=0.9424  (10.8s)
+  → Checkpoint saved: checkpoints/postswap/experiment_2_resolution/e2a_res256_b4/unet_best.pt  (DSC=0.9424)
+Epoch 051/100  train_loss=0.3801  train_DSC=0.9356  val_loss=0.4185  val_DSC=0.9309  (10.7s)
+Epoch 052/100  train_loss=0.3742  train_DSC=0.9321  val_loss=0.4274  val_DSC=0.9352  (10.7s)
+Epoch 053/100  train_loss=0.3618  train_DSC=0.9332  val_loss=0.4093  val_DSC=0.9389  (10.5s)
+Epoch 054/100  train_loss=0.3546  train_DSC=0.9322  val_loss=0.4119  val_DSC=0.9411  (10.5s)
+Epoch 055/100  train_loss=0.3492  train_DSC=0.9334  val_loss=0.4152  val_DSC=0.9371  (10.5s)
+Epoch 056/100  train_loss=0.3389  train_DSC=0.9379  val_loss=0.3857  val_DSC=0.9419  (10.6s)
+Epoch 057/100  train_loss=0.3322  train_DSC=0.9370  val_loss=0.3698  val_DSC=0.9440  (10.5s)
+  → Checkpoint saved: checkpoints/postswap/experiment_2_resolution/e2a_res256_b4/unet_best.pt  (DSC=0.9440)
+Epoch 058/100  train_loss=0.3217  train_DSC=0.9369  val_loss=0.3705  val_DSC=0.9460  (10.5s)
+  → Checkpoint saved: checkpoints/postswap/experiment_2_resolution/e2a_res256_b4/unet_best.pt  (DSC=0.9460)
+Epoch 059/100  train_loss=0.3217  train_DSC=0.9315  val_loss=0.3718  val_DSC=0.9361  (10.5s)
+Epoch 060/100  train_loss=0.3151  train_DSC=0.9378  val_loss=0.3568  val_DSC=0.9417  (10.5s)
+Epoch 061/100  train_loss=0.3036  train_DSC=0.9413  val_loss=0.3821  val_DSC=0.9408  (10.5s)
+Epoch 062/100  train_loss=0.3017  train_DSC=0.9374  val_loss=0.3699  val_DSC=0.9438  (10.5s)
+Epoch 063/100  train_loss=0.2927  train_DSC=0.9389  val_loss=0.3476  val_DSC=0.9432  (10.5s)
+Epoch 064/100  train_loss=0.2894  train_DSC=0.9416  val_loss=0.3464  val_DSC=0.9407  (10.5s)
+Epoch 065/100  train_loss=0.2830  train_DSC=0.9388  val_loss=0.3530  val_DSC=0.9399  (10.5s)
+Epoch 066/100  train_loss=0.2783  train_DSC=0.9420  val_loss=0.3596  val_DSC=0.9433  (10.5s)
+Epoch 067/100  train_loss=0.2768  train_DSC=0.9393  val_loss=0.3404  val_DSC=0.9342  (10.5s)
+Epoch 068/100  train_loss=0.2708  train_DSC=0.9400  val_loss=0.3273  val_DSC=0.9465  (10.5s)
+  → Checkpoint saved: checkpoints/postswap/experiment_2_resolution/e2a_res256_b4/unet_best.pt  (DSC=0.9465)
+Epoch 069/100  train_loss=0.2685  train_DSC=0.9388  val_loss=0.3349  val_DSC=0.9440  (10.5s)
+Epoch 070/100  train_loss=0.2618  train_DSC=0.9420  val_loss=0.3406  val_DSC=0.9391  (10.5s)
+Epoch 071/100  train_loss=0.2611  train_DSC=0.9444  val_loss=0.3379  val_DSC=0.9427  (10.5s)
+Epoch 072/100  train_loss=0.2647  train_DSC=0.9356  val_loss=0.3337  val_DSC=0.9400  (10.6s)
+Epoch 073/100  train_loss=0.2540  train_DSC=0.9423  val_loss=0.3287  val_DSC=0.9471  (10.6s)
+  → Checkpoint saved: checkpoints/postswap/experiment_2_resolution/e2a_res256_b4/unet_best.pt  (DSC=0.9471)
+Epoch 074/100  train_loss=0.2540  train_DSC=0.9429  val_loss=0.3288  val_DSC=0.9457  (10.5s)
+Epoch 075/100  train_loss=0.2530  train_DSC=0.9440  val_loss=0.3375  val_DSC=0.9370  (10.6s)
+Epoch 076/100  train_loss=0.2458  train_DSC=0.9449  val_loss=0.3371  val_DSC=0.9429  (10.5s)
+Epoch 077/100  train_loss=0.2420  train_DSC=0.9467  val_loss=0.3339  val_DSC=0.9433  (10.6s)
+Epoch 078/100  train_loss=0.2407  train_DSC=0.9471  val_loss=0.3394  val_DSC=0.9455  (10.6s)
+Epoch 079/100  train_loss=0.2414  train_DSC=0.9430  val_loss=0.3456  val_DSC=0.9429  (11.0s)
+Epoch 080/100  train_loss=0.2403  train_DSC=0.9443  val_loss=0.3356  val_DSC=0.9407  (10.9s)
+Epoch 081/100  train_loss=0.2441  train_DSC=0.9407  val_loss=0.3299  val_DSC=0.9403  (10.8s)
+Epoch 082/100  train_loss=0.2391  train_DSC=0.9462  val_loss=0.3266  val_DSC=0.9472  (10.9s)
+  → Checkpoint saved: checkpoints/postswap/experiment_2_resolution/e2a_res256_b4/unet_best.pt  (DSC=0.9472)
+Epoch 083/100  train_loss=0.2386  train_DSC=0.9445  val_loss=0.3405  val_DSC=0.9415  (10.8s)
+Epoch 084/100  train_loss=0.2370  train_DSC=0.9467  val_loss=0.3173  val_DSC=0.9427  (11.0s)
+Epoch 085/100  train_loss=0.2356  train_DSC=0.9450  val_loss=0.3220  val_DSC=0.9467  (10.7s)
+Epoch 086/100  train_loss=0.2311  train_DSC=0.9466  val_loss=0.3167  val_DSC=0.9447  (10.7s)
+Epoch 087/100  train_loss=0.2339  train_DSC=0.9460  val_loss=0.3151  val_DSC=0.9445  (10.6s)
+Epoch 088/100  train_loss=0.2349  train_DSC=0.9457  val_loss=0.3124  val_DSC=0.9457  (10.6s)
+Epoch 089/100  train_loss=0.2332  train_DSC=0.9451  val_loss=0.3111  val_DSC=0.9449  (10.6s)
+Epoch 090/100  train_loss=0.2290  train_DSC=0.9468  val_loss=0.3202  val_DSC=0.9455  (10.6s)
+Epoch 091/100  train_loss=0.2324  train_DSC=0.9442  val_loss=0.3096  val_DSC=0.9440  (10.6s)
+Epoch 092/100  train_loss=0.2283  train_DSC=0.9465  val_loss=0.3122  val_DSC=0.9450  (10.5s)
+Epoch 093/100  train_loss=0.2312  train_DSC=0.9490  val_loss=0.3138  val_DSC=0.9444  (10.6s)
+Early stopping: no val_DSC improvement > 0.001 for 20 epochs (best=0.9472 at epoch 82). Stopping at epoch 93/100.
+
+[celldform] Reloaded best checkpoint for final evaluation: epoch 82
+
+Final validation metrics:
+  [trapped_cell]
+    dsc: 0.9470
+    iou: 0.8994
+    precision: 0.9485
+    recall: 0.9456
+  [class_2]
+    dsc: 0.6152
+    iou: 0.4443
+    precision: 0.6754
+    recall: 0.5649
+  [mean]
+    dsc: 0.7811
+    iou: 0.6718
+    precision: 0.8119
+    recall: 0.7552
+/home/mega/work/thesis/cancer_cell_deformation/celldform/utils/visualization.py:155: UserWarning: This figure includes Axes that are not compatible with tight_layout, so results might be incorrect.
+  fig.tight_layout()
+Training curves saved to results/postswap/experiment_2_resolution/unet_training_curves_v1_e2a_res256_b4.png

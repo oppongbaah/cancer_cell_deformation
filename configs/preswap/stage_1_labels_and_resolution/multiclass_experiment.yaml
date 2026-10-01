@@ -83,7 +83,7 @@ resume:
   load_scheduler: true
 
 # ─── Checkpointing ───────────────────────────────────────────────────────────
-checkpoint_dir: "checkpoints/multiclass_experiment"
+checkpoint_dir: "checkpoints/preswap/stage_1_labels_and_resolution/multiclass_experiment"
 keep_n_checkpoints: 3
 
 # ─── Feature extraction ──────────────────────────────────────────────────────

@@ -1,31 +1,7 @@
 #!/usr/bin/env bash
-# Train + evaluate one run of the postswap series, keeping every artefact in the
-# right folder. Usage:  scripts/training/run_postswap.sh <run-name>  [extra train args...]
-#   e.g. scripts/training/run_postswap.sh postswap_ftl_cw142_res384_s42
-# Expects configs/postswap/<run-name>.yaml to exist.
+# Superseded 2026-09-30 by run_experiment.sh, which files every artefact under one
+# experiment folder. Kept so old commands still work: runs <run-name> as part of the
+# seed-baseline experiment (configs/postswap/experiment_0a_seed_baseline/<run-name>.yaml).
+#   scripts/training/run_postswap.sh postswap_ftl_cw142_s46
 set -euo pipefail
-# two levels: this script lives in scripts/training/, so the repo root is ../..
-# (it was scripts/ before the 2026-09-17 reorganisation — one level was right then)
-cd "$(dirname "$0")/../.."
-RUN="${1:?usage: run_postswap.sh <run-name> [extra train args]}"; shift || true
-CFG="configs/postswap/${RUN}.yaml"
-[ -f "$CFG" ] || { echo "no such config: $CFG"; exit 1; }
-mkdir -p logs/postswap results/postswap
-
-echo "[postswap] training $RUN"
-.venv/bin/python -u scripts/training/train_unet.py --config "$CFG" --tag "$RUN" "$@" \
-    > "logs/postswap/${RUN}.log" 2>&1
-grep -E 'split assignment|val  :|train:|WARNING' "logs/postswap/${RUN}.log" || true
-
-CK="checkpoints/postswap/${RUN}/unet_best.pt"
-echo "[postswap] evaluating $RUN on the four development cells"
-for c in high_cell1 high_cell9 low_cell5 low_cell6; do
-    .venv/bin/python scripts/training/evaluate_unet.py --checkpoint "$CK" --config "$CFG" \
-        --pool postswap_devset --filter "$c" \
-        --results-log results/postswap/postswap_eval_log.jsonl >/dev/null
-done
-.venv/bin/python scripts/training/evaluate_unet.py --checkpoint "$CK" --config "$CFG" \
-    --pool postswap_devset --results-log results/postswap/postswap_eval_log.jsonl >/dev/null
-mv -f results/unet_training_curves_*"${RUN}"*.png results/postswap/ 2>/dev/null || true
-
-.venv/bin/python scripts/training/compare_postswap.py --runs "$RUN" postswap_ftl_cw142_s42
+exec "$(dirname "$0")/run_experiment.sh" postswap/experiment_0a_seed_baseline "$@"

@@ -130,7 +130,7 @@ resume:
 
 # Own directory for the combined-recipe run (2026-09-04) — every prior checkpoint (original, bf64_bc,
 # bf64_scale) kept untouched for comparison.
-checkpoint_dir: "checkpoints/multiclass_experiment_256_bf64_allaug"
+checkpoint_dir: "checkpoints/preswap/stage_4_augmentation/multiclass_experiment_256_bf64_allaug"
 keep_n_checkpoints: 3
 
 # ─── Feature extraction ──────────────────────────────────────────────────────

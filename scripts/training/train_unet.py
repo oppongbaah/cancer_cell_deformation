@@ -383,6 +383,9 @@ def main():
                              "vs. legacy frames (overrides training.domain_oversample_weight). "
                              "1.0 = off/uniform (default); pass 1.0 explicitly to force it off "
                              "when the config has it enabled.")
+    parser.add_argument("--results-dir", type=Path, default=Path("results"),
+                        help="Where the training-curve PNG goes (e.g. results/postswap/experiment_1b_loss). "
+                             "Versions are numbered within this folder.")
     parser.add_argument("--tag", default=None,
                         help="Suffix appended to the saved training-curve filename "
                              "(e.g. --tag auto -> unet_training_curves_v6_auto.png), "
@@ -536,8 +539,8 @@ def main():
             print(f"  {k}: {v:.4f}")
 
     # ── Plot training curves ──────────────────────────────────────────────────
-    results_dir = Path("results")
-    results_dir.mkdir(exist_ok=True)
+    results_dir = args.results_dir
+    results_dir.mkdir(parents=True, exist_ok=True)
 
     existing = sorted(results_dir.glob("unet_training_curves_v*.png"))
     next_version = len(existing) + 1

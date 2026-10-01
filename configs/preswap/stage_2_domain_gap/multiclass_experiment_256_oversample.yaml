@@ -76,7 +76,7 @@ resume:
   load_scheduler: true
 
 # ─── Checkpointing ───────────────────────────────────────────────────────────
-checkpoint_dir: "checkpoints/multiclass_experiment_256_domain_oversample"
+checkpoint_dir: "checkpoints/preswap/stage_2_domain_gap/multiclass_experiment_256_domain_oversample"
 keep_n_checkpoints: 3
 
 # ─── Feature extraction ──────────────────────────────────────────────────────

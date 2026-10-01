@@ -125,7 +125,7 @@ resume:
 # three-way comparison in the 2026-09-10 progress report isolates augmentation
 # instead of confounding it with the schedule and split changes that landed in the
 # same run on 2026-09-04.
-checkpoint_dir: "checkpoints/multiclass_experiment_256_bf64_base_cos"
+checkpoint_dir: "checkpoints/preswap/stage_4_augmentation/multiclass_experiment_256_bf64_base_cos"
 keep_n_checkpoints: 3
 
 # ─── Feature extraction ──────────────────────────────────────────────────────
