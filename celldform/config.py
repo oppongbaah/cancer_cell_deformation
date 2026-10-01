@@ -19,7 +19,7 @@ configs can use ``$HOME``, ``$WORK``, ``$SCRATCH``, etc.
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional, Tuple
 
@@ -246,6 +246,30 @@ class AcquisitionCfg:
 
 
 @dataclass
+class SplitCfg:
+    """Cell-level train/val/test split (randswap, 2026-10-01; supervisor feedback).
+
+    Counted in WHOLE CELLS, never frames: a cell is the unit that must stay unseen.
+    ``test_cells`` must divide the roster -- the number of folds is roster / test_cells,
+    and every cell is tested exactly once across the folds. Legacy (2021) frames carry no
+    cell and no HER2 label: they always train, never validate or test.
+
+    Fix ``cell_split_seed`` and COMMIT the config before the first draw; accept the
+    draw as it comes. ``scripts/data/build_randswap.py`` refuses to run otherwise.
+    """
+    unit: str = "cell"
+    train_cells: int = 11
+    val_cells: int = 1
+    test_cells: int = 3
+    cell_split_seed: int = 42
+    stratify_by: Optional[str] = "her2"      # each test fold gets both classes; None = off
+    test_frames_per_cell: int = 20           # evenly spaced over each test cell's frames
+    balance_by_cell: bool = True             # each real cell weighs the same in training
+    sources: List[List[str]] = field(default_factory=list)   # [[frames_dir, masks_dir], ...]
+    data_root: str = ""                      # per-fold preprocessed data: <data_root>/fold_<k>/
+
+
+@dataclass
 class CelldformConfig:
     """Top-level configuration object for the entire celldform pipeline."""
     data: DataConfig
@@ -257,6 +281,7 @@ class CelldformConfig:
     biomechanics: BiomechanicsCfg
     acquisition: AcquisitionCfg
     resume: ResumeCfg
+    split: Optional[SplitCfg] = None   # None = the older frame-fraction split (data.val_split)
     checkpoint_dir: str = "checkpoints"
     keep_n_checkpoints: int = 3
     device: Optional[str] = None   # null → auto-detect (cuda if available, else cpu)
@@ -305,6 +330,7 @@ def load(path: str | Path) -> CelldformConfig:
         unet=_parse_unet(raw.get("unet", {})),
         training=_parse_training(raw["training"]),
         resume=_parse_resume(raw.get("resume", {})),
+        split=_parse_split(raw["split"]) if raw.get("split") else None,
         features=_parse_features(raw.get("features", {})),
         classification=_parse_classification(raw.get("classification", {})),
         biomechanics=_parse_biomechanics(raw.get("biomechanics", {})),
@@ -318,6 +344,25 @@ def load(path: str | Path) -> CelldformConfig:
 # ---------------------------------------------------------------------------
 # Section parsers
 # ---------------------------------------------------------------------------
+
+def _parse_split(d: dict) -> SplitCfg:
+    s = SplitCfg(
+        unit=str(d.get("unit", "cell")),
+        train_cells=int(d["train_cells"]), val_cells=int(d["val_cells"]),
+        test_cells=int(d["test_cells"]),
+        cell_split_seed=int(d.get("cell_split_seed", 42)),
+        stratify_by=d.get("stratify_by", "her2"),
+        test_frames_per_cell=int(d.get("test_frames_per_cell", 20)),
+        balance_by_cell=bool(d.get("balance_by_cell", True)),
+        sources=[[str(a), str(b)] for a, b in d.get("sources", [])],
+        data_root=str(d.get("data_root", "")),
+    )
+    if s.unit != "cell":
+        raise ValueError(f"split.unit must be 'cell', got '{s.unit}'")
+    if min(s.train_cells, s.test_cells) < 1 or s.val_cells < 0:
+        raise ValueError("split: train_cells and test_cells must be >= 1, val_cells >= 0")
+    return s
+
 
 def _parse_data(d: dict) -> DataConfig:
     for key in ("frames_dir", "masks_dir"):

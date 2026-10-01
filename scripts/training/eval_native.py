@@ -34,13 +34,16 @@ from celldform.config import load as load_config
 from celldform.integration.realtime import feature_mask
 from celldform.preprocessing.pipeline import crop_box
 from celldform.segmentation.unet import UNet
+from celldform.splits import parse_stem
 
 GT_DIR = Path("data/masks/02_unet_holdout_multiclass")
 
 
 def _cell(stem: str) -> str:
-    parts = stem.split("_")
-    return f"{parts[0]}_{parts[1]}"
+    cell = parse_stem(stem)[0]
+    if cell is None:
+        raise SystemExit(f"{stem} is not a real-cell frame")
+    return cell
 
 
 def _scores(tp: int, fp: int, fn: int) -> dict:
@@ -52,19 +55,31 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--checkpoint", type=Path, required=True)
     ap.add_argument("--config", type=Path, required=True)
-    ap.add_argument("--inputs", type=Path, required=True,
+    ap.add_argument("--inputs", type=Path, default=None,
                     help="preprocessed testing-set inputs at the MODEL's resolution")
     ap.add_argument("--gt-dir", type=Path, default=GT_DIR)
+    ap.add_argument("--fold-dir", type=Path, default=None,
+                    help="randswap fold folder: test inputs, native masks and this fold's crop "
+                         "centre all come from its split.json (overrides --inputs/--gt-dir)")
     ap.add_argument("--log", type=Path, default=None)
     args = ap.parse_args()
 
     conf = load_config(str(args.config))
+    gt_of = {}
+    if args.fold_dir:
+        rec = json.loads((args.fold_dir / "split.json").read_text())
+        args.inputs = args.fold_dir / "test" / "inputs"
+        gt_of = {k: Path(v) for k, v in rec["test_masks_native"].items()}
+        if rec.get("crop_center"):
+            conf.preprocessing.crop_center = tuple(rec["crop_center"])
+    if args.inputs is None:
+        raise SystemExit("give --inputs or --fold-dir")
     model = UNet.from_checkpoint(args.checkpoint, in_channels=1, out_channels=conf.unet.out_channels,
                                  base_features=conf.unet.base_features)
     acc: dict[str, list[int]] = defaultdict(lambda: [0, 0, 0])
     frames = sorted(args.inputs.glob("*.png"))
     for f in frames:
-        gt_raw = cv2.imread(str(args.gt_dir / f.name), cv2.IMREAD_GRAYSCALE)
+        gt_raw = cv2.imread(str(gt_of.get(f.stem, args.gt_dir / f.name)), cv2.IMREAD_GRAYSCALE)
         if gt_raw is None:
             raise SystemExit(f"no native ground truth for {f.name} in {args.gt_dir}")
         x = cv2.imread(str(f), cv2.IMREAD_GRAYSCALE).astype(np.float32) / 255.0

@@ -48,10 +48,9 @@ All preswap evaluations are in one ledger, `results/preswap/preswap_eval_log.jso
 Baseline for experiment 1 is `postswap_ftl_cw142_s43` — **0.864, the best of the four
 seeds**. One run resolves only ±0.139, so a delta against it is a screen, not a result.
 
-## Frozen recipe (2026-10-01)
+## Randswap baseline (2026-10-01)
 
 **Lovász-softmax loss + native 384×384 crop** — `configs/postswap/experiment_3_cropping/e3b_crop384_b4.yaml`
 (Focal-Tversky + CE + 0.5 × Lovász, width 64, scale augmentation, cosine, micro-batch 4 × 4-step
-accumulation, seed 42). This is the recipe the randomised `randswap` split will train and test,
-with the crop centre derived per fold from that fold's training cells only.
-
+accumulation, seed 42). The starting configuration for the randomised `randswap` cross-validation,
+with the crop centre derived per fold from that fold's training cells only. Not frozen.

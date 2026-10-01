@@ -33,7 +33,9 @@ the checkpoint directory for full reproducibility.
 from __future__ import annotations
 
 import argparse
+import json
 import os
+from collections import Counter
 import random
 from collections import defaultdict
 from datetime import datetime
@@ -49,6 +51,7 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader, Dataset, WeightedRandomSampler
 
+from celldform.splits import parse_stem
 from celldform.config import load as load_config
 from celldform.segmentation.trainer import SegmentationTrainer
 from celldform.segmentation.unet import UNet
@@ -383,6 +386,10 @@ def main():
                              "vs. legacy frames (overrides training.domain_oversample_weight). "
                              "1.0 = off/uniform (default); pass 1.0 explicitly to force it off "
                              "when the config has it enabled.")
+    parser.add_argument("--fold", default=None,
+                        help="randswap: train fold K of the config's split section (built first by "
+                             "scripts/data/build_randswap.py). Data, validation cell and checkpoint "
+                             "folder all come from that fold.")
     parser.add_argument("--results-dir", type=Path, default=Path("results"),
                         help="Where the training-curve PNG goes (e.g. results/postswap/experiment_1b_loss). "
                              "Versions are numbered within this folder.")
@@ -404,6 +411,19 @@ def main():
     # ── Data ────────────────────────────────────────────────────────────────
     frames_dir = Path(conf.data.frames_dir)
     masks_dir = Path(conf.data.masks_dir)
+    fold_record = None
+    if args.fold is not None:
+        if conf.split is None:
+            raise SystemExit("--fold needs a config with a split: section")
+        if args.fold == "final":
+            raise SystemExit("The final model (all cells, fixed epochs) comes after the CV rounds.")
+        fold_dir = Path(conf.split.data_root) / f"fold_{args.fold}"
+        fold_record = json.loads((fold_dir / "split.json").read_text())
+        frames_dir, masks_dir = fold_dir / "train" / "inputs", fold_dir / "train" / "labels"
+        conf.checkpoint_dir = str(Path(conf.checkpoint_dir) / f"fold_{args.fold}")
+        print(f"[celldform] randswap fold {args.fold}: test {fold_record['cells']['test']}  "
+              f"val {fold_record['cells']['val']}  (split drawn at config commit "
+              f"{fold_record['config_commit'][:8]})")
 
     if not frames_dir.exists():
         raise FileNotFoundError(
@@ -430,7 +450,16 @@ def main():
 
     groups = _build_groups(pairs)
     split_seed = conf.training.split_seed if conf.training.split_seed is not None else seed
-    train_pairs, val_pairs = _group_split(pairs, groups, n_val, split_seed=split_seed)
+    if fold_record is not None:
+        # Cell-level split from the fold record: validation = the fold's val cell(s);
+        # everything else here (train cells + legacy) trains. Test cells are not in this
+        # folder at all.
+        val_cells = set(fold_record["cells"]["val"])
+        cell_of = [parse_stem(f.stem)[0] for f, _ in pairs]
+        val_pairs = [p for p, c in zip(pairs, cell_of) if c in val_cells]
+        train_pairs = [p for p, c in zip(pairs, cell_of) if c not in val_cells]
+    else:
+        train_pairs, val_pairs = _group_split(pairs, groups, n_val, split_seed=split_seed)
 
     n_groups = len(set(groups))
     print(
@@ -465,6 +494,17 @@ def main():
         )
 
     train_sampler = None
+    if fold_record is not None and conf.split.balance_by_cell:
+        # Each real cell gets the same total weight (the mean real-cell frame count), so a
+        # cell with 50 annotated frames pulls no harder than one with 20. Legacy frames keep
+        # weight 1 -- their share is unchanged from the frame-weighted baseline.
+        cells = [parse_stem(f.stem)[0] for f, _ in train_pairs]
+        counts = Counter(c for c in cells if c is not None)
+        mean_n = sum(counts.values()) / len(counts)
+        weights = [1.0 if c is None else mean_n / counts[c] for c in cells]
+        train_sampler = WeightedRandomSampler(weights, num_samples=len(train_pairs), replacement=True)
+        print(f"[celldform] per-cell balanced sampling over {len(counts)} cells "
+              f"({min(counts.values())}-{max(counts.values())} frames each -> {mean_n:.1f} effective)")
     domain_weight = conf.training.domain_oversample_weight
     if domain_weight != 1.0:
         is_domain = [f.stem.startswith("domain_") for f, m in train_pairs]
