@@ -2,19 +2,20 @@
 
 > # ⭐ CURRENT / BEST
 >
-> ## **`configs/postswap/postswap_ftl_cw142_s42.yaml`**
+> ## **`configs/postswap/experiment_0a_seed_baseline/postswap_ftl_cw142_s42.yaml`**
 >
 > **Every new experiment branches from this file.** Copy it, change **one** field,
-> rename it, and put it in `configs/postswap/`.
+> rename it, and put it in its experiment folder, `configs/postswap/<experiment>/`
+> (see `EXPERIMENTS.md` at the repo root).
 >
 > Focal–Tversky loss (α 0.7, β 0.3, γ 0.75) · class weights **[1, 4, 2]** ·
 > width 64 · no dropout · cosine · scale augmentation only · seed 42 ·
 > **split_seed pinned at 42** · 451-frame post-swap pool.
 >
-> **Development-set result: pooled DSC 0.800** (3-seed mean over s42/s43/s44,
-> sd 0.047). Seed 42 is the working seed because it is the median draw and lands
-> exactly on that mean — s43 (0.847) is the high draw and would anchor everything
-> optimistically.
+> **Development-set result (complete 203-frame set): single model 0.809 ± 0.049**
+> across four seeds, **ensemble of four 0.859**.
+> Seed 42 remains the working seed for iteration. Do not adopt whichever seed scores
+> highest — that is selection on the evaluation data.
 
 ---
 
@@ -23,9 +24,14 @@
 ```
 configs/
   default.yaml        base template — binary, 256×256. NOT what is being trained.
-  postswap/           the active series (after the 17 Sept cell exchange)
-  preswap/            historical. Kept as the record, not for new runs.
+  postswap/<experiment>/   the active series (after the 17 Sept cell exchange):
+                           experiment_0a_seed_baseline, experiment_0b_distillation, experiment_1a_optimizer, experiment_1b_loss,
+                           experiment_2_resolution
+  preswap/<stage>/         historical, grouped into stage_1 ... stage_5. The record, not for new runs.
 ```
+
+Since 2026-09-30 every experiment has the same folder name under `configs/`,
+`checkpoints/`, `logs/` and `results/`. `EXPERIMENTS.md` at the repo root lists them all.
 
 **A config's results are only comparable to others trained on the same pool.** The
 17 September exchange moved `high-10` into training and `high-1` into the development
@@ -33,20 +39,22 @@ set, so nothing in `preswap/` can be compared against anything in `postswap/`.
 
 ## `postswap/` — the active series
 
-| Config | Seed | Pooled DSC |
+| Config | Seed | Evaluated DSC |
 |---|---|---|
-| **`postswap_ftl_cw142_s42.yaml`** | 42 | **0.800** ⭐ baseline |
-| `postswap_ftl_cw142_s43.yaml` | 43 | 0.847 |
-| `postswap_ftl_cw142_s44.yaml` | 44 | 0.754 |
+| **`postswap_ftl_cw142_s42.yaml`** | 42 | 0.830 ⭐ working seed |
+| `postswap_ftl_cw142_s43.yaml` | 43 | 0.864 |
+| `postswap_ftl_cw142_s44.yaml` | 44 | 0.753 — collapsed on high-1 |
+| `postswap_ftl_cw142_s45.yaml` | 45 | 0.787 — collapsed on high-9 |
 
-All three are identical except `seed`. The 0.093 spread across them **is the error
-bar** — see the rules in `configs/postswap/README.md`.
+All four are identical except `seed`. **Two of the four collapse on one cell, and which
+cell is unpredictable** — see `checkpoints/README.md`. The spread across them **is the
+error bar** — see the rules in `configs/postswap/README.md`.
 
 ## `preswap/` — historical, by era
 
 **The 17 Sept loss experiments** (four-cell development set as it stood that morning):
 
-| Config | Pooled DSC | Outcome |
+| Config | Evaluated DSC | Outcome |
 |---|---|---|
 | `multiclass_experiment_256_scale_cos_ftl.yaml` | 0.691 | Focal–Tversky; best pre-swap |
 | `multiclass_experiment_256_scale_cos_cw133.yaml` | 0.676 | class weights → [1,3,3]; no real effect |
@@ -75,5 +83,5 @@ checkpoint directory and log file, so one string finds everything for a run. The
 scripts/training/run_postswap.sh postswap_ftl_cw142_res384_s42
 ```
 
-Never rename an existing run — `results/postswap/postswap_eval_log.jsonl` keys results
+Never rename an existing run — `results/postswap/experiment_0a_seed_baseline/eval_log.jsonl` keys results
 by the checkpoint's parent directory name, so a rename orphans its results.

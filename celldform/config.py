@@ -19,7 +19,7 @@ configs can use ``$HOME``, ``$WORK``, ``$SCRATCH``, etc.
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional, Tuple
 
@@ -60,6 +60,13 @@ class PreprocessingCfg:
     morphology: bool = True
     resize: bool = True
     normalize: bool = True
+    # Native-resolution crop instead of a whole-frame resize (2026-10-01, experiment 3).
+    # crop_center is (x, y) in full-frame pixels for the real-cell setup, derived from the
+    # TRAINING cells' masks only; legacy_crop_center is the same for the 2021 frames,
+    # whose trap sits elsewhere (they are training-only). None = no crop.
+    crop_size: Optional[int] = None
+    crop_center: Optional[Tuple[int, int]] = None
+    legacy_crop_center: Optional[Tuple[int, int]] = None
 
 
 @dataclass
@@ -75,9 +82,13 @@ class UNetCfg:
 class TrainingCfg:
     epochs: int = 50
     batch_size: int = 16
+    grad_accum_steps: int = 1             # micro-batches per optimizer step; effective batch =
+                                          # batch_size * grad_accum_steps. 1 = off.
     lr: float = 1e-4
     weight_decay: float = 1e-4
     optimizer: str = "adamw"              # "adamw" | "adam" | "sgd"
+    momentum: float = 0.9                 # SGD only. 0.9 is the historical hardcoded value.
+    nesterov: bool = False                # SGD only. nnU-Net uses momentum 0.99 + Nesterov.
     scheduler: str = "reduce_on_plateau"  # "reduce_on_plateau" | "cosine" | "none"
     scheduler_patience: int = 5
     scheduler_factor: float = 0.5
@@ -125,6 +136,16 @@ class TrainingCfg:
     tversky_beta: float = 0.3      # FN penalty. tversky_alpha + tversky_beta = 1.0 is the usual convention.
     focal_gamma: float = 0.75      # exponent on (1 - TI). 1.0 = plain Tversky, no focal reshaping.
                                    # 0.75 corresponds to Abraham & Khan (2019)'s 1/gamma with gamma=4/3.
+    lovasz_weight: float = 0.0     # focal_tversky only. > 0 ADDS a Lovasz-softmax term (Berman et al.
+                                   # 2018, arXiv 1705.08790), computed per image over the classes
+                                   # present: loss = a*CE + (1-a)*FTL + lovasz_weight*Lovasz. It is a
+                                   # convex surrogate of 1 - IoU, so a frame whose cell is lost entirely
+                                   # scores ~1 and is punished hard -- the per-cell collapse. 0 = off.
+    distill_weight: float = 0.0    # > 0 ADDS a knowledge-distillation term: distill_weight * T^2 *
+                                   # KL(teacher || student) on temperature-T softened class probabilities,
+                                   # per pixel. Needs <fold_dir>/train/soft/<stem>.npy teacher targets
+                                   # (scripts/data/build_distill_data.py). 0 = off (every run before 10/1).
+    distill_temperature: float = 2.0
     dice_exclude_background: bool = False  # multiclass only. False (default) keeps the historical
                                            # behaviour: _DiceCELoss averages Dice over ALL classes,
                                            # background included. Background Dice sits at ~0.9996 from
@@ -230,6 +251,30 @@ class AcquisitionCfg:
 
 
 @dataclass
+class SplitCfg:
+    """Cell-level train/val/test split (randswap, 2026-10-01; supervisor feedback).
+
+    Counted in WHOLE CELLS, never frames: a cell is the unit that must stay unseen.
+    ``test_cells`` must divide the roster -- the number of folds is roster / test_cells,
+    and every cell is tested exactly once across the folds. Legacy (2021) frames carry no
+    cell and no HER2 label: they always train, never validate or test.
+
+    Fix ``cell_split_seed`` and COMMIT the config before the first draw; accept the
+    draw as it comes. ``scripts/data/build_randswap.py`` refuses to run otherwise.
+    """
+    unit: str = "cell"
+    train_cells: int = 11
+    val_cells: int = 1
+    test_cells: int = 3
+    cell_split_seed: int = 42
+    stratify_by: Optional[str] = "her2"      # each test fold gets both classes; None = off
+    test_frames_per_cell: int = 20           # evenly spaced over each test cell's frames
+    balance_by_cell: bool = True             # each real cell weighs the same in training
+    sources: List[List[str]] = field(default_factory=list)   # [[frames_dir, masks_dir], ...]
+    data_root: str = ""                      # per-fold preprocessed data: <data_root>/fold_<k>/
+
+
+@dataclass
 class CelldformConfig:
     """Top-level configuration object for the entire celldform pipeline."""
     data: DataConfig
@@ -241,6 +286,7 @@ class CelldformConfig:
     biomechanics: BiomechanicsCfg
     acquisition: AcquisitionCfg
     resume: ResumeCfg
+    split: Optional[SplitCfg] = None   # None = the older frame-fraction split (data.val_split)
     checkpoint_dir: str = "checkpoints"
     keep_n_checkpoints: int = 3
     device: Optional[str] = None   # null → auto-detect (cuda if available, else cpu)
@@ -289,6 +335,7 @@ def load(path: str | Path) -> CelldformConfig:
         unet=_parse_unet(raw.get("unet", {})),
         training=_parse_training(raw["training"]),
         resume=_parse_resume(raw.get("resume", {})),
+        split=_parse_split(raw["split"]) if raw.get("split") else None,
         features=_parse_features(raw.get("features", {})),
         classification=_parse_classification(raw.get("classification", {})),
         biomechanics=_parse_biomechanics(raw.get("biomechanics", {})),
@@ -302,6 +349,25 @@ def load(path: str | Path) -> CelldformConfig:
 # ---------------------------------------------------------------------------
 # Section parsers
 # ---------------------------------------------------------------------------
+
+def _parse_split(d: dict) -> SplitCfg:
+    s = SplitCfg(
+        unit=str(d.get("unit", "cell")),
+        train_cells=int(d["train_cells"]), val_cells=int(d["val_cells"]),
+        test_cells=int(d["test_cells"]),
+        cell_split_seed=int(d.get("cell_split_seed", 42)),
+        stratify_by=d.get("stratify_by", "her2"),
+        test_frames_per_cell=int(d.get("test_frames_per_cell", 20)),
+        balance_by_cell=bool(d.get("balance_by_cell", True)),
+        sources=[[str(a), str(b)] for a, b in d.get("sources", [])],
+        data_root=str(d.get("data_root", "")),
+    )
+    if s.unit != "cell":
+        raise ValueError(f"split.unit must be 'cell', got '{s.unit}'")
+    if min(s.train_cells, s.test_cells) < 1 or s.val_cells < 0:
+        raise ValueError("split: train_cells and test_cells must be >= 1, val_cells >= 0")
+    return s
+
 
 def _parse_data(d: dict) -> DataConfig:
     for key in ("frames_dir", "masks_dir"):
@@ -329,6 +395,10 @@ def _parse_preprocessing(p: dict) -> PreprocessingCfg:
         clahe_clip_limit=float(p.get("clahe_clip_limit", 2.0)),
         clahe_tile_grid=clahe_tile,
         morph_kernel_size=int(p.get("morph_kernel_size", 3)),
+        crop_size=(int(p["crop_size"]) if p.get("crop_size") else None),
+        crop_center=(tuple(int(v) for v in p["crop_center"]) if p.get("crop_center") else None),
+        legacy_crop_center=(tuple(int(v) for v in p["legacy_crop_center"])
+                            if p.get("legacy_crop_center") else None),
         denoise=bool(enabled.get("denoise", True)),
         enhance=bool(enabled.get("enhance", True)),
         morphology=bool(enabled.get("morphology", True)),
@@ -374,9 +444,12 @@ def _parse_training(t: dict) -> TrainingCfg:
     return TrainingCfg(
         epochs=int(t.get("epochs", 50)),
         batch_size=int(t.get("batch_size", 16)),
+        grad_accum_steps=int(t.get("grad_accum_steps", 1)),
         lr=float(t.get("lr", 1e-4)),
         weight_decay=float(t.get("weight_decay", 1e-4)),
         optimizer=optimizer,
+        momentum=float(t.get("momentum", 0.9)),
+        nesterov=bool(t.get("nesterov", False)),
         scheduler=scheduler,
         scheduler_patience=patience,
         scheduler_factor=factor,
@@ -394,6 +467,9 @@ def _parse_training(t: dict) -> TrainingCfg:
         tversky_alpha=float(t.get("tversky_alpha", 0.7)),
         tversky_beta=float(t.get("tversky_beta", 0.3)),
         focal_gamma=float(t.get("focal_gamma", 0.75)),
+        lovasz_weight=float(t.get("lovasz_weight", 0.0)),
+        distill_weight=float(t.get("distill_weight", 0.0)),
+        distill_temperature=float(t.get("distill_temperature", 2.0)),
         dice_exclude_background=bool(t.get("dice_exclude_background", False)),
         domain_oversample_weight=float(t.get("domain_oversample_weight", 1.0)),
         augment_noise_std=float(noise_std),

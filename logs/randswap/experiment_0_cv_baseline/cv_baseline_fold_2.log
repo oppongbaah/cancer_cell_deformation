@@ -1,0 +1,114 @@
+fold 2:
+  train 11 cells (73.3%)   545 frames incl. 200 legacy  high-1(51), high-10(50), high-2(20), high-3(20), high-4(20), high-8(19), low-1(20), low-2(24), low-4(19), low-5(51), low-6(51)
+  val    1 cells ( 6.7%)    50 frames  high-9(50)
+  test   3 cells (20.0%)    59 frames  high-6(20), high-7(20), low-3(19)
+  crop 384: centre (579, 532) from the 11 training cells; legacy (648, 373)
+  -> data/preprocessed/randswap/experiment_0_cv_baseline/fold_2  (595 train/val frames, 59 test frames)
+[celldform] randswap fold 2: test ['high_cell6', 'high_cell7', 'low_cell3']  val ['high_cell9']  (split drawn at config commit ada18ffc)
+[celldform] Dataset split (group-aware, 23 groups) — train: 545  val: 50
+[celldform]   split assignment (seed=42)
+[celldform]     val  : high_cell9(50)
+[celldform]     train: high_cell1(51), low_cell5(51), low_cell6(51), high_cell10(50), low_cell2(24), high_cell2(20), high_cell3(20), high_cell4(20), low_cell1(20), high_cell8(19), low_cell4(19), legacy(200)
+[celldform]   WARNING: 'high_cell9' is 50 of 50 validation frames (100%) — validation is mostly one group, so checkpoint selection and early stopping are steered by that single cell, and it is absent from training.
+[celldform]   note: cell group(s) held out of training this run: high_cell9
+[celldform] per-cell balanced sampling over 11 cells (19-51 frames each -> 31.4 effective)
+[celldform] Config snapshot → checkpoints/randswap/experiment_0_cv_baseline/cv_baseline/fold_2/config.yaml
+
+============================================================
+  Platform info [before training]
+============================================================
+  OS          : Linux 6.18.40.1-microsoft-standard-WSL2 (x86_64)
+  Python      : 3.12.3
+  PyTorch     : 2.12.0+cu130
+  Device      : NVIDIA GeForce RTX 4060 Laptop GPU (GPU 0)
+  CUDA        : 13.0
+  VRAM        : 8.0 GB
+============================================================
+
+Epoch 001/100  train_loss=0.9694  train_DSC=0.3977  val_loss=0.9223  val_DSC=0.2919  (31.4s)
+  → Checkpoint saved: checkpoints/randswap/experiment_0_cv_baseline/cv_baseline/fold_2/unet_best.pt  (DSC=0.2919)
+Epoch 002/100  train_loss=0.8077  train_DSC=0.8052  val_loss=0.8593  val_DSC=0.5106  (29.1s)
+  → Checkpoint saved: checkpoints/randswap/experiment_0_cv_baseline/cv_baseline/fold_2/unet_best.pt  (DSC=0.5106)
+Epoch 003/100  train_loss=0.7274  train_DSC=0.8835  val_loss=0.8774  val_DSC=0.0918  (29.3s)
+Epoch 004/100  train_loss=0.6920  train_DSC=0.8952  val_loss=0.7759  val_DSC=0.6022  (29.3s)
+  → Checkpoint saved: checkpoints/randswap/experiment_0_cv_baseline/cv_baseline/fold_2/unet_best.pt  (DSC=0.6022)
+Epoch 005/100  train_loss=0.6661  train_DSC=0.8886  val_loss=0.7126  val_DSC=0.6927  (29.2s)
+  → Checkpoint saved: checkpoints/randswap/experiment_0_cv_baseline/cv_baseline/fold_2/unet_best.pt  (DSC=0.6927)
+Epoch 006/100  train_loss=0.6358  train_DSC=0.9088  val_loss=0.7528  val_DSC=0.5416  (29.1s)
+Epoch 007/100  train_loss=0.6041  train_DSC=0.9316  val_loss=0.7625  val_DSC=0.5436  (29.1s)
+Epoch 008/100  train_loss=0.5801  train_DSC=0.9338  val_loss=0.7238  val_DSC=0.5485  (29.0s)
+Epoch 009/100  train_loss=0.5654  train_DSC=0.9324  val_loss=0.6191  val_DSC=0.7235  (29.1s)
+  → Checkpoint saved: checkpoints/randswap/experiment_0_cv_baseline/cv_baseline/fold_2/unet_best.pt  (DSC=0.7235)
+Epoch 010/100  train_loss=0.5450  train_DSC=0.9297  val_loss=0.6366  val_DSC=0.6554  (29.1s)
+Epoch 011/100  train_loss=0.5326  train_DSC=0.9313  val_loss=0.6295  val_DSC=0.6433  (29.1s)
+Epoch 012/100  train_loss=0.5070  train_DSC=0.9430  val_loss=0.6751  val_DSC=0.6731  (29.1s)
+Epoch 013/100  train_loss=0.4906  train_DSC=0.9444  val_loss=0.6088  val_DSC=0.6094  (29.1s)
+Epoch 014/100  train_loss=0.4774  train_DSC=0.9347  val_loss=0.6367  val_DSC=0.5614  (29.2s)
+Epoch 015/100  train_loss=0.4526  train_DSC=0.9403  val_loss=0.5024  val_DSC=0.8765  (29.3s)
+  → Checkpoint saved: checkpoints/randswap/experiment_0_cv_baseline/cv_baseline/fold_2/unet_best.pt  (DSC=0.8765)
+Epoch 016/100  train_loss=0.4408  train_DSC=0.9453  val_loss=0.6056  val_DSC=0.5918  (29.4s)
+Epoch 017/100  train_loss=0.4303  train_DSC=0.9357  val_loss=0.5823  val_DSC=0.7214  (29.2s)
+Epoch 018/100  train_loss=0.4017  train_DSC=0.9522  val_loss=0.5698  val_DSC=0.6237  (29.1s)
+Epoch 019/100  train_loss=0.3870  train_DSC=0.9494  val_loss=0.5462  val_DSC=0.7286  (29.1s)
+Epoch 020/100  train_loss=0.3753  train_DSC=0.9491  val_loss=0.4227  val_DSC=0.9073  (29.1s)
+  → Checkpoint saved: checkpoints/randswap/experiment_0_cv_baseline/cv_baseline/fold_2/unet_best.pt  (DSC=0.9073)
+Epoch 021/100  train_loss=0.3677  train_DSC=0.9537  val_loss=0.5974  val_DSC=0.5714  (29.1s)
+Epoch 022/100  train_loss=0.3379  train_DSC=0.9563  val_loss=0.4293  val_DSC=0.7953  (29.1s)
+Epoch 023/100  train_loss=0.3265  train_DSC=0.9508  val_loss=0.4606  val_DSC=0.6630  (29.2s)
+Epoch 024/100  train_loss=0.3139  train_DSC=0.9513  val_loss=0.5677  val_DSC=0.5622  (29.1s)
+Epoch 025/100  train_loss=0.3124  train_DSC=0.9404  val_loss=0.4666  val_DSC=0.6381  (29.1s)
+Epoch 026/100  train_loss=0.2920  train_DSC=0.9448  val_loss=0.4902  val_DSC=0.7184  (29.2s)
+Epoch 027/100  train_loss=0.2781  train_DSC=0.9580  val_loss=0.4260  val_DSC=0.7748  (29.3s)
+Epoch 028/100  train_loss=0.2738  train_DSC=0.9547  val_loss=0.5264  val_DSC=0.5696  (29.3s)
+Epoch 029/100  train_loss=0.2694  train_DSC=0.9463  val_loss=0.5451  val_DSC=0.5659  (29.3s)
+Epoch 030/100  train_loss=0.2498  train_DSC=0.9568  val_loss=0.2746  val_DSC=0.9499  (29.2s)
+  → Checkpoint saved: checkpoints/randswap/experiment_0_cv_baseline/cv_baseline/fold_2/unet_best.pt  (DSC=0.9499)
+Epoch 031/100  train_loss=0.2532  train_DSC=0.9528  val_loss=0.5287  val_DSC=0.6789  (29.1s)
+Epoch 032/100  train_loss=0.2440  train_DSC=0.9562  val_loss=0.4789  val_DSC=0.7213  (29.1s)
+Epoch 033/100  train_loss=0.2300  train_DSC=0.9570  val_loss=0.2535  val_DSC=0.9446  (29.1s)
+Epoch 034/100  train_loss=0.2330  train_DSC=0.9524  val_loss=0.5371  val_DSC=0.5508  (29.4s)
+Epoch 035/100  train_loss=0.2287  train_DSC=0.9552  val_loss=0.3110  val_DSC=0.8658  (29.8s)
+Epoch 036/100  train_loss=0.2184  train_DSC=0.9572  val_loss=0.3966  val_DSC=0.6284  (29.3s)
+Epoch 037/100  train_loss=0.2233  train_DSC=0.9535  val_loss=0.2929  val_DSC=0.8637  (29.4s)
+Epoch 038/100  train_loss=0.2216  train_DSC=0.9542  val_loss=0.4320  val_DSC=0.7198  (29.5s)
+Epoch 039/100  train_loss=0.2143  train_DSC=0.9612  val_loss=0.4576  val_DSC=0.5784  (29.6s)
+Epoch 040/100  train_loss=0.2101  train_DSC=0.9593  val_loss=0.3484  val_DSC=0.6867  (30.0s)
+Epoch 041/100  train_loss=0.2164  train_DSC=0.9528  val_loss=0.2696  val_DSC=0.8525  (29.8s)
+Epoch 042/100  train_loss=0.2039  train_DSC=0.9619  val_loss=0.3155  val_DSC=0.8445  (29.9s)
+Epoch 043/100  train_loss=0.2087  train_DSC=0.9611  val_loss=0.2715  val_DSC=0.8807  (29.6s)
+Epoch 044/100  train_loss=0.1943  train_DSC=0.9635  val_loss=0.3073  val_DSC=0.8477  (29.8s)
+Epoch 045/100  train_loss=0.1949  train_DSC=0.9626  val_loss=0.2223  val_DSC=0.9297  (29.8s)
+Epoch 046/100  train_loss=0.1989  train_DSC=0.9558  val_loss=0.3606  val_DSC=0.6561  (30.0s)
+Epoch 047/100  train_loss=0.1908  train_DSC=0.9610  val_loss=0.2907  val_DSC=0.8109  (29.5s)
+Epoch 048/100  train_loss=0.1961  train_DSC=0.9569  val_loss=0.3658  val_DSC=0.6894  (29.7s)
+Epoch 049/100  train_loss=0.1831  train_DSC=0.9624  val_loss=0.2699  val_DSC=0.8467  (29.7s)
+Epoch 050/100  train_loss=0.1804  train_DSC=0.9604  val_loss=0.2127  val_DSC=0.9285  (29.4s)
+Early stopping: no val_DSC improvement > 0.001 for 20 epochs (best=0.9499 at epoch 30). Stopping at epoch 50/100.
+
+[celldform] Reloaded best checkpoint for final evaluation: epoch 30
+
+Final validation metrics:
+  [trapped_cell]
+    dsc: 0.9496
+    iou: 0.9041
+    precision: 0.9442
+    recall: 0.9551
+  [class_2]
+    dsc: 0.8198
+    iou: 0.6946
+    precision: 0.9505
+    recall: 0.7207
+  [mean]
+    dsc: 0.8847
+    iou: 0.7993
+    precision: 0.9474
+    recall: 0.8379
+/home/mega/work/thesis/cancer_cell_deformation/celldform/utils/visualization.py:155: UserWarning: This figure includes Axes that are not compatible with tight_layout, so results might be incorrect.
+  fig.tight_layout()
+Training curves saved to results/randswap/experiment_0_cv_baseline/unet_training_curves_v2_cv_baseline_fold_2.png
+fold_2  (native 1228x922, 59 frames, input 384x384)
+  high-6    DSC 0.859  prec 0.918  rec 0.807
+  high-7    DSC 0.809  prec 0.691  rec 0.975
+  low-3     DSC 0.971  prec 0.985  rec 0.957
+  pooled    DSC 0.884  prec 0.852  rec 0.919
+  per-cell mean DSC 0.880

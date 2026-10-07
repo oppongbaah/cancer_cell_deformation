@@ -28,7 +28,7 @@ anything is left unresolved.
 |---|---|
 | `plot_pool_flow.py` | pool provenance diagram |
 | `plot_split_change.py` | train/val split, before and after |
-| `plot_sweep_dsc.py` | every checkpoint ranked by pooled DSC |
+| `plot_sweep_dsc.py` | every checkpoint ranked by evaluated DSC |
 | `plot_percell_metrics.py` | per-cell DSC/precision bars |
 | `render_holdout_comparison.py` | raw / labelled-mask / masks-only / overlay strips |
 | `plot_cell_sizes.py` | per-cell trapped-cell size |

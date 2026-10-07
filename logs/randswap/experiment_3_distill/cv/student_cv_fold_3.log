@@ -1,0 +1,113 @@
+  high_cell10: 198 extra frames
+  high_cell2: 199 extra frames
+  high_cell3: 198 extra frames
+  high_cell4: 198 extra frames
+  high_cell6: 197 extra frames
+  high_cell7: 207 extra frames
+  high_cell9: 199 extra frames
+  low_cell2: 196 extra frames
+  low_cell4: 204 extra frames
+  low_cell5: 202 extra frames
+  low_cell6: 201 extra frames
+  teacher 250/2763
+  teacher 500/2763
+  teacher 750/2763
+  teacher 1000/2763
+  teacher 1250/2763
+  teacher 1500/2763
+  teacher 1750/2763
+  teacher 2000/2763
+  teacher 2250/2763
+  teacher 2500/2763
+  teacher 2750/2763
+-> data/preprocessed/randswap/experiment_3_distill/fold_3: 564 annotated + 2199 teacher-labelled training frames; teacher vs hand masks on the annotated frames: mean Dice 0.971
+[celldform] randswap fold 3: test ['high_cell1', 'high_cell8', 'low_cell1']  val ['low_cell3']  (split drawn at config commit ada18ffc)
+[celldform] Dataset split (group-aware, 23 groups) — train: 2744  val: 19
+[celldform]   split assignment (seed=42)
+[celldform]     val  : low_cell3(19)
+[celldform]     train: low_cell5(253), low_cell6(252), high_cell9(249), high_cell10(248), high_cell7(227), low_cell4(223), low_cell2(220), high_cell2(219), high_cell3(218), high_cell4(218), high_cell6(217), legacy(200)
+[celldform]   WARNING: 'low_cell3' is 19 of 19 validation frames (100%) — validation is mostly one group, so checkpoint selection and early stopping are steered by that single cell, and it is absent from training.
+[celldform]   note: cell group(s) held out of training this run: low_cell3
+[celldform] distillation data: 2199 teacher-labelled frames added; epoch stays 545 samples
+[celldform] per-cell balanced sampling over 11 cells (217-253 frames each -> 231.3 effective)
+[celldform] Config snapshot → checkpoints/randswap/experiment_3_distill/student_cv/fold_3/config.yaml
+
+============================================================
+  Platform info [before training]
+============================================================
+  OS          : Linux 6.18.40.1-microsoft-standard-WSL2 (x86_64)
+  Python      : 3.12.3
+  PyTorch     : 2.12.0+cu130
+  Device      : NVIDIA GeForce RTX 4060 Laptop GPU (GPU 0)
+  CUDA        : 13.0
+  VRAM        : 8.0 GB
+============================================================
+
+Epoch 001/29  train_loss=4.0779  train_DSC=0.3286  val_loss=0.8695  val_DSC=0.4470  (37.9s)
+  → Checkpoint saved: checkpoints/randswap/experiment_3_distill/student_cv/fold_3/unet_best.pt  (DSC=0.4470)
+Epoch 002/29  train_loss=3.2693  train_DSC=0.5828  val_loss=0.8119  val_DSC=0.6290  (29.6s)
+  → Checkpoint saved: checkpoints/randswap/experiment_3_distill/student_cv/fold_3/unet_best.pt  (DSC=0.6290)
+Epoch 003/29  train_loss=2.9969  train_DSC=0.6997  val_loss=0.7523  val_DSC=0.8153  (29.4s)
+  → Checkpoint saved: checkpoints/randswap/experiment_3_distill/student_cv/fold_3/unet_best.pt  (DSC=0.8153)
+Epoch 004/29  train_loss=2.7852  train_DSC=0.8424  val_loss=0.7372  val_DSC=0.7147  (29.4s)
+Epoch 005/29  train_loss=2.6085  train_DSC=0.8742  val_loss=0.7325  val_DSC=0.5731  (29.3s)
+Epoch 006/29  train_loss=2.4415  train_DSC=0.8999  val_loss=0.6291  val_DSC=0.8897  (29.0s)
+  → Checkpoint saved: checkpoints/randswap/experiment_3_distill/student_cv/fold_3/unet_best.pt  (DSC=0.8897)
+Epoch 007/29  train_loss=2.2986  train_DSC=0.9228  val_loss=0.5965  val_DSC=0.9467  (29.2s)
+  → Checkpoint saved: checkpoints/randswap/experiment_3_distill/student_cv/fold_3/unet_best.pt  (DSC=0.9467)
+Epoch 008/29  train_loss=2.1720  train_DSC=0.9132  val_loss=0.5849  val_DSC=0.9391  (30.0s)
+Epoch 009/29  train_loss=2.0325  train_DSC=0.9339  val_loss=0.7620  val_DSC=0.2536  (29.1s)
+Epoch 010/29  train_loss=1.9292  train_DSC=0.9154  val_loss=0.5250  val_DSC=0.9638  (29.0s)
+  → Checkpoint saved: checkpoints/randswap/experiment_3_distill/student_cv/fold_3/unet_best.pt  (DSC=0.9638)
+Epoch 011/29  train_loss=1.8183  train_DSC=0.9311  val_loss=0.5115  val_DSC=0.9491  (29.6s)
+Epoch 012/29  train_loss=1.6927  train_DSC=0.9510  val_loss=0.8100  val_DSC=0.0165  (29.4s)
+Epoch 013/29  train_loss=1.6192  train_DSC=0.9289  val_loss=0.4783  val_DSC=0.9666  (28.9s)
+  → Checkpoint saved: checkpoints/randswap/experiment_3_distill/student_cv/fold_3/unet_best.pt  (DSC=0.9666)
+Epoch 014/29  train_loss=1.5174  train_DSC=0.9542  val_loss=0.4621  val_DSC=0.9634  (29.5s)
+Epoch 015/29  train_loss=1.4300  train_DSC=0.9427  val_loss=0.5338  val_DSC=0.7676  (29.2s)
+Epoch 016/29  train_loss=1.3494  train_DSC=0.9488  val_loss=0.5777  val_DSC=0.5907  (29.1s)
+Epoch 017/29  train_loss=1.2720  train_DSC=0.9543  val_loss=0.4800  val_DSC=0.8933  (28.9s)
+Epoch 018/29  train_loss=1.2108  train_DSC=0.9559  val_loss=0.4480  val_DSC=0.9164  (28.9s)
+Epoch 019/29  train_loss=1.1366  train_DSC=0.9579  val_loss=0.4006  val_DSC=0.9560  (28.9s)
+Epoch 020/29  train_loss=1.0696  train_DSC=0.9609  val_loss=0.3717  val_DSC=0.9677  (28.8s)
+  → Checkpoint saved: checkpoints/randswap/experiment_3_distill/student_cv/fold_3/unet_best.pt  (DSC=0.9677)
+Epoch 021/29  train_loss=1.0238  train_DSC=0.9467  val_loss=0.3667  val_DSC=0.9622  (28.8s)
+Epoch 022/29  train_loss=0.9660  train_DSC=0.9597  val_loss=0.3417  val_DSC=0.9695  (28.9s)
+  → Checkpoint saved: checkpoints/randswap/experiment_3_distill/student_cv/fold_3/unet_best.pt  (DSC=0.9695)
+Epoch 023/29  train_loss=0.9125  train_DSC=0.9603  val_loss=0.3468  val_DSC=0.9662  (28.8s)
+Epoch 024/29  train_loss=0.8650  train_DSC=0.9649  val_loss=0.3245  val_DSC=0.9690  (28.8s)
+Epoch 025/29  train_loss=0.8234  train_DSC=0.9612  val_loss=0.3172  val_DSC=0.9629  (28.9s)
+Epoch 026/29  train_loss=0.7787  train_DSC=0.9658  val_loss=0.3113  val_DSC=0.9616  (29.1s)
+Epoch 027/29  train_loss=0.7543  train_DSC=0.9579  val_loss=0.2843  val_DSC=0.9694  (29.3s)
+Epoch 028/29  train_loss=0.7198  train_DSC=0.9654  val_loss=0.2936  val_DSC=0.9631  (29.1s)
+Epoch 029/29  train_loss=0.6852  train_DSC=0.9659  val_loss=0.2715  val_DSC=0.9702  (29.0s)
+  → Checkpoint saved: checkpoints/randswap/experiment_3_distill/student_cv/fold_3/unet_best.pt  (DSC=0.9702)
+  → Checkpoint saved: checkpoints/randswap/experiment_3_distill/student_cv/fold_3/unet_last.pt  (DSC=nan)
+
+[celldform] Reloaded best checkpoint for final evaluation: epoch 29
+
+Final validation metrics:
+  [trapped_cell]
+    dsc: 0.9701
+    iou: 0.9419
+    precision: 0.9638
+    recall: 0.9764
+  [class_2]
+    dsc: 0.8103
+    iou: 0.6811
+    precision: 0.8936
+    recall: 0.7412
+  [mean]
+    dsc: 0.8902
+    iou: 0.8115
+    precision: 0.9287
+    recall: 0.8588
+/home/mega/work/thesis/cancer_cell_deformation/celldform/utils/visualization.py:155: UserWarning: This figure includes Axes that are not compatible with tight_layout, so results might be incorrect.
+  fig.tight_layout()
+Training curves saved to results/randswap/experiment_3_distill/unet_training_curves_v5_student_cv_fold_3.png
+student_cv_fold_3  (native 1228x922, 59 frames, input 384x384)
+  high-1    DSC 0.697  prec 0.839  rec 0.595
+  high-8    DSC 0.675  prec 0.935  rec 0.528
+  low-1     DSC 0.781  prec 0.974  rec 0.651
+  pooled    DSC 0.727  prec 0.927  rec 0.598
+  per-cell mean DSC 0.717

@@ -1,5 +1,4 @@
 source,frame_index,saved_index,timestamp_s,output_path,width,height
-data/raw/low/cell 2 low 50 increments.mp4,0,0,0.0,data/frames/03_mask_factory/low_cell2_000000.jpg,1228,922
 data/raw/low/cell 2 low 50 increments.mp4,200,1,9.090909,data/frames/03_mask_factory/low_cell2_000200.jpg,1228,922
 data/raw/low/cell 2 low 50 increments.mp4,400,2,18.181818,data/frames/03_mask_factory/low_cell2_000400.jpg,1228,922
 data/raw/low/cell 2 low 50 increments.mp4,600,3,27.272727,data/frames/03_mask_factory/low_cell2_000600.jpg,1228,922

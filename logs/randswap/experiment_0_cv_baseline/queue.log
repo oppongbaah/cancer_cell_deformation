@@ -1,0 +1,101 @@
+[randswap/experiment_0_cv_baseline] fold 1: drawing the split and building data  (01:49)
+fold 1:
+  train 11 cells (73.3%)   571 frames incl. 200 legacy  high-1(51), high-10(50), high-4(20), high-6(20), high-7(20), high-8(19), high-9(50), low-1(20), low-3(19), low-5(51), low-6(51)
+  val    1 cells ( 6.7%)    19 frames  low-4(19)
+  test   3 cells (20.0%)    64 frames  high-2(20), high-3(20), low-2(24)
+  crop 384: centre (580, 532) from the 11 training cells; legacy (648, 373)
+  -> data/preprocessed/randswap/experiment_0_cv_baseline/fold_1  (590 train/val frames, 60 test frames)
+[randswap/experiment_0_cv_baseline] fold 1: training  (01:50)
+[celldform] randswap fold 1: test ['high_cell2', 'high_cell3', 'low_cell2']  val ['low_cell4']  (split drawn at config commit ada18ffc)
+[celldform] per-cell balanced sampling over 11 cells (19-51 frames each -> 33.7 effective)
+Early stopping: no val_DSC improvement > 0.001 for 20 epochs (best=0.9734 at epoch 39). Stopping at epoch 46/100.
+[celldform] Reloaded best checkpoint for final evaluation: epoch 39
+[randswap/experiment_0_cv_baseline] fold 1: scoring the test cells at native resolution
+fold_1  (native 1228x922, 60 frames, input 384x384)
+  high-2    DSC 0.978  prec 0.978  rec 0.978
+  high-3    DSC 0.889  prec 0.958  rec 0.829
+  low-2     DSC 0.973  prec 0.982  rec 0.964
+  pooled    DSC 0.955  prec 0.975  rec 0.935
+  per-cell mean DSC 0.947
+[randswap/experiment_0_cv_baseline] fold 1 done  (02:13)
+[randswap/experiment_0_cv_baseline] fold 2: drawing the split and building data  (02:13)
+fold 2:
+  train 11 cells (73.3%)   545 frames incl. 200 legacy  high-1(51), high-10(50), high-2(20), high-3(20), high-4(20), high-8(19), low-1(20), low-2(24), low-4(19), low-5(51), low-6(51)
+  val    1 cells ( 6.7%)    50 frames  high-9(50)
+  test   3 cells (20.0%)    59 frames  high-6(20), high-7(20), low-3(19)
+  crop 384: centre (579, 532) from the 11 training cells; legacy (648, 373)
+  -> data/preprocessed/randswap/experiment_0_cv_baseline/fold_2  (595 train/val frames, 59 test frames)
+[randswap/experiment_0_cv_baseline] fold 2: training  (02:14)
+[celldform] randswap fold 2: test ['high_cell6', 'high_cell7', 'low_cell3']  val ['high_cell9']  (split drawn at config commit ada18ffc)
+[celldform] per-cell balanced sampling over 11 cells (19-51 frames each -> 31.4 effective)
+Early stopping: no val_DSC improvement > 0.001 for 20 epochs (best=0.9499 at epoch 30). Stopping at epoch 50/100.
+[celldform] Reloaded best checkpoint for final evaluation: epoch 30
+[randswap/experiment_0_cv_baseline] fold 2: scoring the test cells at native resolution
+fold_2  (native 1228x922, 59 frames, input 384x384)
+  high-6    DSC 0.859  prec 0.918  rec 0.807
+  high-7    DSC 0.809  prec 0.691  rec 0.975
+  low-3     DSC 0.971  prec 0.985  rec 0.957
+  pooled    DSC 0.884  prec 0.852  rec 0.919
+  per-cell mean DSC 0.880
+[randswap/experiment_0_cv_baseline] fold 2 done  (02:39)
+[randswap/experiment_0_cv_baseline] fold 3: drawing the split and building data  (02:39)
+fold 3:
+  train 11 cells (73.3%)   545 frames incl. 200 legacy  high-10(50), high-2(20), high-3(20), high-4(20), high-6(20), high-7(20), high-9(50), low-2(24), low-4(19), low-5(51), low-6(51)
+  val    1 cells ( 6.7%)    19 frames  low-3(19)
+  test   3 cells (20.0%)    90 frames  high-1(51), high-8(19), low-1(20)
+  crop 384: centre (594, 498) from the 11 training cells; legacy (648, 373)
+  -> data/preprocessed/randswap/experiment_0_cv_baseline/fold_3  (564 train/val frames, 59 test frames)
+[randswap/experiment_0_cv_baseline] fold 3: training  (02:39)
+[celldform] randswap fold 3: test ['high_cell1', 'high_cell8', 'low_cell1']  val ['low_cell3']  (split drawn at config commit ada18ffc)
+[celldform] per-cell balanced sampling over 11 cells (19-51 frames each -> 31.4 effective)
+Early stopping: no val_DSC improvement > 0.001 for 20 epochs (best=0.9697 at epoch 29). Stopping at epoch 49/100.
+[celldform] Reloaded best checkpoint for final evaluation: epoch 29
+[randswap/experiment_0_cv_baseline] fold 3: scoring the test cells at native resolution
+fold_3  (native 1228x922, 59 frames, input 384x384)
+  high-1    DSC 0.771  prec 0.819  rec 0.728
+  high-8    DSC 0.712  prec 0.978  rec 0.559
+  low-1     DSC 0.951  prec 0.948  rec 0.955
+  pooled    DSC 0.840  prec 0.921  rec 0.773
+  per-cell mean DSC 0.811
+[randswap/experiment_0_cv_baseline] fold 3 done  (03:04)
+[randswap/experiment_0_cv_baseline] fold 4: drawing the split and building data  (03:04)
+fold 4:
+  train 11 cells (73.3%)   514 frames incl. 200 legacy  high-1(51), high-2(20), high-3(20), high-6(20), high-7(20), high-8(19), high-9(50), low-1(20), low-2(24), low-4(19), low-6(51)
+  val    1 cells ( 6.7%)    19 frames  low-3(19)
+  test   3 cells (20.0%)   121 frames  high-10(50), high-4(20), low-5(51)
+  crop 384: centre (580, 532) from the 11 training cells; legacy (648, 373)
+  -> data/preprocessed/randswap/experiment_0_cv_baseline/fold_4  (533 train/val frames, 60 test frames)
+[randswap/experiment_0_cv_baseline] fold 4: training  (03:04)
+[celldform] randswap fold 4: test ['high_cell10', 'high_cell4', 'low_cell5']  val ['low_cell3']  (split drawn at config commit ada18ffc)
+[celldform] per-cell balanced sampling over 11 cells (19-51 frames each -> 28.5 effective)
+Early stopping: no val_DSC improvement > 0.001 for 20 epochs (best=0.9456 at epoch 28). Stopping at epoch 48/100.
+[celldform] Reloaded best checkpoint for final evaluation: epoch 28
+[randswap/experiment_0_cv_baseline] fold 4: scoring the test cells at native resolution
+fold_4  (native 1228x922, 60 frames, input 384x384)
+  high-10   DSC 0.758  prec 0.645  rec 0.920
+  high-4    DSC 0.625  prec 0.467  rec 0.945
+  low-5     DSC 0.978  prec 0.986  rec 0.971
+  pooled    DSC 0.757  prec 0.630  rec 0.948
+  per-cell mean DSC 0.787
+[randswap/experiment_0_cv_baseline] fold 4 done  (03:27)
+[randswap/experiment_0_cv_baseline] fold 5: drawing the split and building data  (03:27)
+fold 5:
+  train 11 cells (73.3%)   483 frames incl. 200 legacy  high-1(51), high-10(50), high-2(20), high-3(20), high-4(20), high-6(20), high-7(20), high-8(19), low-1(20), low-2(24), low-3(19)
+  val    1 cells ( 6.7%)    51 frames  low-5(51)
+  test   3 cells (20.0%)   120 frames  high-9(50), low-4(19), low-6(51)
+  crop 384: centre (579, 532) from the 11 training cells; legacy (648, 373)
+  -> data/preprocessed/randswap/experiment_0_cv_baseline/fold_5  (534 train/val frames, 59 test frames)
+[randswap/experiment_0_cv_baseline] fold 5: training  (03:27)
+[celldform] randswap fold 5: test ['high_cell9', 'low_cell4', 'low_cell6']  val ['low_cell5']  (split drawn at config commit ada18ffc)
+[celldform] per-cell balanced sampling over 11 cells (19-51 frames each -> 25.7 effective)
+Early stopping: no val_DSC improvement > 0.001 for 20 epochs (best=0.9776 at epoch 26). Stopping at epoch 46/100.
+[celldform] Reloaded best checkpoint for final evaluation: epoch 26
+[randswap/experiment_0_cv_baseline] fold 5: scoring the test cells at native resolution
+fold_5  (native 1228x922, 59 frames, input 384x384)
+  high-9    DSC 0.816  prec 0.949  rec 0.715
+  low-4     DSC 0.968  prec 0.984  rec 0.952
+  low-6     DSC 0.762  prec 0.956  rec 0.634
+  pooled    DSC 0.870  prec 0.969  rec 0.790
+  per-cell mean DSC 0.849
+[randswap/experiment_0_cv_baseline] fold 5 done  (03:48)
+QUEUE_OK

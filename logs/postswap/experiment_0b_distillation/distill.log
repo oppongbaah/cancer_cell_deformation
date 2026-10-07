@@ -1,0 +1,64 @@
+[distill] reusing cache at data/preprocessed/train/postswap_soft_targets (451 targets) -- --rebuild-cache to redo
+[distill] split (split_seed=42) — train 397  val 54
+[distill] student: base_features=64  lambda_hard=0.5  T=2.0  epochs=100
+Epoch 001/100  train_loss=1.4512  train_DSC=0.0272  val_loss=1.5787  val_DSC=0.0004
+Epoch 002/100  train_loss=1.1480  train_DSC=0.0440  val_loss=1.0257  val_DSC=0.0009
+Epoch 003/100  train_loss=0.9669  train_DSC=0.0099  val_loss=0.8524  val_DSC=0.0037
+Epoch 004/100  train_loss=0.8611  train_DSC=0.0056  val_loss=0.8025  val_DSC=0.0057
+Epoch 005/100  train_loss=0.7864  train_DSC=0.0101  val_loss=0.7374  val_DSC=0.0095
+Epoch 006/100  train_loss=0.7428  train_DSC=0.0391  val_loss=0.6803  val_DSC=0.0181
+Epoch 007/100  train_loss=0.6788  train_DSC=0.0498  val_loss=0.6386  val_DSC=0.0264
+Epoch 008/100  train_loss=0.6368  train_DSC=0.1591  val_loss=0.6107  val_DSC=0.1941
+Epoch 009/100  train_loss=0.5939  train_DSC=0.3395  val_loss=0.5787  val_DSC=0.2851
+Epoch 010/100  train_loss=0.5541  train_DSC=0.4295  val_loss=0.5428  val_DSC=0.4475
+Epoch 011/100  train_loss=0.5203  train_DSC=0.4958  val_loss=0.5008  val_DSC=0.5605
+Epoch 012/100  train_loss=0.4880  train_DSC=0.5194  val_loss=0.4820  val_DSC=0.5121
+Epoch 013/100  train_loss=0.4576  train_DSC=0.5218  val_loss=0.4505  val_DSC=0.5412
+Epoch 014/100  train_loss=0.4299  train_DSC=0.5213  val_loss=0.4194  val_DSC=0.5675
+Epoch 015/100  train_loss=0.4039  train_DSC=0.5232  val_loss=0.3948  val_DSC=0.5666
+Epoch 016/100  train_loss=0.3794  train_DSC=0.5205  val_loss=0.3752  val_DSC=0.5604
+Epoch 017/100  train_loss=0.3568  train_DSC=0.5168  val_loss=0.3545  val_DSC=0.5656
+Epoch 018/100  train_loss=0.3356  train_DSC=0.5184  val_loss=0.3319  val_DSC=0.5630
+Epoch 019/100  train_loss=0.3159  train_DSC=0.5142  val_loss=0.3138  val_DSC=0.5805
+Epoch 020/100  train_loss=0.2978  train_DSC=0.5150  val_loss=0.2910  val_DSC=0.5897
+Epoch 021/100  train_loss=0.2804  train_DSC=0.5153  val_loss=0.2773  val_DSC=0.5843
+Epoch 022/100  train_loss=0.2640  train_DSC=0.5164  val_loss=0.2677  val_DSC=0.6021
+Epoch 023/100  train_loss=0.2489  train_DSC=0.5189  val_loss=0.2485  val_DSC=0.5769
+Epoch 024/100  train_loss=0.2350  train_DSC=0.5235  val_loss=0.2352  val_DSC=0.5940
+Epoch 025/100  train_loss=0.2215  train_DSC=0.5281  val_loss=0.2260  val_DSC=0.5713
+Epoch 026/100  train_loss=0.2091  train_DSC=0.5333  val_loss=0.2085  val_DSC=0.5818
+Epoch 027/100  train_loss=0.1976  train_DSC=0.5316  val_loss=0.1977  val_DSC=0.5988
+Epoch 028/100  train_loss=0.1869  train_DSC=0.5359  val_loss=0.1939  val_DSC=0.5954
+Epoch 029/100  train_loss=0.1768  train_DSC=0.5392  val_loss=0.1771  val_DSC=0.6013
+Epoch 030/100  train_loss=0.1672  train_DSC=0.5444  val_loss=0.1724  val_DSC=0.5911
+Epoch 031/100  train_loss=0.1582  train_DSC=0.5564  val_loss=0.1616  val_DSC=0.6134
+Epoch 032/100  train_loss=0.1498  train_DSC=0.5682  val_loss=0.1554  val_DSC=0.6298
+Epoch 033/100  train_loss=0.1431  train_DSC=0.5796  val_loss=0.1458  val_DSC=0.6508
+Epoch 034/100  train_loss=0.1350  train_DSC=0.6116  val_loss=0.1401  val_DSC=0.6398
+Epoch 035/100  train_loss=0.1275  train_DSC=0.6524  val_loss=0.1342  val_DSC=0.7420
+Epoch 036/100  train_loss=0.1199  train_DSC=0.7825  val_loss=0.1255  val_DSC=0.8038
+Epoch 037/100  train_loss=0.1128  train_DSC=0.9168  val_loss=0.1225  val_DSC=0.8142
+Epoch 038/100  train_loss=0.1055  train_DSC=0.9421  val_loss=0.1071  val_DSC=0.8563
+Epoch 039/100  train_loss=0.0993  train_DSC=0.9421  val_loss=0.1043  val_DSC=0.8155
+Epoch 040/100  train_loss=0.0940  train_DSC=0.9455  val_loss=0.1010  val_DSC=0.8057
+Epoch 041/100  train_loss=0.0890  train_DSC=0.9475  val_loss=0.0978  val_DSC=0.6751
+Epoch 042/100  train_loss=0.0845  train_DSC=0.9496  val_loss=0.0915  val_DSC=0.7417
+Epoch 043/100  train_loss=0.0803  train_DSC=0.9482  val_loss=0.0915  val_DSC=0.7008
+Epoch 044/100  train_loss=0.0763  train_DSC=0.9510  val_loss=0.0838  val_DSC=0.7688
+Epoch 045/100  train_loss=0.0726  train_DSC=0.9524  val_loss=0.0812  val_DSC=0.6809
+Epoch 046/100  train_loss=0.0691  train_DSC=0.9531  val_loss=0.0776  val_DSC=0.7304
+Epoch 047/100  train_loss=0.0659  train_DSC=0.9536  val_loss=0.0747  val_DSC=0.7862
+Epoch 048/100  train_loss=0.0628  train_DSC=0.9555  val_loss=0.0712  val_DSC=0.7303
+Epoch 049/100  train_loss=0.0600  train_DSC=0.9537  val_loss=0.0704  val_DSC=0.7176
+Epoch 050/100  train_loss=0.0573  train_DSC=0.9546  val_loss=0.0662  val_DSC=0.7420
+Epoch 051/100  train_loss=0.0548  train_DSC=0.9561  val_loss=0.0643  val_DSC=0.7481
+Epoch 052/100  train_loss=0.0525  train_DSC=0.9547  val_loss=0.0635  val_DSC=0.7158
+Epoch 053/100  train_loss=0.0503  train_DSC=0.9549  val_loss=0.0598  val_DSC=0.7513
+Epoch 054/100  train_loss=0.0483  train_DSC=0.9576  val_loss=0.0559  val_DSC=0.7841
+Epoch 055/100  train_loss=0.0464  train_DSC=0.9569  val_loss=0.0573  val_DSC=0.7359
+Epoch 056/100  train_loss=0.0446  train_DSC=0.9584  val_loss=0.0551  val_DSC=0.7652
+Epoch 057/100  train_loss=0.0430  train_DSC=0.9582  val_loss=0.0545  val_DSC=0.7551
+Epoch 058/100  train_loss=0.0414  train_DSC=0.9590  val_loss=0.0521  val_DSC=0.7710
+[distill] early stop at epoch 58 (best 38, val_DSC 0.8563)
+[distill] best epoch 38  val_DSC 0.8563  -> /home/mega/work/thesis/cancer_cell_deformation/checkpoints/postswap/postswap_distilled/unet_best.pt
+[distill] curves -> results/postswap/unet_training_curves_postswap_distilled.png

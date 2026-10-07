@@ -1,0 +1,214 @@
+# ════════════════════════════════════════════════════════════════════════════
+#  EXPERIMENT 3 — e3a_crop512_b4   (2026-10-01)
+#  Question: does cropping the central region at native resolution beat resizing the
+#  whole frame? Every trapped cell in all 15 real cells lies in x 489-671, y 432-631 of
+#  the 1228x922 frame (fixed by the optics). The crop centre is derived from the
+#  TRAINING cells only; all four testing cells fall inside with >=71 px margin (384) /
+#  >=135 px (512), and no trapped-cell pixel of any frame is cut off.
+#  Base: e2b_res512_b4 (Lovasz, seed 42, micro-batch 4 x 4-step accumulation) with ONE
+#  change -- the input is a native 512x512 crop instead of the whole frame resized to 512.
+#  Scored at native resolution (eval_native.py pastes the crop back into the frame).
+#  Run with: scripts/training/run_experiment.sh postswap/experiment_3_cropping e3a_crop512_b4
+# ════════════════════════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════════════════════════
+#  POST-SWAP REFERENCE RUN — Way Forward item 1 (2026-09-17)
+#
+#  Naming:  postswap_ftl_cw142_s<SEED>
+#    postswap  the 17 Sept roster: high-10 moved INTO training, high-1 OUT to the
+#              development set. 451 training frames, 22 groups. NOT comparable to
+#              any result measured before that exchange.
+#    ftl       Focal-Tversky region loss (Abraham & Khan 2019, arXiv 1810.07842)
+#    cw142     training.class_weights = [1.0, 4.0, 2.0]
+#    s<SEED>   initialisation seed. split_seed is PINNED at 42 in all three, so the
+#              spread across seeds measures initialisation noise alone, with split
+#              composition held constant. Varying split_seed is a separate probe.
+#
+#  Everything lives under its own names so this series never collides with the
+#  pre-swap work:
+#    data     data/preprocessed/train/postswap_multiclass_256/       (train)
+#             data/preprocessed/evaluate/postswap_devset/            (evaluate)
+#    ckpt     checkpoints/postswap_ftl_cw142_s<SEED>/
+#    eval log results/postswap_eval_log.jsonl
+#  The pre-swap folders (01_annotate_pool_multiclass_256, 02_unet_holdout) and
+#  results/holdout_eval_log.jsonl are left untouched.
+# ════════════════════════════════════════════════════════════════════════════
+
+# Multiclass U-Net config at 256x256 — controlled resolution ablation
+# companion to configs/multiclass_experiment.yaml (128x128).
+#
+# Purpose: same 40 masks, same seed (42), same class_weights ([1,3,3]) as
+# multiclass_experiment.yaml — only the preprocessing target size differs
+# (256 here vs 128 there). Pairs with configs/binary_experiment_256.yaml
+# (also 256x256, same seed, pos_weight=50) for the fairest binary-vs-
+# multiclass comparison: both models get their best-performing resolution,
+# so any remaining DSC gap is attributable to the labeling scheme alone.
+#
+# Pre-requisites:
+#   1. python scripts/validate_masks.py --multiclass
+#   2. python scripts/preprocess_frames.py --pool 01_annotate_pool --masks \
+#        --mask-dir data/masks/01_annotate_pool_multiclass \
+#        --output-dir data/preprocessed/train/01_annotate_pool_multiclass_256/inputs \
+#        --mask-output-dir data/preprocessed/train/01_annotate_pool_multiclass_256/labels \
+#        --target-size 256 256
+#   3. celldform-train-unet --config configs/multiclass_experiment_256.yaml
+
+# ─── Data paths ──────────────────────────────────────────────────────────────
+data:
+  frames_dir: "data/preprocessed/train/postswap_multiclass_crop512/inputs"   # EXPERIMENT 3: native crop
+  masks_dir:  "data/preprocessed/train/postswap_multiclass_crop512/labels"
+  features_csv: "data/features.csv"
+  labels_csv: "data/labels.csv"
+  val_split: 0.10
+
+# ─── Preprocessing ───────────────────────────────────────────────────────────
+# Record-of-what-was-used only — preprocess_frames.py does not read this file;
+# pass --target-size to match when you run it (see prerequisites above).
+preprocessing:
+  target_size: [512, 512]          # EXPERIMENT 3: = crop_size, so no resize
+  crop_size: 512                   # native 512x512 window, 1:1, no stretch
+  crop_center: [579, 510]          # (x, y) centre of the TRAINING cells' trapped-cell box
+  legacy_crop_center: [648, 373]   # 2021 frames: their trap sits elsewhere (training only)
+  median_kernel: 3
+  clahe_clip_limit: 2.0
+  clahe_tile_grid: [8, 8]
+  morph_kernel_size: 3
+  enabled:
+    denoise: true
+    enhance: true
+    morphology: true
+    resize: true  
+    normalize: true
+
+# ─── U-Net ───────────────────────────────────────────────────────────────────
+unet:
+  in_channels: 1
+  base_features: 64  # confirmed 2026-09-03/04 across the full 2-cell holdout sweep (14 checkpoints): this
+                      # is the best-scoring width on real, never-seen cells (DSC 0.525), ahead of every
+                      # base_features=32 variant (0.38-0.44) and of the same 64-width + full reg recipe
+                      # (bf64_reg, dropout/cutout/cosine, DSC 0.378 — regularizing hurt here too). See
+                      # CLAUDE.md's "Full 2-cell holdout evaluation" section for the full table.
+  out_channels: 3   # 0=background, 1=trapped cell, 2=other/decoy object
+  dropout: 0.0  # reverted 2026-09-04 — dropout+cutout (bf64_reg, dropout=0.4) scored *worse* on the real
+                # holdout (0.378) than plain unregularized 64-width (0.525), same direction as every
+                # base_features=32 variant. The full sweep's precision/recall breakdown shows recall is
+                # fine everywhere (0.6-0.7) while precision is the actual discriminator (0.45 unregularized
+                # vs. 0.26-0.33 regularized) — the model finds the cell fine, it over-predicts area around
+                # it, and dropout/cutout consistently made that worse, not better. Not retrying this lever.
+
+# ─── Training ────────────────────────────────────────────────────────────────
+training:
+  epochs: 100
+  batch_size: 4                   # EXPERIMENT 2: micro-batch 4 (512 does not fit 16)
+  grad_accum_steps: 4             # -> effective batch 16, as the baseline
+  lr: 0.0001
+  weight_decay: 0.0001  # settled — tried 0.001 twice: once under reduce_on_plateau (bf32_reg2_wd, DSC
+                         # 0.856->0.835), once under cosine (bf32_reg2_wd2, DSC 0.862->0.855). Smaller drop
+                         # under cosine (its natural decay softens weight decay's early bite) but still a
+                         # net negative both times, with best epoch landing much earlier both times (over-
+                         # regularized on top of dropout=0.4+cutout=0.3). Confirmed settled, not schedule-
+                         # dependent — stop retrying weight_decay increases at this dropout/cutout level.
+  optimizer: "adamw"
+  scheduler: "cosine"  # changed 2026-09-04 (bf64_allaug) — combining all augmentation levers plus the new
+                        # 90/10 train/monitor split (see data.val_split above) into one run, deliberately
+                        # not isolated this time (user request). cosine's only prior real-holdout data point
+                        # was unfavorable in isolation-testing conventions (it was reverted 2026-09-04 for
+                        # bf64_bc/bf64_scale specifically to keep those runs' one new variable clean) — this
+                        # run trades that isolation for testing the full combined recipe at once.
+  scheduler_patience: 5
+  scheduler_factor: 0.5
+  num_workers: 6
+  seed: 42                        # initialisation / data order only — split is pinned below
+  split_seed: 42                  # PINNED across all three runs. Added 2026-09-17 so the
+                                  # seed-to-seed spread isolates initialisation noise instead of
+                                  # bundling it with split composition, which is what made the
+                                  # 0.072 swing of the 9/17 report impossible to attribute.
+                                  # Verified a healthy draw: high_cell10 stays in TRAINING and
+                                  # validation is low_cell4 + 2 legacy bursts (54 frames).
+  loss_alpha: 0.3
+  lovasz_weight: 0.5              # EXPERIMENT 1b: ADDS a per-image Lovasz-softmax (IoU) term
+  loss_type: "focal_tversky"  # EXPERIMENT 1c (2026-09-17) — the ONLY training field changed from
+                               # multiclass_experiment_256_scale_cos.yaml. class_weights stays [1,4,2]
+                               # and dice_exclude_background stays false, so this isolates the region
+                               # term: Dice -> Focal-Tversky. The report's designated fallback for
+                               # Experiment 1, after re-weighting (exp1a) and background exclusion
+                               # (exp1b) each moved pooled DSC by <0.01.
+  tversky_alpha: 0.7           # FP penalty. 0.5 would reduce exactly to Dice (verified numerically).
+  tversky_beta: 0.3            # FN penalty. Asymmetry targets the measured failure: pooled precision
+                               # 0.589 against recall 0.773 — the model over-predicts cell area, and
+                               # high-9/high-10 sit at precision 0.503/0.315.
+  focal_gamma: 0.75            # Abraham & Khan (2019) 1/gamma with gamma=4/3. 1.0 = plain Tversky.
+  class_weights: [1.0, 4.0, 2.0]  # isolated 2026-09-03 (bf32_reg2_ablate, reverted to [1,3,3]+noise off):
+                                   # trapped-cell DSC dropped 0.856->0.819, precision dropped sharply
+                                   # 0.782->0.716 at ~flat recall — confirms this rebalance is genuinely
+                                   # helping (fewer false positives on trapped-cell), not just riding along
+                                   # unablated. Reverted back to the settled value.
+  augmentation:  # train-split-only, on top of the existing flip/rotation augmentation (always on, not
+                 # configurable here — see CellDataset in scripts/train_unet.py)
+    noise_std: 0.02  # isolated 2026-09-03 alongside class_weights above (combined test, not separated) —
+                      # confirmed net-positive together; reverted back to the settled value.
+    cutout_prob: 0.0
+    brightness_contrast_prob: 0.0
+    scale_prob: 0.5
+
+  early_stopping_patience: 20  # stop once val_DSC hasn't improved (>1e-3) for 20 epochs. Added 2026-09-02:
+                                # v25's curves show val loss/DSC plateauing ~epoch 40-48 while train loss kept
+                                # dropping and train DSC kept climbing to ~0.90 — the last ~50 epochs were
+                                # fine-tuning into an increasingly overfit fit that never helped val.
+  use_amp: true
+  cudnn_deterministic: true   # torch.backends.cudnn.deterministic — fixes cuDNN's conv-algorithm selection
+  cudnn_benchmark: false      # was true. Verified 2026-08-28: cudnn_deterministic=true + cudnn_benchmark=true
+                               # does NOT reproduce (benchmark's algorithm-timing race still drifts runs apart
+                               # from epoch ~2-3) despite not erroring; deterministic=true + benchmark=false
+                               # DOES reproduce bit-for-bit, at the same speed (no measured slowdown). Every
+                               # run in the base_features/dropout/cutout sweep (v26-v29) used benchmark=true,
+                               # so those DSC deltas (e.g. dropout 0.3->0.4) have unverified non-determinism
+                               # noise mixed in. This run re-checks bf32_reg2 (dropout=0.4) under a genuinely
+                               # reproducible setting before trusting 0.848 as the settled number.
+  strict_deterministic: false # torch.use_deterministic_algorithms(True, warn_only=True) on top of the cudnn flags above*
+
+# ─── Compute ─────────────────────────────────────────────────────────────────
+device: null
+
+# ─── Resume ──────────────────────────────────────────────────────────────────
+resume:
+  checkpoint: null
+  load_optimizer: true
+  load_scheduler: true
+
+# 2026-09-09 re-run: identical to the bf64_allaug combined config in EVERY respect
+# (cosine scheduler, val_split 0.10, no test split, base_features 64, dropout 0,
+# class_weights, noise_std) except which augmentation knobs are on. Exists so the
+# three-way comparison in the 2026-09-10 progress report isolates augmentation
+# instead of confounding it with the schedule and split changes that landed in the
+# same run on 2026-09-04.
+checkpoint_dir: "checkpoints/postswap/experiment_3_cropping/e3a_crop512_b4"
+keep_n_checkpoints: 3
+
+# ─── Feature extraction ──────────────────────────────────────────────────────
+features:
+  pixel_size_um: null
+  min_area_px: 50
+
+# ─── Classification ──────────────────────────────────────────────────────────
+classification:
+  scale_features: true
+  random_state: 42
+
+# ─── Biomechanics ────────────────────────────────────────────────────────────
+biomechanics:
+  metric: "aspect_ratio"
+  window_s: null
+  laser_power_mW: 0.0
+  trap_current_mA: 0.0
+
+# ─── Frame extraction ────────────────────────────────────────────────────────
+acquisition:
+  target_fps: null
+  every_n: 1
+  max_frames: null
+  image_format: "png"
+  change_threshold: 2.0
+  dark_percentile: 20.0
+  channel_width: 0.30
+  min_circularity: 0.60
+  domain_adapt_n: 20   # frames/cell into 01_annotate_pool (celldform-organize-dataset); raised 5→20 on 2026-08-19

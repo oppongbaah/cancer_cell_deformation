@@ -230,6 +230,30 @@ class UNet(nn.Module):
             return (class_map == 1).astype(np.uint8)
         return class_map.astype(np.uint8)
 
+    @torch.no_grad()
+    def predict_proba(
+        self,
+        image: "np.ndarray",  # noqa: F821
+        device: Optional[str] = None,
+    ) -> "np.ndarray":
+        """Per-class probabilities for one preprocessed frame, shape (C, H, W) float32.
+
+        Softmax in multiclass mode, sigmoid (C = 1) in binary mode. ``predict()`` is
+        exactly the argmax of this. Exposed so a caller can resample the *probabilities*
+        to another resolution before deciding classes -- resampling an argmaxed mask
+        instead gives a staircase boundary at the upsampling factor.
+        """
+        import numpy as np
+
+        dev = device or ("cuda" if torch.cuda.is_available() else "cpu")
+        self.to(dev).eval()
+        arr = np.asarray(image, dtype=np.float32)
+        if arr.ndim == 2:
+            arr = arr[None]
+        logit = self(torch.from_numpy(arr)[None].to(dev))
+        prob = torch.sigmoid(logit) if self.out_conv.out_channels == 1 else torch.softmax(logit, dim=1)
+        return prob[0].cpu().numpy()
+
     # ------------------------------------------------------------------
     # Serialisation
     # ------------------------------------------------------------------

@@ -29,7 +29,7 @@ from celldform.biomechanics.analysis import DeformationAnalyzer
 from celldform.classification.classifiers import CellClassifier
 from celldform.config import load as load_config
 from celldform.features.extractor import MorphologyExtractor
-from celldform.integration.realtime import RealTimePipeline
+from celldform.integration.realtime import FEATURE_SIZE, RealTimePipeline, feature_mask
 from celldform.preprocessing.pipeline import PreprocessingConfig, PreprocessingPipeline
 from celldform.segmentation.unet import UNet
 from celldform.utils.visualization import Visualizer
@@ -109,17 +109,20 @@ def main():
     from celldform.acquisition.extractor import FrameExtractor
 
     feature_rows, label_rows = [], []
-    fe = FrameExtractor(args.video, output_dir=None)
+    # Stream at FEATURE_SIZE, not FrameExtractor's 256 default, so median blur and CLAHE
+    # run at the resolution the training frames were preprocessed at.
+    fe = FrameExtractor(args.video, output_dir=None, target_size=FEATURE_SIZE)
 
     for frame_idx, timestamp, frame in fe.stream(every_n=every_n):
         if max_frames and frame_idx // every_n >= max_frames:
             break
 
         processed = preprocessor(frame)
-        # binary_output=True: downstream (MorphologyExtractor, saved masks) must only ever
-        # see the trapped cell, never decoy/class-2 pixels — see UNet.predict() docstring.
-        mask = unet.predict(processed, device=device, binary_output=True)
+        # Trapped cell only (never decoy pixels), at FEATURE_SIZE -- see feature_mask().
+        mask = feature_mask(unet, processed)
         features = extractor.extract(mask)
+        cell_found = not np.isnan(features["area"])
+        features["cell_found"] = cell_found
         features["frame_index"] = frame_idx
         features["timestamp"] = timestamp
         feature_rows.append(features)
@@ -131,19 +134,23 @@ def main():
             )
 
         if classifier is not None:
-            feat_vec = np.array(
-                [[features[k] for k in sorted(extractor._FEATURE_NAMES)]],
-                dtype=np.float32,
-            )
-            feat_vec = np.nan_to_num(feat_vec, nan=0.0)
-            label = int(classifier.predict(feat_vec)[0])
-            try:
-                proba = float(classifier.predict_proba(feat_vec)[0, 1])
-            except Exception:
-                proba = float("nan")
+            # No cell -> no label. NaN features are never imputed: zero-filling them
+            # would hand the classifier a fabricated cell of area 0.
+            label, proba = None, float("nan")
+            if cell_found:
+                feat_vec = np.array(
+                    [[features[k] for k in sorted(extractor._FEATURE_NAMES)]],
+                    dtype=np.float32,
+                )
+                label = int(classifier.predict(feat_vec)[0])
+                try:
+                    proba = float(classifier.predict_proba(feat_vec)[0, 1])
+                except Exception:
+                    pass
             label_rows.append({
                 "frame_index": frame_idx,
                 "timestamp": timestamp,
+                "cell_found": cell_found,
                 "label": label,
                 "proba_high_HER2": proba,
             })

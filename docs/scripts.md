@@ -351,8 +351,8 @@ Equivalent to `celldform-infer`. See [CLI Reference](cli.md).
 
 ## `training/compare_postswap.py` — enforce the noise floor on comparisons
 
-Reads `results/postswap/postswap_eval_log.jsonl` and compares runs against the series
-baseline, per development cell and pooled.
+Reads `results/postswap/experiment_0a_seed_baseline/eval_log.jsonl` and compares runs against the series
+baseline, per development cell and over all cells together.
 
 ```bash
 python scripts/training/compare_postswap.py                      # every run vs. baseline
@@ -361,12 +361,12 @@ python scripts/training/compare_postswap.py --seeds A B C        # aggregate see
 ```
 
 It exists to stop a number that looks exciting being recorded as a finding. Measured
-seed-only spread on this pipeline is **sd 0.047 pooled**, so a difference between two
-single runs has SE ≈ 0.066 and needs roughly twice that to be believable. Anything
-below **0.133** prints as `INCONCLUSIVE`:
+seed-only spread on this pipeline is **evaluated sd 0.057**, so a difference between two
+single runs has SE ≈ 0.081 and needs roughly twice that to be believable. Anything
+below **0.161** prints as `INCONCLUSIVE`:
 
 ```
-  => INCONCLUSIVE. Pooled delta +0.048 is inside the +/-0.133 noise floor.
+  => INCONCLUSIVE. Evaluated delta +0.048 is inside the +/-0.161 noise floor.
      Log as screened, not as a result. Three seeds on BOTH arms to decide it.
 ```
 
@@ -384,9 +384,70 @@ scripts/training/run_postswap.sh postswap_ftl_cw142_res384_s42
 ```
 
 Expects `configs/postswap/<run-name>.yaml`. Trains, evaluates on all four development
-cells plus pooled, writes the log to `logs/postswap/`, moves the training curve into
+cells plus all cells together, writes the log to `logs/postswap/`, moves the training curve into
 `results/postswap/`, echoes the split assignment, and finishes by running
 `compare_postswap.py` against the baseline.
 
 Use it rather than calling `train_unet.py` directly, so artefacts land in the right
 folders and the comparison happens automatically.
+
+
+---
+
+## `notebooks/pipeline_walkthrough.ipynb` — the pipeline end to end
+
+A runnable tour of all seven stages against the data actually on disk: pool inspection
+and the firewall check, frame extraction, mask validation, preprocessing, the train/val
+split, evaluation with the noise floor applied, features, classification, biomechanics
+and real-time inference.
+
+```bash
+jupyter lab notebooks/pipeline_walkthrough.ipynb
+```
+
+Most cells only read and display. The four that write are each gated:
+
+```python
+RUN_ORGANISE = False      # rebuilds data/frames/ from raw  ← destructive
+RUN_PREPROCESS = False    # rewrites data/preprocessed/**
+RUN_TRAINING = False      # ~15 min on an 8 GB GPU
+RUN_EVAL = False          # runs the model over the development set
+```
+
+They print what they *would* do while the flag is `False`.
+
+### Notebook outputs are stripped automatically
+
+`nbstripout` is installed as a git **clean filter**, so outputs and `execution_count`
+never reach a commit — the working file keeps them, git stores only the source. Without
+it a single re-run produces a multi-megabyte diff of base64 PNGs in which nothing
+meaningful changed.
+
+`.gitattributes` is committed, but the filter command lives in `.git/config`, which is
+not. **After cloning, run it once:**
+
+```bash
+pip install -e ".[dev]"
+nbstripout --install --attributes .gitattributes
+git config --local --get filter.nbstripout.clean    # should print a command
+```
+
+If you skip this, git silently does nothing — an undefined filter is not an error — and
+outputs go into history as normal.
+
+### The notebook sandbox
+
+Runs launched from the notebook write to `configs/notebook/`, `checkpoints/notebook/`,
+`logs/notebook/` and `results/notebook/`, never into `preswap/` or `postswap/`. That
+keeps exploratory output out of the experimental record that `compare_postswap.py` and
+the report tables are generated from. All four are gitignored.
+
+`promote()` moves a sandbox run up into `configs/postswap/` when it turns out to matter.
+It verifies the run against the config snapshot saved inside its checkpoint directory —
+so a run whose config was edited afterwards is refused rather than silently promoted.
+
+!!! tip "Appendix"
+    The last section lists the traps this pipeline has actually fallen into — stale
+    preprocessing silently breaking the firewall, single-run deltas below the noise
+    floor, an oversized validation group voiding a run. Worth reading before a first
+    experiment.

@@ -21,11 +21,13 @@ import argparse, json, statistics as st
 from collections import defaultdict
 from pathlib import Path
 
-LOG = Path("results/postswap/postswap_eval_log.jsonl")
+LOG = Path("results/postswap/experiment_0a_seed_baseline/eval_log.jsonl")
 BASELINE = "postswap_ftl_cw142_s42"
 CELLS = ["high_cell1", "high_cell9", "low_cell5", "low_cell6"]
-SD = 0.047                      # pooled sd, 3 seeds, split pinned (2026-09-17)
-THRESHOLD = 2 * SD * (2 ** 0.5) # ~0.133 -- smallest believable single-run difference
+SD = 0.049                      # evaluated sd over FOUR seeds (s42-s45), split pinned, complete
+                                # 203-frame testing set (2026-09-24). Was 0.057 over three seeds
+                                # (and 0.047 on 172 frames); updated 2026-09-30.
+THRESHOLD = 2 * SD * (2 ** 0.5) # ~0.139 -- smallest believable single-run difference
 
 
 def load(log: Path) -> dict[str, dict[str, dict]]:
@@ -37,7 +39,7 @@ def load(log: Path) -> dict[str, dict[str, dict]]:
             continue
         r = json.loads(line)
         run = Path(r["checkpoint"]).parent.name
-        out[run][r.get("filter") or "POOLED"] = r["metrics"]["1"]   # class 1 = trapped cell
+        out[run][r.get("filter") or "ALL CELLS"] = r["metrics"]["1"]   # class 1 = trapped cell
     return out
 
 
@@ -59,11 +61,11 @@ def main() -> None:
         print(f"Aggregate over {len(names)} seeds: {', '.join(names)}\n")
         print(f"{'cell':<10}" + "".join(f"{n.split('_')[-1]:>9}" for n in names)
               + f"{'mean':>9}{'sd':>8}")
-        for c in CELLS + ["POOLED"]:
+        for c in CELLS + ["ALL CELLS"]:
             v = [data[n][c]["dsc"] for n in names if c in data[n]]
             if len(v) < 2:
                 continue
-            lbl = c.replace("_cell", "-") if c != "POOLED" else "POOLED"
+            lbl = c.replace("_cell", "-") if c != "ALL CELLS" else "ALL CELLS"
             print(f"{lbl:<10}" + "".join(f"{x:>9.3f}" for x in v)
                   + f"{st.mean(v):>9.3f}{st.stdev(v):>8.3f}")
         return
@@ -75,33 +77,33 @@ def main() -> None:
     runs = [r for r in runs if r != args.baseline and r in data]
     if not runs:
         print(f"Baseline only ({args.baseline}):")
-        for c in CELLS + ["POOLED"]:
+        for c in CELLS + ["ALL CELLS"]:
             if c in base:
-                lbl = c.replace("_cell", "-") if c != "POOLED" else "POOLED"
+                lbl = c.replace("_cell", "-") if c != "ALL CELLS" else "ALL CELLS"
                 print(f"  {lbl:<10}{base[c]['dsc']:>7.3f}")
         return
 
     print(f"Baseline: {args.baseline}")
     print(f"Noise floor: single-run differences below {THRESHOLD:.3f} are not "
-          f"interpretable (pooled sd {SD}).\n")
+          f"interpretable (evaluated sd {SD}).\n")
     for run in runs:
         m = data[run]
         print(f"--- {run} ---")
         print(f"{'cell':<10}{'baseline':>10}{'this run':>10}{'delta':>9}")
-        for c in CELLS + ["POOLED"]:
+        for c in CELLS + ["ALL CELLS"]:
             if c not in m or c not in base:
                 continue
             b, x = base[c]["dsc"], m[c]["dsc"]
-            lbl = c.replace("_cell", "-") if c != "POOLED" else "POOLED"
+            lbl = c.replace("_cell", "-") if c != "ALL CELLS" else "ALL CELLS"
             print(f"{lbl:<10}{b:>10.3f}{x:>10.3f}{x - b:>+9.3f}")
-        if "POOLED" in m and "POOLED" in base:
-            d = m["POOLED"]["dsc"] - base["POOLED"]["dsc"]
+        if "ALL CELLS" in m and "ALL CELLS" in base:
+            d = m["ALL CELLS"]["dsc"] - base["ALL CELLS"]["dsc"]
             if abs(d) < THRESHOLD:
-                print(f"\n  => INCONCLUSIVE. Pooled delta {d:+.3f} is inside the "
+                print(f"\n  => INCONCLUSIVE. Evaluated delta {d:+.3f} is inside the "
                       f"+/-{THRESHOLD:.3f} noise floor.\n     Log as screened, not as a "
                       f"result. Three seeds on BOTH arms to decide it.")
             else:
-                print(f"\n  => Pooled delta {d:+.3f} exceeds the {THRESHOLD:.3f} noise "
+                print(f"\n  => Evaluated delta {d:+.3f} exceeds the {THRESHOLD:.3f} noise "
                       f"floor -- worth confirming\n     with three seeds on both arms.")
         print()
 

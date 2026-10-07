@@ -3,13 +3,16 @@
 Everything after the 17 September cell exchange lives here. Runs from before it are
 **not comparable** and stay where they were.
 
-## Layout — one folder per stage, same `postswap/` name in each
+## Layout — one folder per experiment, same name under each root (since 2026-09-30)
 
 ```
-configs/postswap/        this folder: one YAML per run
-checkpoints/postswap/    <run-name>/unet_best.pt + config.yaml snapshot
-logs/postswap/           <run-name>.log  (training stdout, incl. the split assignment)
-results/postswap/        postswap_eval_log.jsonl + training-curve PNGs
+configs/postswap/<experiment>/        one YAML per run
+checkpoints/postswap/<experiment>/    <run-name>/unet_best.pt + config.yaml snapshot
+logs/postswap/<experiment>/           <run-name>.log  (training stdout, incl. the split assignment)
+results/postswap/<experiment>/        eval_log.jsonl + training-curve PNGs
+
+experiments: experiment_0a_seed_baseline, experiment_0b_distillation, experiment_1a_optimizer, experiment_1b_loss, experiment_2_resolution
+run one:     scripts/training/run_experiment.sh postswap/<experiment> <run-name>
 data/preprocessed/train/postswap_multiclass_256/     451 frames, 22 groups
 data/preprocessed/evaluate/postswap_devset/          172 annotated dev frames
 ```
@@ -21,7 +24,7 @@ Extend it for new variables, keeping the same order, e.g. `postswap_ftl_cw142_re
 The name is reused verbatim as the config filename, the checkpoint directory and the
 log filename, so one string finds everything belonging to a run.
 
-Do **not** rename an existing run: `results/postswap/postswap_eval_log.jsonl` keys
+Do **not** rename an existing run: `results/postswap/experiment_0a_seed_baseline/eval_log.jsonl` keys
 results by the checkpoint's parent directory name, so a rename orphans its results.
 
 ## Baseline
@@ -38,7 +41,7 @@ Development-set results, 3 seeds (42/43/44), split pinned at 42:
 | high-9   | 0.825 | 0.895 | 0.816 | 0.845 | 0.043 |
 | low-5    | 0.922 | 0.913 | 0.814 | 0.883 | 0.060 |
 | low-6    | 0.718 | 0.804 | 0.777 | 0.766 | 0.044 |
-| **Pooled** | **0.800** | 0.847 | 0.754 | **0.800** | 0.046 |
+| **All cells** | **0.800** | 0.847 | 0.754 | **0.800** | 0.046 |
 
 Seed 42 is the working seed because it is the median draw and lands exactly on the
 3-seed mean; seed 43 is the high draw and would anchor everything optimistically.
@@ -46,8 +49,8 @@ Seed 42 is the working seed because it is the median draw and lands exactly on t
 ## Rules for this series
 
 1. **One seed (42) while iterating.** `split_seed` stays pinned at 42 too.
-2. **A single-seed delta below ~0.13 is NOT a result.** Measured spread is sd 0.047,
-   so one run resolves only differences above roughly 2*sd*sqrt(2) ~ 0.13. Anything
+2. **A single-seed delta below ~0.16 is NOT a result.** Measured spread is sd 0.057,
+   so one run resolves only differences above roughly 2*sd*sqrt(2) ~ 0.16. Anything
    smaller is logged as "screened, inconclusive" -- never as a finding. This is the
    mistake that cost this project the `scale_cos` recipe (+0.066, unverifiable) and
    the Focal-Tversky "+0.023" (its repeat came back -0.049).

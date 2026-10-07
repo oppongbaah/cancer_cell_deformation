@@ -11,7 +11,7 @@ The DSC reported here is the honest, thesis-reportable score — these cells
 were never seen during training or hyperparameter tuning.
 
 Every run appends its metrics as one JSON line to a results log (default
-results/postswap/postswap_eval_log.jsonl) — printing to stdout alone lost every prior
+results/postswap/experiment_0a_seed_baseline/eval_log.jsonl) — printing to stdout alone lost every prior
 sweep's numbers the moment the terminal scrolled past them. Pass
 --no-save-results to skip logging, or --results-log to point elsewhere.
 
@@ -56,7 +56,7 @@ def main() -> None:
     parser.add_argument("--filter", default=None,
                         help="Only evaluate frames whose filename stem starts with this prefix "
                              "(e.g. --filter low_cell6 to isolate one cell from a multi-cell pool)")
-    parser.add_argument("--results-log", type=Path, default=Path("results/postswap/postswap_eval_log.jsonl"),
+    parser.add_argument("--results-log", type=Path, default=Path("results/postswap/experiment_0a_seed_baseline/eval_log.jsonl"),
                         help="JSONL file to append this run's metrics to")
     parser.add_argument("--no-save-results", action="store_true",
                         help="Skip writing to --results-log")

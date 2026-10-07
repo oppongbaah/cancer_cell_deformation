@@ -57,7 +57,7 @@ There is **no `04_clf_arena` anymore** — it was collapsed into `03_mask_factor
 
 ## Three-tier evaluation terminology
 
-Three genuinely different things get called "validation" or "test" informally — worth being precise, since a pooled score from the wrong tier is easy to over-trust:
+Three genuinely different things get called "validation" or "test" informally — worth being precise, since an evaluated score from the wrong tier is easy to over-trust:
 
 | Tier | What it is | Where | Used for |
 |---|---|---|---|
@@ -122,6 +122,15 @@ The single most consequential finding from the 2026-09 evaluation sweep, worth k
 The internal validation split tests generalization to **unseen frames of already-trained-on cell identities** — not to a genuinely novel cell. A checkpoint tuned to look excellent on it (`bf32_reg2_cos`, internal val DSC 0.862) scored only **DSC 0.163** on the first genuinely held-out cell ever evaluated (`high_cell9`), while a "worse-looking" checkpoint (higher internal train/val gap, informally called "overfitting") scored **0.428** — roughly 2.6× better on real generalization despite scoring worse on the metric everything had been tuned against.
 
 **Root cause, once the full development set was evaluated:** both `high_cell9` and `low_cell6`'s true trapped-cell size (704 / 886 px²) falls at or below every one of the 11 training cells' (825-1549 px²) — a real train/development-set size mismatch that the internal split, drawn from the same size distribution as training, could never surface. See [Training Results](training.md#the-2026-09-full-evaluation-sweep) for the full sweep, the per-cell breakdown, and what fixed it (partially).
+
+!!! warning "Superseded figure (23 September 2026)"
+    The `1549 px²` upper bound above is `high_cell1` **as annotated at the time**.
+    That cell was re-annotated on 23 September and now measures **678 px²** — the
+    smallest cell in the study, not the largest. The old masks no longer exist.
+    The size mismatch described here was real but **smaller than stated**, and part
+    of the gap was an annotation artifact. Current ranges: training 688–1449 px²,
+    development set 678–1033 px², interleaved. See `docs/status.md`.
+
 
 ---
 

@@ -29,16 +29,22 @@ Usage
 -----
 python scripts/report/render_holdout_comparison.py \\
     --pool 02_unet_holdout --cell high_cell9 \\
-    --checkpoint checkpoints/preswap/multiclass_experiment_256_bf32_reg2_cos/unet_best.pt
+    --checkpoint checkpoints/preswap/stage_3_regularisation/multiclass_experiment_256_bf32_reg2_cos/unet_best.pt
 
 python scripts/report/render_holdout_comparison.py \\
     --pool 02_unet_holdout --cell low_cell6 \\
-    --checkpoint checkpoints/preswap/multiclass_experiment_256/unet_best.pt \\
+    --checkpoint checkpoints/preswap/stage_1_labels_and_resolution/multiclass_experiment_256/unet_best.pt \\
     --base-features 64 --n-frames 5 --output-dir results/holdout_comparisons/low_cell6
 
 python scripts/report/render_holdout_comparison.py --pool 02_unet_holdout --cell high_cell9 \\
-    --checkpoint checkpoints/preswap/multiclass_experiment_256_bf32_reg2_cos/unet_best.pt \\
+    --checkpoint checkpoints/preswap/stage_3_regularisation/multiclass_experiment_256_bf32_reg2_cos/unet_best.pt \\
     --gt-color 0,60,255 --half-width 140 --half-height 140   # pin crop + palette explicitly
+
+# The deployed configuration: four checkpoints run as one EnsembleUNet, panels
+# labelled by laser increment rather than frame index.
+python scripts/report/render_holdout_comparison.py --pool 02_unet_holdout --cell high_cell1 \\
+    --checkpoint checkpoints/postswap/experiment_0a_seed_baseline/postswap_ftl_cw142_s4{2,3,4,5}/unet_best.pt \\
+    --power-labels 200 --n-frames 6
 """
 
 from __future__ import annotations
@@ -53,6 +59,7 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))  # repo root
 from celldform.segmentation.unet import UNet
+from celldform.segmentation.ensemble import EnsembleUNet
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "annotation"))  # for preview_masks
 from preview_masks import _colorize  # the real color convention, not a re-implementation
@@ -138,7 +145,9 @@ def main() -> None:
     parser.add_argument("--preprocessed-dir", type=Path, help="Override preprocessed input directory "
                         "(default: data/preprocessed/evaluate/<pool>/inputs)")
 
-    parser.add_argument("--checkpoint", type=Path, required=True)
+    parser.add_argument("--checkpoint", type=Path, required=True, nargs="+",
+                        help="One checkpoint, or several to run them as an ensemble "
+                             "(EnsembleUNet: averaged softmax, the deployed configuration)")
     parser.add_argument("--base-features", type=int, default=None,
                         help="Overrides the checkpoint dir's own config.yaml when given")
     parser.add_argument("--out-channels", type=int, default=None)
@@ -161,6 +170,14 @@ def main() -> None:
                         help="Print each panel's frame index in a band above it (default)")
     parser.add_argument("--no-frame-labels", dest="frame_labels", action="store_false",
                         help="Render bare panels with no frame-index band")
+    parser.add_argument("--power-labels", action="store_true",
+                        help="Label panels by laser increment instead of frame index. The "
+                             "acquisition ramps power in ~50 increments and frames are sampled "
+                             "one per increment, so a frame's rank in the cell's full sorted "
+                             "frame list IS its increment: 'step 20/50'. Derived from the rank, "
+                             "not from a fixed frames-per-step divisor -- the videos are not all "
+                             "the same length, and cell 1's last frame (010200) would come out "
+                             "as step 51 of 50 under a fixed 200.")
     parser.add_argument("--label-color", type=str, default="255,255,255",
                         help="R,G,B for the frame-index text")
     parser.add_argument("--label-bg", type=str, default="20,20,20",
@@ -187,12 +204,13 @@ def main() -> None:
         if not d.exists():
             sys.exit(f"{label.capitalize()} directory not found: {d}")
 
-    if not args.checkpoint.exists():
-        sys.exit(f"Checkpoint not found: {args.checkpoint}")
+    missing = [c for c in args.checkpoint if not c.exists()]
+    if missing:
+        sys.exit(f"Checkpoint(s) not found: {missing}")
 
     base_features, out_channels, in_channels = args.base_features, args.out_channels, args.in_channels
     if None in (base_features, out_channels, in_channels):
-        sibling_config = args.checkpoint.parent / "config.yaml"
+        sibling_config = args.checkpoint[0].parent / "config.yaml"
         if sibling_config.exists():
             # Full (not safe_load) — SegmentationTrainer's saved snapshot uses a
             # !!python/tuple tag for preprocessing.target_size; this file is our
@@ -207,18 +225,38 @@ def main() -> None:
             base_features = base_features if base_features is not None else 64
             out_channels = out_channels if out_channels is not None else 3
             in_channels = in_channels if in_channels is not None else 1
-            print(f"Warning: no config.yaml next to {args.checkpoint}, "
+            print(f"Warning: no config.yaml next to {args.checkpoint[0]}, "
                   f"assuming base_features={base_features}, out_channels={out_channels}, "
                   f"in_channels={in_channels}")
 
-    model = UNet.from_checkpoint(args.checkpoint, in_channels=in_channels,
-                                  base_features=base_features, out_channels=out_channels)
+    if len(args.checkpoint) == 1:
+        model = UNet.from_checkpoint(args.checkpoint[0], in_channels=in_channels,
+                                     base_features=base_features, out_channels=out_channels)
+        print(f"Model: single checkpoint {args.checkpoint[0]}")
+    else:
+        # The same class RealTimePipeline runs, so these panels show the deployed
+        # prediction rather than a figure-only reimplementation of averaging.
+        model = EnsembleUNet.from_checkpoints(args.checkpoint, in_channels=in_channels,
+                                              out_channels=out_channels,
+                                              base_features=base_features)
+        print(f"Model: ensemble of {len(model)}")
+        for c in args.checkpoint:
+            print(f"  - {c}")
 
     if args.frame_indices:
         idxs = [s.strip() for s in args.frame_indices.split(",")]
     else:
         idxs = _select_frame_indices(frame_dir, args.cell, args.n_frames)
     print(f"Frames: {', '.join(idxs)}")
+
+    power_label: dict[str, str] = {}
+    if args.power_labels:
+        all_idxs = _select_frame_indices(frame_dir, args.cell, 10**9)  # every frame, sorted
+        last = len(all_idxs) - 1
+        rank = {v: i for i, v in enumerate(all_idxs)}
+        power_label = {i: f"step {rank[i]}/{last}" for i in idxs}
+        print(f"Laser ramp: {len(all_idxs)} increments, "
+              f"showing {', '.join(power_label[i] for i in idxs)}")
 
     gt_masks, preds, frames = [], [], []
     raw_h = raw_w = None
@@ -282,7 +320,7 @@ def main() -> None:
     for idx, frame, gt, pred in zip(idxs, frames, gt_masks, preds):
         frame_bgr = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)
         gt_bin = (gt == 1).astype(np.uint8)
-        label = f"frame {idx}"
+        label = power_label[idx] if args.power_labels else f"frame {idx}"
 
         raw_panels.append(crop(frame_bgr, label))
         labelled_panels.append(crop(_colorize(gt), label))

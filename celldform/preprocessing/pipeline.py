@@ -26,6 +26,16 @@ import cv2
 import numpy as np
 
 
+def crop_box(center: Tuple[int, int], size: int, h: int, w: int) -> Tuple[int, int, int, int]:
+    """Clamped (x0, y0, x1, y1) of a size x size window centred on center=(x, y)."""
+    if size > h or size > w:
+        raise ValueError(f"crop {size} does not fit a {w}x{h} frame")
+    cx, cy = center
+    x0 = min(max(int(cx) - size // 2, 0), w - size)
+    y0 = min(max(int(cy) - size // 2, 0), h - size)
+    return x0, y0, x0 + size, y0 + size
+
+
 @dataclass
 class PreprocessingConfig:
     """Hyper-parameters for each preprocessing stage."""
@@ -44,6 +54,16 @@ class PreprocessingConfig:
 
     # Output spatial size (H, W) — must match model input
     output_size: Tuple[int, int] = (256, 256)
+
+    # Native-resolution crop (2026-10-01, experiment 3). When crop_size is set, a
+    # crop_size x crop_size window centred on crop_center (x, y) in FULL-FRAME pixels is
+    # cut out after denoise/CLAHE/morphology (which still see the whole frame) and before
+    # resize -- the resize is then a no-op when crop_size == output_size, keeping the
+    # frame at 1:1 with no stretch. The window is clamped to stay inside the frame.
+    # The trapped cell sits in a fixed region set by the optics, so this only works while
+    # the trap does not move: crop_center is a per-setup CALIBRATION, not a constant.
+    crop_size: Optional[int] = None
+    crop_center: Optional[Tuple[int, int]] = None
 
     # Toggle individual stages
     enabled: Dict[str, bool] = field(
@@ -114,6 +134,10 @@ class PreprocessingPipeline:
         if self.cfg.enabled.get("morphology", True):
             img = self._morphology(img)
 
+        if self.cfg.crop_size:
+            x0, y0, x1, y1 = self.crop_box(img.shape[0], img.shape[1])
+            img = img[y0:y1, x0:x1]
+
         if self.cfg.enabled.get("resize", True):
             img = self._resize(img)
 
@@ -121,6 +145,10 @@ class PreprocessingPipeline:
             img = self._normalize(img)
 
         return img
+
+    def crop_box(self, h: int, w: int) -> Tuple[int, int, int, int]:
+        """(x0, y0, x1, y1) of the crop window in a full frame of size h x w."""
+        return crop_box(self.cfg.crop_center, self.cfg.crop_size, h, w)
 
     def batch(self, images: list[np.ndarray]) -> list[np.ndarray]:
         """Apply the pipeline to a list of images."""

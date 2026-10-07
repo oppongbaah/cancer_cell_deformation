@@ -21,7 +21,7 @@ region vs. true cell vs. background — and their trend against laser power
 Usage
 -----
 python scripts/report/diagnose_false_positives.py --cell high_cell9 \\
-    --checkpoint checkpoints/preswap/multiclass_experiment_256_bf64_scale_cos/unet_best.pt \\
+    --checkpoint checkpoints/preswap/stage_4_augmentation/multiclass_experiment_256_bf64_scale_cos/unet_best.pt \\
     --output results/fp_diagnosis_high_cell9.png
 """
 

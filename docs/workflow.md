@@ -7,7 +7,7 @@ style preferences; two results have already been retracted for breaking them.
 
 1. **One seed (42) while iterating**, `split_seed` pinned at 42 too. Three seeds on
    **both arms** before anything is reported as a result.
-2. **A single-seed delta below ~0.13 is not a result.** Log it as *screened,
+2. **A single-seed delta below ~0.16 is not a result.** Log it as *screened,
    inconclusive*. `scripts/training/compare_postswap.py` prints this verdict for you.
 3. **Change one variable per run.** If a non-experimental setting moves — schedule,
    split, width, pool — re-run the baseline under it before quoting any delta.
@@ -167,7 +167,7 @@ python scripts/data/preprocess_frames.py --masks --pool 02_unet_holdout \
     --output-dir data/preprocessed/evaluate/02_unet_holdout/inputs \
     --mask-output-dir data/preprocessed/evaluate/02_unet_holdout/labels
 
-# 5c — evaluate: pooled, and per-cell (always check both — see the warning below)
+# 5c — evaluate: all cells, and per-cell (always check both — see the warning below)
 python scripts/training/evaluate_unet.py --checkpoint checkpoints/multiclass_experiment_256_bf64_scale_cos/unet_best.pt \
     --config checkpoints/multiclass_experiment_256_bf64_scale_cos/config.yaml
 python scripts/training/evaluate_unet.py --checkpoint checkpoints/multiclass_experiment_256_bf64_scale_cos/unet_best.pt \
@@ -178,8 +178,8 @@ python scripts/training/evaluate_unet.py --checkpoint checkpoints/multiclass_exp
 
 Every run appends its full-precision metrics to `results/preswap/preswap_eval_log.jsonl` (`--no-save-results` to skip, `--results-log` to redirect) — that file, not a number copied into a doc or terminal scrollback, is the durable record.
 
-!!! danger "Always check the per-cell breakdown, never trust the pooled number alone"
-    With only two development cells, the pooled score is a frame-weighted blend, not an average, and it has hidden a real regression before: `bf64_scale` looked like a win pooled (0.525→0.541) but actually made `high_cell9` *worse* (0.428→0.368) while making `low_cell6` much better — the `--filter` flags above exist specifically so this doesn't get missed again. See [Training Results](training.md#the-2026-09-full-evaluation-sweep) for the full story.
+!!! danger "Always check the per-cell breakdown, never trust the evaluated number alone"
+    With only two development cells, the evaluated score is a frame-weighted blend, not an average, and it has hidden a real regression before: `bf64_scale` looked like a win over all cells (0.525→0.541) but actually made `high_cell9` *worse* (0.428→0.368) while making `low_cell6` much better — the `--filter` flags above exist specifically so this doesn't get missed again. See [Training Results](training.md#the-2026-09-full-evaluation-sweep) for the full story.
 
 !!! note "This is not the thesis-reportable blind-test number"
     The development set is evaluated repeatedly to guide tuning — that's the opposite of what a blind test needs. The one honest, one-shot generalization number comes from `02_unet_holdout/final_test/` (`high_cell10`), reserved and deliberately unannotated until the recipe is settled — see [Data Layout — Cell roles](data.md#cell-roles) for the full protocol.

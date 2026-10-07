@@ -2,7 +2,7 @@
 """
 Grouped bar chart of per-cell holdout metrics, read straight out of
 results/preswap/preswap_eval_log.jsonl — one panel per evaluation scope (each
-development-set cell, plus the pooled figure), grouped bars per metric,
+development-set cell, plus all cells together), grouped bars per metric,
 one bar per checkpoint.
 
 This exists because the per-cell comparison is the single most-repeated
@@ -24,7 +24,7 @@ python scripts/report/plot_percell_metrics.py \\
     --checkpoint multiclass_experiment_256_bf64_allaug=Combined \\
     --scope high_cell9="high-9 (over-segments)" \\
     --scope low_cell6="low-6 (under-detects)" \\
-    --scope pooled=Pooled \\
+    --scope all_cells=All\\ cells \\
     --output results/percell_metrics.png
 """
 
@@ -81,7 +81,9 @@ def _lookup(rows: list[dict], ckpt_key: str, scope_key: str, cls: str) -> dict:
     `multiclass_experiment_256_bf64_allaug`, which would quietly plot one
     checkpoint's numbers under another's label.
     """
-    want_filter = None if scope_key.lower() == "pooled" else scope_key
+    # "all_cells" is the current name; "pooled" is still accepted so older
+    # pinned commands keep working.
+    want_filter = None if scope_key.lower() in ("all_cells", "pooled") else scope_key
     hits = [
         r for r in rows
         if Path(r.get("checkpoint", "")).parent.name == ckpt_key
@@ -100,7 +102,7 @@ def main() -> None:
     p.add_argument("--checkpoint", action="append", required=True, metavar="KEY[=LABEL]",
                    help="Checkpoint name substring, repeatable. The first is the baseline.")
     p.add_argument("--scope", action="append", required=True, metavar="KEY[=LABEL]",
-                   help="`--filter` value from the eval log, or `pooled`. One panel each.")
+                   help="`--filter` value from the eval log, or `all_cells`. One panel each.")
     p.add_argument("--metric", action="append", metavar="KEY[=LABEL]",
                    help="Metric key(s) from the log (default: dsc, precision)")
     p.add_argument("--class-id", default="1",
@@ -164,7 +166,7 @@ def main() -> None:
             for (mk, _ml), bar, h in zip(metrics, bars, heights):
                 baseline = values[scope_key][mk][0]
                 # Red marks a variant that came in under the baseline — the
-                # regression a pooled average would have hidden.
+                # regression an all-cells average would have hidden.
                 worse = i > 0 and h < baseline
                 ax.text(bar.get_x() + bar.get_width() / 2, h + 0.015, f"{h:.3f}",
                         ha="center", va="bottom", fontsize=9.5,

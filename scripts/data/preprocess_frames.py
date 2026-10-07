@@ -149,6 +149,14 @@ def main() -> None:
                         help="Source mask directory (default: data/masks/<pool>)")
     parser.add_argument("--mask-output-dir", type=Path,
                         help="Override destination for resized masks")
+    parser.add_argument("--crop-size", type=int, default=None,
+                        help="Cut a native-resolution SIZE x SIZE window instead of resizing the "
+                             "whole frame (experiment 3). Needs --crop-center.")
+    parser.add_argument("--crop-center", type=int, nargs=2, metavar=("X", "Y"), default=None,
+                        help="Crop centre in full-frame pixels for real-cell frames")
+    parser.add_argument("--legacy-crop-center", type=int, nargs=2, metavar=("X", "Y"), default=None,
+                        help="Crop centre for legacy 2021 frames (their trap sits elsewhere); "
+                             "defaults to --crop-center")
     parser.add_argument("--target-size", type=int, nargs=2, metavar=("H", "W"), default=None,
                         help="Output spatial size (default: 256 256). Both dims should be "
                              "divisible by 16 for U-Net's 4 downsampling steps.")
@@ -189,6 +197,12 @@ def main() -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     cfg = PreprocessingConfig(output_size=tuple(args.target_size)) if args.target_size else PreprocessingConfig()
+    if args.crop_size:
+        if not args.crop_center:
+            sys.exit("--crop-size needs --crop-center")
+        cfg.crop_size = args.crop_size
+    legacy_center = tuple(args.legacy_crop_center or args.crop_center or ()) or None
+    real_center = tuple(args.crop_center) if args.crop_center else None
     n_compare = min(args.n_compare, len(images)) if args.compare else 0
 
     print(f"Source frames: {image_dir}  ({len(all_images)} total, {n_skipped} skipped — no mask)")
@@ -208,6 +222,10 @@ def main() -> None:
 
     for i, path in enumerate(images):
         img = _load_gray(path)
+        if cfg.crop_size:
+            # Legacy 2021 frames are named by timestamp (all digits); their trap sits
+            # elsewhere, so they get their own crop centre.
+            cfg.crop_center = legacy_center if path.stem[0].isdigit() else real_center
 
         preprocessed = _run_pipeline(img, cfg)
         uint8_out = (preprocessed * 255).astype(np.uint8)
@@ -218,7 +236,11 @@ def main() -> None:
             mask_src = mask_src_dir / path.with_suffix(".png").name
             if mask_src.exists():
                 mask = cv2.imread(str(mask_src), cv2.IMREAD_GRAYSCALE)
-                mask_resized = cv2.resize(mask, target_size, interpolation=cv2.INTER_NEAREST)
+                if cfg.crop_size:
+                    x0, y0, x1, y1 = PreprocessingPipeline(cfg).crop_box(*mask.shape[:2])
+                    mask = mask[y0:y1, x0:x1]
+                mask_resized = (mask if mask.shape[::-1] == target_size else
+                                cv2.resize(mask, target_size, interpolation=cv2.INTER_NEAREST))
                 cv2.imwrite(str(mask_out_dir / mask_src.name), mask_resized)
                 n_masks_saved += 1
 

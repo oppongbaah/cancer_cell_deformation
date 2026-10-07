@@ -33,7 +33,9 @@ the checkpoint directory for full reproducibility.
 from __future__ import annotations
 
 import argparse
+import json
 import os
+from collections import Counter
 import random
 from collections import defaultdict
 from datetime import datetime
@@ -49,6 +51,7 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader, Dataset, WeightedRandomSampler
 
+from celldform.splits import parse_stem
 from celldform.config import load as load_config
 from celldform.segmentation.trainer import SegmentationTrainer
 from celldform.segmentation.unet import UNet
@@ -119,8 +122,12 @@ class CellDataset(Dataset):
 
     def __init__(self, frame_paths, mask_paths, augment: bool = False, multiclass: bool = False,
                  noise_std: float = 0.0, cutout_prob: float = 0.0,
-                 brightness_contrast_prob: float = 0.0, scale_prob: float = 0.0) -> None:
+                 brightness_contrast_prob: float = 0.0, scale_prob: float = 0.0,
+                 soft_paths=None) -> None:
         assert len(frame_paths) == len(mask_paths)
+        # soft_paths: per-frame teacher probabilities (C, H, W) .npy for distillation. Every spatial
+        # transform below is applied to them too; intensity transforms (noise, cutout, jitter) are not.
+        self.soft_paths = soft_paths
         self.frame_paths = frame_paths
         self.mask_paths = mask_paths
         self.augment = augment
@@ -144,18 +151,26 @@ class CellDataset(Dataset):
             mask_arr = mask.astype(np.int64)            # raw class ids 0/1/2
         else:
             mask_arr = (mask > 127).astype(np.float32)  # binarise to 0.0 / 1.0
+        soft = (np.load(self.soft_paths[idx]).astype(np.float32)
+                if self.soft_paths is not None else None)          # (C, H, W)
 
         if self.augment:
             if random.random() < 0.5:
                 frame_f = np.fliplr(frame_f).copy()
                 mask_arr = np.fliplr(mask_arr).copy()
+                if soft is not None:
+                    soft = soft[:, :, ::-1].copy()
             if random.random() < 0.5:
                 frame_f = np.flipud(frame_f).copy()
                 mask_arr = np.flipud(mask_arr).copy()
+                if soft is not None:
+                    soft = soft[:, ::-1, :].copy()
             k = random.randint(0, 3)
             if k:
                 frame_f = np.rot90(frame_f, k).copy()
                 mask_arr = np.rot90(mask_arr, k).copy()
+                if soft is not None:
+                    soft = np.rot90(soft, k, axes=(1, 2)).copy()
             if self.scale_prob > 0 and random.random() < self.scale_prob:
                 h, w = frame_f.shape
                 scale = random.uniform(0.7, 1.3)
@@ -168,12 +183,17 @@ class CellDataset(Dataset):
                 )
                 if self.multiclass:
                     mask_resized = mask_resized.astype(np.int64)
+                if soft is not None:
+                    soft_resized = np.stack([cv2.resize(c, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
+                                             for c in soft])
                 if scale >= 1.0:
                     # Zoomed in — center-crop back to (h, w).
                     y0 = (new_h - h) // 2
                     x0 = (new_w - w) // 2
                     frame_f = frame_resized[y0:y0 + h, x0:x0 + w].copy()
                     mask_arr = mask_resized[y0:y0 + h, x0:x0 + w].copy()
+                    if soft is not None:
+                        soft = soft_resized[:, y0:y0 + h, x0:x0 + w].copy()
                 else:
                     # Zoomed out — pad back to (h, w), centered. Frame padded with its own mean
                     # intensity (matches cutout's fill choice below); mask padded with background (0).
@@ -184,6 +204,10 @@ class CellDataset(Dataset):
                                                   cv2.BORDER_CONSTANT, value=float(frame_f.mean()))
                     mask_arr = cv2.copyMakeBorder(mask_resized, top, bottom, left, right,
                                                    cv2.BORDER_CONSTANT, value=0)
+                    if soft is not None:            # padding is certain background, like the mask
+                        soft = np.stack([cv2.copyMakeBorder(c, top, bottom, left, right, cv2.BORDER_CONSTANT,
+                                                            value=1.0 if ci == 0 else 0.0)
+                                         for ci, c in enumerate(soft_resized)])
             if self.noise_std > 0:
                 frame_f = np.clip(
                     frame_f + np.random.normal(0.0, self.noise_std, frame_f.shape), 0.0, 1.0
@@ -207,6 +231,8 @@ class CellDataset(Dataset):
             mask_t = torch.from_numpy(mask_arr)             # (H, W) long — CrossEntropyLoss target shape
         else:
             mask_t = torch.from_numpy(mask_arr[np.newaxis])  # (1, H, W) float
+        if soft is not None:
+            return frame_t, mask_t, torch.from_numpy(np.ascontiguousarray(soft))
         return frame_t, mask_t
 
 
@@ -268,9 +294,9 @@ def _build_groups(pairs: list[tuple[Path, Path]]) -> list[str]:
 
     groups = []
     for stem in stems:
-        if stem.startswith("domain_"):
-            parts = stem.split("_")
-            groups.append("_".join(parts[1:-1]))  # domain_high_cell1_002042 -> high_cell1
+        cell = parse_stem(stem)[0]   # domain_high_cell1_002042 and high_cell1_000200 -> high_cell1
+        if cell is not None:
+            groups.append(cell)
         elif stem in legacy_bursts:
             groups.append(legacy_bursts[stem])
         else:
@@ -383,6 +409,20 @@ def main():
                              "vs. legacy frames (overrides training.domain_oversample_weight). "
                              "1.0 = off/uniform (default); pass 1.0 explicitly to force it off "
                              "when the config has it enabled.")
+    parser.add_argument("--fold", default=None,
+                        help="randswap: train fold K of the config's split section (built first by "
+                             "scripts/data/build_randswap.py). Data, validation cell and checkpoint "
+                             "folder all come from that fold.")
+    parser.add_argument("--results-dir", type=Path, default=Path("results"),
+                        help="Where the training-curve PNG goes (e.g. results/postswap/experiment_1b_loss). "
+                             "Versions are numbered within this folder.")
+    parser.add_argument("--epochs", type=int, default=None,
+                        help="Stop after this many epochs. The LR schedule still spans training.epochs, so "
+                             "a CV fold that peaked at epoch E and a deployment-model run with --epochs E see the "
+                             "same learning-rate trajectory. Required with --fold deploy.")
+    parser.add_argument("--save-last", action="store_true",
+                        help="Also save the LAST epoch's weights as unet_last.pt (e.g. a fixed-length run "
+                             "scored at its final epoch rather than at the best validation epoch).")
     parser.add_argument("--tag", default=None,
                         help="Suffix appended to the saved training-curve filename "
                              "(e.g. --tag auto -> unet_training_curves_v6_auto.png), "
@@ -401,6 +441,19 @@ def main():
     # ── Data ────────────────────────────────────────────────────────────────
     frames_dir = Path(conf.data.frames_dir)
     masks_dir = Path(conf.data.masks_dir)
+    fold_record = None
+    if args.fold is not None:
+        if conf.split is None:
+            raise SystemExit("--fold needs a config with a split: section")
+        if args.fold == "deploy" and args.epochs is None:
+            raise SystemExit("--fold deploy trains a fixed length: pass --epochs (the CV median best epoch)")
+        fold_dir = Path(conf.split.data_root) / f"fold_{args.fold}"
+        fold_record = json.loads((fold_dir / "split.json").read_text())
+        frames_dir, masks_dir = fold_dir / "train" / "inputs", fold_dir / "train" / "labels"
+        conf.checkpoint_dir = str(Path(conf.checkpoint_dir) / f"fold_{args.fold}")
+        print(f"[celldform] randswap fold {args.fold}: test {fold_record['cells']['test']}  "
+              f"val {fold_record['cells']['val']}  (split drawn at config commit "
+              f"{fold_record['config_commit'][:8]})")
 
     if not frames_dir.exists():
         raise FileNotFoundError(
@@ -427,7 +480,16 @@ def main():
 
     groups = _build_groups(pairs)
     split_seed = conf.training.split_seed if conf.training.split_seed is not None else seed
-    train_pairs, val_pairs = _group_split(pairs, groups, n_val, split_seed=split_seed)
+    if fold_record is not None:
+        # Cell-level split from the fold record: validation = the fold's val cell(s);
+        # everything else here (train cells + legacy) trains. Test cells are not in this
+        # folder at all.
+        val_cells = set(fold_record["cells"]["val"])
+        cell_of = [parse_stem(f.stem)[0] for f, _ in pairs]
+        val_pairs = [p for p, c in zip(pairs, cell_of) if c in val_cells]
+        train_pairs = [p for p, c in zip(pairs, cell_of) if c not in val_cells]
+    else:
+        train_pairs, val_pairs = _group_split(pairs, groups, n_val, split_seed=split_seed)
 
     n_groups = len(set(groups))
     print(
@@ -440,7 +502,12 @@ def main():
     n_workers = conf.training.num_workers
     multiclass = conf.unet.out_channels > 1
 
-    def make_loader(pairs, shuffle, augment=False, sampler=None):
+    soft_dir = (fold_dir / "train" / "soft") if fold_record is not None else None
+    use_soft = conf.training.distill_weight > 0
+    if use_soft and (soft_dir is None or not soft_dir.exists()):
+        raise SystemExit("training.distill_weight > 0 needs <fold_dir>/train/soft (build_distill_data.py)")
+
+    def make_loader(pairs, shuffle, augment=False, sampler=None, soft=False):
         fs, ms = zip(*pairs)
         noise_std = conf.training.augment_noise_std if augment else 0.0
         cutout_prob = conf.training.augment_cutout_prob if augment else 0.0
@@ -448,7 +515,8 @@ def main():
         scale_prob = conf.training.augment_scale_prob if augment else 0.0
         ds = CellDataset(list(fs), list(ms), augment=augment, multiclass=multiclass,
                           noise_std=noise_std, cutout_prob=cutout_prob,
-                          brightness_contrast_prob=brightness_contrast_prob, scale_prob=scale_prob)
+                          brightness_contrast_prob=brightness_contrast_prob, scale_prob=scale_prob,
+                          soft_paths=[soft_dir / f"{f.stem}.npy" for f in fs] if soft else None)
         return DataLoader(
             ds,
             batch_size=conf.training.batch_size,
@@ -462,6 +530,32 @@ def main():
         )
 
     train_sampler = None
+    if fold_record is not None and conf.split.balance_by_cell:
+        # Each real cell gets the same total weight (the mean real-cell frame count), so a
+        # cell with 50 annotated frames pulls no harder than one with 20. Legacy frames keep
+        # weight 1 -- their share is unchanged from the frame-weighted baseline.
+        cells = [parse_stem(f.stem)[0] for f, _ in train_pairs]
+        counts = Counter(c for c in cells if c is not None)
+        mean_n = sum(counts.values()) / len(counts)
+        weights = [1.0 if c is None else mean_n / counts[c] for c in cells]
+        n_samples = len(train_pairs)
+        ann = fold_record.get("annotated_train_stems")
+        if ann is not None:
+            # Distillation data adds teacher-labelled frames of the training cells. Keep the CV
+            # recipe's composition and budget: each real cell keeps the TOTAL weight it had with its
+            # annotated frames only, legacy keeps weight 1 per frame, and an epoch draws as many
+            # samples as before -- only the variety of frames per cell grows.
+            ann = set(ann)
+            ann_counts = Counter(parse_stem(f.stem)[0] for f, _ in train_pairs
+                                 if f.stem in ann and parse_stem(f.stem)[0] is not None)
+            per_cell = sum(ann_counts.values()) / len(ann_counts)
+            weights = [1.0 if c is None else per_cell / counts[c] for c in cells]
+            n_samples = sum(1 for f, _ in train_pairs if f.stem in ann)
+            print(f"[celldform] distillation data: {len(train_pairs) - n_samples} teacher-labelled frames "
+                  f"added; epoch stays {n_samples} samples")
+        train_sampler = WeightedRandomSampler(weights, num_samples=n_samples, replacement=True)
+        print(f"[celldform] per-cell balanced sampling over {len(counts)} cells "
+              f"({min(counts.values())}-{max(counts.values())} frames each -> {mean_n:.1f} effective)")
     domain_weight = conf.training.domain_oversample_weight
     if domain_weight != 1.0:
         is_domain = [f.stem.startswith("domain_") for f, m in train_pairs]
@@ -479,8 +573,8 @@ def main():
             f"~{100 * effective_domain_frac:.1f}% domain per epoch (sampled with replacement)"
         )
 
-    train_loader = make_loader(train_pairs, shuffle=True, augment=True, sampler=train_sampler)
-    val_loader = make_loader(val_pairs, shuffle=False, augment=False)
+    train_loader = make_loader(train_pairs, shuffle=True, augment=True, sampler=train_sampler, soft=use_soft)
+    val_loader = make_loader(val_pairs, shuffle=False, augment=False) if val_pairs else None
 
     # ── Model ────────────────────────────────────────────────────────────────
     unet = UNet(
@@ -498,7 +592,13 @@ def main():
     )
 
     # ── Train ────────────────────────────────────────────────────────────────
-    history = trainer.fit()
+    history = trainer.fit(epochs=args.epochs)
+    if args.save_last and val_loader is not None:
+        trainer._save_checkpoint("unet_last.pt", len(history["train_loss"]), float("nan"))
+    if val_loader is None:
+        print(f"\n[celldform] fixed-length run done: {trainer.checkpoint_dir / 'unet_deploy.pt'} "
+              f"(epoch {args.epochs}, no validation cell)")
+        return
 
     # ── Reload best checkpoint ──────────────────────────────────────────────
     # trainer.model holds the LAST epoch's weights when fit() returns, not
@@ -536,8 +636,8 @@ def main():
             print(f"  {k}: {v:.4f}")
 
     # ── Plot training curves ──────────────────────────────────────────────────
-    results_dir = Path("results")
-    results_dir.mkdir(exist_ok=True)
+    results_dir = args.results_dir
+    results_dir.mkdir(parents=True, exist_ok=True)
 
     existing = sorted(results_dir.glob("unet_training_curves_v*.png"))
     next_version = len(existing) + 1

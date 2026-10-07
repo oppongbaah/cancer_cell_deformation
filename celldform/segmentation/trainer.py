@@ -165,8 +165,10 @@ class _FocalTverskyCELoss(nn.Module):
         tversky_alpha: float = 0.7,
         tversky_beta: float = 0.3,
         focal_gamma: float = 0.75,
+        lovasz_weight: float = 0.0,
     ) -> None:
         super().__init__()
+        self.lovasz_weight = lovasz_weight
         self.alpha = alpha
         self.smooth = smooth
         self.num_classes = num_classes
@@ -200,7 +202,45 @@ class _FocalTverskyCELoss(nn.Module):
         # unbounded and produces NaNs under AMP once a class is segmented near-perfectly.
         ftl = ((1.0 - ti).clamp(min=1e-6) ** self.focal_gamma).mean()
 
-        return self.alpha * ce_loss + (1.0 - self.alpha) * ftl
+        loss = self.alpha * ce_loss + (1.0 - self.alpha) * ftl
+        if self.lovasz_weight > 0:
+            loss = loss + self.lovasz_weight * _lovasz_softmax(probs.float(), targets)
+        return loss
+
+
+def _lovasz_grad(gt_sorted: torch.Tensor) -> torch.Tensor:
+    """Gradient of the Lovasz extension of the Jaccard loss w.r.t. sorted errors."""
+    gts = gt_sorted.sum()
+    intersection = gts - gt_sorted.cumsum(0)
+    union = gts + (1.0 - gt_sorted).cumsum(0)
+    jaccard = 1.0 - intersection / union
+    jaccard[1:] = jaccard[1:] - jaccard[:-1]
+    return jaccard
+
+
+def _lovasz_softmax(probs: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
+    """Lovasz-softmax loss (Berman, Rannen Triki & Blaschko, CVPR 2018).
+
+    A convex surrogate of 1 - IoU, optimised directly. Computed PER IMAGE and averaged,
+    over the classes present in that image's ground truth -- so an image whose trapped
+    cell is missed entirely contributes a loss near 1 for that class instead of being
+    diluted across the batch. ``probs`` (B, C, H, W) softmax, ``targets`` (B, H, W).
+    """
+    losses = []
+    for p_img, t_img in zip(probs, targets):
+        p_flat = p_img.reshape(p_img.size(0), -1)             # (C, P)
+        t_flat = t_img.reshape(-1)
+        per_class = []
+        for c in range(p_flat.size(0)):
+            fg = (t_flat == c).float()
+            if fg.sum() == 0:
+                continue
+            errors = (fg - p_flat[c]).abs()
+            errors_sorted, perm = torch.sort(errors, descending=True)
+            per_class.append(torch.dot(errors_sorted, _lovasz_grad(fg[perm])))
+        if per_class:
+            losses.append(torch.stack(per_class).mean())
+    return torch.stack(losses).mean() if losses else probs.sum() * 0.0
 
 
 class SegmentationTrainer:
@@ -226,7 +266,7 @@ class SegmentationTrainer:
         self,
         model: UNet,
         train_loader: DataLoader,
-        val_loader: DataLoader,
+        val_loader: Optional[DataLoader],
         conf: CelldformConfig,
     ) -> None:
         self.conf = conf
@@ -257,6 +297,7 @@ class SegmentationTrainer:
             torch.use_deterministic_algorithms(True, warn_only=True)
 
         self.out_channels = conf.unet.out_channels
+        # If binay segmentation, use Dice + BCE; if multiclass, use Dice + CE or Focal-Tversky + CE.
         if self.out_channels == 1:
             self.criterion = _DiceBCELoss(
                 alpha=conf.training.loss_alpha,
@@ -271,6 +312,7 @@ class SegmentationTrainer:
                 tversky_alpha=conf.training.tversky_alpha,
                 tversky_beta=conf.training.tversky_beta,
                 focal_gamma=conf.training.focal_gamma,
+                lovasz_weight=conf.training.lovasz_weight,
             ).to(self.device)
         else:
             self.criterion = _DiceCELoss(
@@ -328,7 +370,12 @@ class SegmentationTrainer:
         for epoch in range(self.start_epoch, n_epochs + 1):
             t0 = time.time()
             train_loss, train_dsc = self._train_one_epoch()
-            val_loss, val_dsc = self._validate()
+            if self.val_loader is None:
+                # Fixed-length run (e.g. the randswap deployment model): no cell is held out, so there is
+                # nothing to select an epoch on -- train exactly n_epochs and keep the last weights.
+                val_loss, val_dsc = float("nan"), float("nan")
+            else:
+                val_loss, val_dsc = self._validate()
             self._step_scheduler(val_dsc)
 
             history["train_loss"].append(train_loss)
@@ -342,6 +389,11 @@ class SegmentationTrainer:
                 f"train_loss={train_loss:.4f}  train_DSC={train_dsc:.4f}  "
                 f"val_loss={val_loss:.4f}  val_DSC={val_dsc:.4f}  ({elapsed:.1f}s)"
             )
+
+            if self.val_loader is None:
+                if epoch == n_epochs:
+                    self._save_checkpoint("unet_deploy.pt", epoch, val_dsc)
+                continue
 
             if val_dsc > best_dsc:
                 best_dsc = val_dsc
@@ -416,17 +468,38 @@ class SegmentationTrainer:
         total_dsc = 0.0
 
         target_dtype = torch.long if self.out_channels > 1 else torch.float32
-        for images, masks in self.train_loader:
+        # Gradient accumulation: k micro-batches per optimizer step, each loss scaled by
+        # 1/k, so batch_size=4 with k=4 takes the same-sized step as batch_size=16 when
+        # memory forbids the larger batch (512x512, 2026-09-30). BatchNorm still sees the
+        # micro-batch, which is why resolution comparisons need a matched-micro-batch control.
+        k = max(1, self.conf.training.grad_accum_steps)
+        n_batches = len(self.train_loader)
+        self.optimizer.zero_grad()
+        dw, T = self.conf.training.distill_weight, self.conf.training.distill_temperature
+        n_seen = 0
+        for i, batch in enumerate(self.train_loader):
+            images, masks = batch[0], batch[1]
             images = images.to(self.device, non_blocking=True)
             masks = masks.to(self.device, non_blocking=True).to(target_dtype)
-            self.optimizer.zero_grad()
             with torch.amp.autocast(self.device_type, enabled=self.use_amp):
                 logits = self.model(images)
                 loss = self.criterion(logits, masks)
-            self.scaler.scale(loss).backward()
-            self.scaler.step(self.optimizer)
-            self.scaler.update()
+                if dw > 0 and len(batch) == 3:
+                    # Knowledge distillation (Hinton et al. 2015): match the teacher's
+                    # temperature-softened class probabilities, per pixel. T^2 restores the
+                    # gradient scale the softening removes.
+                    teacher = batch[2].to(self.device, non_blocking=True).float()
+                    t_soft = torch.softmax(torch.log(teacher.clamp_min(1e-6)) / T, dim=1)
+                    s_log = torch.log_softmax(logits.float() / T, dim=1)
+                    kl = torch.nn.functional.kl_div(s_log, t_soft, reduction="none").sum(1).mean()
+                    loss = loss + dw * T * T * kl
+            self.scaler.scale(loss / k).backward()
+            if (i + 1) % k == 0 or i + 1 == n_batches:
+                self.scaler.step(self.optimizer)
+                self.scaler.update()
+                self.optimizer.zero_grad()
             total_loss += loss.item() * images.size(0)
+            n_seen += images.size(0)
 
             with torch.no_grad():
                 if self.out_channels == 1:
@@ -438,8 +511,10 @@ class SegmentationTrainer:
                         (preds.cpu() == 1), (masks.cpu() == 1)
                     ) * images.size(0)
 
-        n = len(self.train_loader.dataset)
-        return total_loss / n, total_dsc / n
+        # Samples actually drawn, not the dataset size: a WeightedRandomSampler may draw fewer
+        # (distillation keeps the CV epoch budget while the dataset grows ~5x), and dividing by
+        # len(dataset) printed train_DSC ~0.18 for a model at ~0.95 (2026-10-01).
+        return total_loss / n_seen, total_dsc / n_seen
 
     def _validate(self) -> Tuple[float, float]:
         """Returns (val_loss, val_dsc). For multiclass, val_dsc is the
@@ -523,7 +598,8 @@ def _build_optimizer(
     if name == "adam":
         return torch.optim.Adam(params, lr=cfg.lr, weight_decay=cfg.weight_decay)
     if name == "sgd":
-        return torch.optim.SGD(params, lr=cfg.lr, weight_decay=cfg.weight_decay, momentum=0.9)
+        return torch.optim.SGD(params, lr=cfg.lr, weight_decay=cfg.weight_decay,
+                               momentum=cfg.momentum, nesterov=cfg.nesterov)
     raise ValueError(f"Unknown optimizer '{name}'. Choose from: adamw, adam, sgd.")
 
 
