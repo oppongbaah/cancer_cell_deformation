@@ -9,7 +9,7 @@
 > ⚠️ **Two of four seeds collapse on a single cell — a different cell each time**, and
 > neither cell size nor internal validation predicts which. Ensembling removes it.
 > A single-run difference below ~0.14 is not a result; use
-> `scripts/training/compare_postswap.py` and `check_convergence.py`.
+> `scripts/evaluation/compare_postswap.py` and `check_convergence.py`.
 
 **Real-Time Machine Learning Framework for Quantitative SKBR3 Cell Deformation Analysis in Dual-Beam Optical Tweezer Systems**
 
@@ -81,7 +81,7 @@ python scripts/annotation/annotate.py                             # annotate tra
 python scripts/annotation/validate_masks.py                       # validate masks
 python scripts/data/preprocess_frames.py --masks            # Stage 2 — preprocess
 celldform-train-unet --config configs/default.yaml     # Stage 3 — train U-Net
-python scripts/training/evaluate_unet.py --checkpoint ...       # evaluate on holdout set
+python scripts/evaluation/evaluate_unet.py --checkpoint ...       # evaluate on holdout set
 celldform-infer <input> --unet-ckpt ... --classifier-ckpt ...  # Stages 1–6 inference
 ```
 

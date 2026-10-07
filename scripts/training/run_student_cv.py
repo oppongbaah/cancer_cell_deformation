@@ -48,11 +48,11 @@ def main() -> None:
         shutil.copy(ROOT / DATA / f"fold_{k}" / "split.json", ROOT / "results" / EXP / f"student_cv_fold_{k}_split.json")
         run([py, "-u", "scripts/training/train_unet.py", "--config", CFG, "--fold", k, "--epochs", epochs[k],
              "--save-last", "--tag", f"student_cv_fold_{k}", "--results-dir", f"results/{EXP}"], log)
-        run([py, "scripts/training/eval_native.py", "--checkpoint", str(CKPT / f"fold_{k}" / "unet_last.pt"),
+        run([py, "scripts/evaluation/eval_native.py", "--checkpoint", str(CKPT / f"fold_{k}" / "unet_last.pt"),
              "--name", f"student_cv_fold_{k}", "--fold", k, "--config", CFG, "--fold-dir", str(DATA / f"fold_{k}"),
              "--log", f"results/{EXP}/eval_log_native.jsonl"], log)
         print(f"round {k} done ({epochs[k]} epochs)", flush=True)
-    run([py, "scripts/training/summarize_cv.py", "--exp", EXP, "--run", "student_cv"])
+    run([py, "scripts/evaluation/summarize_cv.py", "--exp", EXP, "--run", "student_cv"])
 
 
 if __name__ == "__main__":

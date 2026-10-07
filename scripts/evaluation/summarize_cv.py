@@ -2,7 +2,7 @@
 """
 Summarise a randswap cross-validation: every round, every cell, one headline.
 
-    python scripts/training/summarize_cv.py --exp randswap/experiment_0_cv_baseline --run cv_baseline
+    python scripts/evaluation/summarize_cv.py --exp randswap/experiment_0_cv_baseline --run cv_baseline
 
 Reads, per fold k: results/<exp>/<run>_fold_<k>_split.json (who was where),
 logs/<exp>/<run>_fold_<k>.log (best epoch, internal validation Dice) and

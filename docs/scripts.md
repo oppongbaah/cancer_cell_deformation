@@ -6,14 +6,18 @@
     scripts/
       data/        organize_dataset · extract_frames · preprocess_frames
       annotation/  annotate · annotate_frame · preview_masks · validate_masks
-      training/    train_unet · evaluate_unet · compare_postswap · run_postswap.sh
+      training/    train_unet · distill · run_experiment.sh · run_randswap*.sh · run_*_cv.py
+      evaluation/  evaluate_unet · eval_native · eval_nnunet · summarize_cv · compare_postswap · ...
       inference/   infer · predict_single_frame
       report/      build_report_assets and the figure/table generators it drives
     ```
 
     Scripts import `celldform` via `Path(__file__).parent.parent.parent`, so moving one
     between folders means fixing that hop. `report/render_holdout_comparison.py`
-    additionally reaches into `annotation/` for `preview_masks`.
+    additionally reaches into `annotation/` for `preview_masks`. Training and evaluation
+    reach across too (split 2026-10-07): `evaluation/evaluate_unet.py` imports `CellDataset`
+    from `training/train_unet.py`, and `training/run_nnunet_cv.py` imports `score` from
+    `evaluation/eval_nnunet.py`.
 
 
 All scripts live under `scripts/<stage>/` and are thin wrappers or standalone tools. Run them directly with `python scripts/<stage>/<name>.py`. The installed CLI (`celldform-*`, see [CLI Reference](cli.md)) targets `celldform.cli` and is unaffected by this layout.
@@ -283,14 +287,14 @@ The script reads `data.frames_dir` and `data.masks_dir` from the config. Pairs f
 
 ---
 
-## `training/evaluate_unet.py` — holdout evaluation
+## `evaluation/evaluate_unet.py` — holdout evaluation
 
 Evaluates a trained U-Net on `02_unet_holdout` and reports the thesis-reportable segmentation metrics.
 
 ```bash
-python scripts/training/evaluate_unet.py --checkpoint checkpoints/multiclass_experiment_256/unet_best.pt \
+python scripts/evaluation/evaluate_unet.py --checkpoint checkpoints/multiclass_experiment_256/unet_best.pt \
     --config configs/multiclass_experiment_256.yaml   # frozen scheme — --config must match out_channels
-python scripts/training/evaluate_unet.py --checkpoint checkpoints/unet_best.pt --pool 02_unet_holdout  # binary baseline
+python scripts/evaluation/evaluate_unet.py --checkpoint checkpoints/unet_best.pt --pool 02_unet_holdout  # binary baseline
 ```
 
 | Option | Default | Description |
@@ -349,15 +353,15 @@ Equivalent to `celldform-infer`. See [CLI Reference](cli.md).
 
 ---
 
-## `training/compare_postswap.py` — enforce the noise floor on comparisons
+## `evaluation/compare_postswap.py` — enforce the noise floor on comparisons
 
 Reads `results/postswap/experiment_0a_seed_baseline/eval_log.jsonl` and compares runs against the series
 baseline, per development cell and over all cells together.
 
 ```bash
-python scripts/training/compare_postswap.py                      # every run vs. baseline
-python scripts/training/compare_postswap.py --runs A B           # just these
-python scripts/training/compare_postswap.py --seeds A B C        # aggregate seeds: mean ± sd
+python scripts/evaluation/compare_postswap.py                      # every run vs. baseline
+python scripts/evaluation/compare_postswap.py --runs A B           # just these
+python scripts/evaluation/compare_postswap.py --seeds A B C        # aggregate seeds: mean ± sd
 ```
 
 It exists to stop a number that looks exciting being recorded as a finding. Measured

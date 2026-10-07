@@ -2,7 +2,7 @@
 """
 Figure and tables for the randswap cross-validation (1 October report).
 
-Reads what scripts/training/summarize_cv.py writes for one CV run:
+Reads what scripts/evaluation/summarize_cv.py writes for one CV run:
 results/<exp>/<run>_cv_cells.csv, <run>_cv_rounds.csv and <run>_cv_summary.json.
 Nothing is typed in here.
 

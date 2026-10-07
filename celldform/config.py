@@ -39,7 +39,7 @@ class DataConfig:
     val_split: float = 0.15     # fraction held out for checkpoint-selection/early-stopping monitoring
                                  # during training. NOT the thesis-reportable evaluation — that's a
                                  # separate, external pool (data/frames/02_unet_holdout/), scored via
-                                 # scripts/training/evaluate_unet.py. A third internal "test" split used to also
+                                 # scripts/evaluation/evaluate_unet.py. A third internal "test" split used to also
                                  # exist here but was removed 2026-09-04: it was computed every run and
                                  # printed in the split summary, but never actually built into a loader
                                  # or evaluated anywhere in train_unet.py — the external holdout already

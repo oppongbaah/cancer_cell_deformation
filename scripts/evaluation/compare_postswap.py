@@ -12,9 +12,9 @@ a finding and had to retract it.
 
 Usage
 -----
-python scripts/training/compare_postswap.py                       # every run in the log
-python scripts/training/compare_postswap.py --runs A B            # just these, vs. baseline
-python scripts/training/compare_postswap.py --seeds 42 43 44      # pool seeds of one recipe
+python scripts/evaluation/compare_postswap.py                       # every run in the log
+python scripts/evaluation/compare_postswap.py --runs A B            # just these, vs. baseline
+python scripts/evaluation/compare_postswap.py --seeds 42 43 44      # pool seeds of one recipe
 """
 from __future__ import annotations
 import argparse, json, statistics as st

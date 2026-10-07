@@ -17,8 +17,8 @@ sweep's numbers the moment the terminal scrolled past them. Pass
 
 Usage
 -----
-python scripts/training/evaluate_unet.py --checkpoint checkpoints/unet_best.pt
-python scripts/training/evaluate_unet.py --checkpoint checkpoints/unet_best.pt \\
+python scripts/evaluation/evaluate_unet.py --checkpoint checkpoints/unet_best.pt
+python scripts/evaluation/evaluate_unet.py --checkpoint checkpoints/unet_best.pt \\
                                  --pool 02_unet_holdout
 """
 
@@ -41,7 +41,7 @@ from celldform.segmentation.trainer import SegmentationTrainer
 from celldform.segmentation.unet import UNet
 
 # Reuse CellDataset from train_unet
-sys.path.insert(0, str(Path(__file__).parent))
+sys.path.insert(0, str(Path(__file__).parent.parent / "training"))
 from train_unet import CellDataset
 
 

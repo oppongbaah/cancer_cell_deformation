@@ -42,7 +42,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT))
-sys.path.insert(0, str(ROOT / "scripts" / "training"))
+sys.path.insert(0, str(ROOT / "scripts" / "evaluation"))   # eval_nnunet
 
 DATASET_ID, DATASET = 501, "Dataset501_CellTrapRandswap"
 CONFIGURATION, PLANS = "2d", "nnUNetPlans"
@@ -117,7 +117,7 @@ def main() -> None:
         return
     for k in a.rounds:
         run_round(k, a.trainer, a.continue_training)
-    subprocess.run([sys.executable, "scripts/training/summarize_cv.py", "--exp", EXP, "--run", "nnunet"], check=True)
+    subprocess.run([sys.executable, "scripts/evaluation/summarize_cv.py", "--exp", EXP, "--run", "nnunet"], check=True)
 
 
 if __name__ == "__main__":

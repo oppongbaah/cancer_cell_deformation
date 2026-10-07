@@ -28,9 +28,9 @@ pipeline to triple.
 
 Usage
 -----
-python scripts/training/ensemble_eval.py                      # all postswap seeds
-python scripts/training/ensemble_eval.py --runs A B C
-python scripts/training/ensemble_eval.py --save-log           # append to the eval log
+python scripts/evaluation/ensemble_eval.py                      # all postswap seeds
+python scripts/evaluation/ensemble_eval.py --runs A B C
+python scripts/evaluation/ensemble_eval.py --save-log           # append to the eval log
 """
 from __future__ import annotations
 

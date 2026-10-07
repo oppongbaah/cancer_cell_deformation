@@ -8,7 +8,7 @@ style preferences; two results have already been retracted for breaking them.
 1. **One seed (42) while iterating**, `split_seed` pinned at 42 too. Three seeds on
    **both arms** before anything is reported as a result.
 2. **A single-seed delta below ~0.16 is not a result.** Log it as *screened,
-   inconclusive*. `scripts/training/compare_postswap.py` prints this verdict for you.
+   inconclusive*. `scripts/evaluation/compare_postswap.py` prints this verdict for you.
 3. **Change one variable per run.** If a non-experimental setting moves — schedule,
    split, width, pool — re-run the baseline under it before quoting any delta.
 4. **Check the split log line** at the top of every run. `high_cell10` is 50 frames
@@ -138,7 +138,7 @@ python scripts/training/train_unet.py --config configs/default.yaml
 celldform-train-unet --config configs/default.yaml
 ```
 
-Training reads from `data/preprocessed/train/01_annotate_pool/`. The dataset is automatically split into train / val (85 % / 15 % by default, `data.val_split` in the config) — val is a monitoring split only (checkpoint selection, early stopping), not the thesis-reportable score. That comes from `scripts/training/evaluate_unet.py` against the external `02_unet_holdout` pool, which is why there's no third "test" split here — it would be redundant with that external evaluation (removed 2026-09-04).
+Training reads from `data/preprocessed/train/01_annotate_pool/`. The dataset is automatically split into train / val (85 % / 15 % by default, `data.val_split` in the config) — val is a monitoring split only (checkpoint selection, early stopping), not the thesis-reportable score. That comes from `scripts/evaluation/evaluate_unet.py` against the external `02_unet_holdout` pool, which is why there's no third "test" split here — it would be redundant with that external evaluation (removed 2026-09-04).
 
 Checkpoints are saved to `checkpoints/`:
 
@@ -168,11 +168,11 @@ python scripts/data/preprocess_frames.py --masks --pool 02_unet_holdout \
     --mask-output-dir data/preprocessed/evaluate/02_unet_holdout/labels
 
 # 5c — evaluate: all cells, and per-cell (always check both — see the warning below)
-python scripts/training/evaluate_unet.py --checkpoint checkpoints/multiclass_experiment_256_bf64_scale_cos/unet_best.pt \
+python scripts/evaluation/evaluate_unet.py --checkpoint checkpoints/multiclass_experiment_256_bf64_scale_cos/unet_best.pt \
     --config checkpoints/multiclass_experiment_256_bf64_scale_cos/config.yaml
-python scripts/training/evaluate_unet.py --checkpoint checkpoints/multiclass_experiment_256_bf64_scale_cos/unet_best.pt \
+python scripts/evaluation/evaluate_unet.py --checkpoint checkpoints/multiclass_experiment_256_bf64_scale_cos/unet_best.pt \
     --config checkpoints/multiclass_experiment_256_bf64_scale_cos/config.yaml --filter high_cell9
-python scripts/training/evaluate_unet.py --checkpoint checkpoints/multiclass_experiment_256_bf64_scale_cos/unet_best.pt \
+python scripts/evaluation/evaluate_unet.py --checkpoint checkpoints/multiclass_experiment_256_bf64_scale_cos/unet_best.pt \
     --config checkpoints/multiclass_experiment_256_bf64_scale_cos/config.yaml --filter low_cell6
 ```
 

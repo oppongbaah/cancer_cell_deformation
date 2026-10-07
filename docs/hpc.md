@@ -174,7 +174,7 @@ scripts/data/preprocess_frames.py
                       upload preprocessed/ via OnDemand file browser ──►
                                            celldform-train-unet
                       ◄── download unet_best.pt via OnDemand file browser
-scripts/training/evaluate_unet.py
+scripts/evaluation/evaluate_unet.py
 ```
 
 Repeat after each annotation batch. Target DSC ≥ 0.80 before freezing the model.

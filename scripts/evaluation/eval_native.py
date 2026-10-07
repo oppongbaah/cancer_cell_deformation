@@ -11,7 +11,7 @@ the downstream features are measured on.
 
 Reports trapped-cell Dice per cell, pooled over all frames, and the per-cell mean.
 
-    python scripts/training/eval_native.py --checkpoint CK --config CFG \\
+    python scripts/evaluation/eval_native.py --checkpoint CK --config CFG \\
         --inputs data/preprocessed/evaluate/postswap_devset_512/inputs \\
         --log results/postswap/<experiment>/eval_log_native.jsonl
 """

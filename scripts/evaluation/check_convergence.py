@@ -15,9 +15,9 @@ already being printed; nothing was looking at it.
 
 Usage
 -----
-python scripts/training/check_convergence.py                       # all postswap seeds
-python scripts/training/check_convergence.py --runs A B C
-python scripts/training/check_convergence.py --tolerance 0.015
+python scripts/evaluation/check_convergence.py                       # all postswap seeds
+python scripts/evaluation/check_convergence.py --runs A B C
+python scripts/evaluation/check_convergence.py --tolerance 0.015
 """
 from __future__ import annotations
 

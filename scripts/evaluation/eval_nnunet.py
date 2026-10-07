@@ -2,7 +2,7 @@
 """
 Score one round of the nnU-Net benchmark exactly as eval_native.py scores our U-Net.
 
-    python scripts/training/eval_nnunet.py --round 1 \
+    python scripts/evaluation/eval_nnunet.py --round 1 \
         --pred-dir data/nnunet/predictions/round1 \
         --checkpoint checkpoints/randswap/experiment_1_nnunet/Dataset501_.../fold_0/checkpoint_final.pth \
         --log results/randswap/experiment_1_nnunet/eval_log_native.jsonl

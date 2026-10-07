@@ -109,7 +109,7 @@ def jobs(img: Path, tab: Path) -> dict[str, list[str]]:
         "model-comparison": ["scripts/report/plot_model_comparison.py", "--out", str(img), "--tables", str(tab)],
         "distill-labels": ["scripts/report/view_soft_target.py", "--round", "4", "--stem", "high_cell7_002525",
                            "domain_high_cell7_002585", "--output", str(img / "distill_soft_targets.png")],
-        "ensemble-gate": ["scripts/training/eval_ensemble_cv.py", "--gate-only", "--tables", str(tab)],
+        "ensemble-gate": ["scripts/evaluation/eval_ensemble_cv.py", "--gate-only", "--tables", str(tab)],
         "exp3-crop-example": ["scripts/report/plot_resize_vs_crop.py",
                               "--output", str(img / "exp3_resize_vs_crop.jpg")],
         "table-percell": ["scripts/report/make_report_tables.py", "percell",

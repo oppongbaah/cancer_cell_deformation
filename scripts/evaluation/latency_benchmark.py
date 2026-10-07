@@ -2,7 +2,7 @@
 """
 Frame-to-mask latency: our U-Net against nnU-Net, measured the same way on the same frames.
 
-    python scripts/training/latency_benchmark.py \
+    python scripts/evaluation/latency_benchmark.py \
         --unet checkpoints/randswap/experiment_0_cv_baseline/cv_baseline/fold_deploy/unet_deploy.pt \
         --config configs/randswap/experiment_0_cv_baseline/cv_baseline.yaml \
         --crop-center-from results/randswap/experiment_0_cv_baseline/cv_baseline_fold_deploy_split.json \
@@ -140,7 +140,7 @@ def main() -> None:
     res = {
         "_what": "Median latency per frame: raw 1228x922 frame in memory -> native trapped-cell mask -> "
                  "shape features (no classifier), RTX 4060 laptop, fp32, GPU otherwise idle. "
-                 "scripts/training/latency_benchmark.py",
+                 "scripts/evaluation/latency_benchmark.py",
         "_frames": f"{len(frames) - a.warmup} feature-factory frames after {a.warmup} warm-up",
         "ours_crop384": round(timed(ours, frames, a.warmup), 1),
         "nnunet_no_tta": round(timed(nn(False), frames, a.warmup), 1),

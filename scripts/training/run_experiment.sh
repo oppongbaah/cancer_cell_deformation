@@ -36,8 +36,8 @@ grep -E 'Early stopping|Reloaded best' "logs/${EXP}/${RUN}.log" || true
 VARIANT=$(.venv/bin/python -c "from celldform.config import load; d=load('$CFG').data.frames_dir; print(d.split('postswap_multiclass')[1].split('/')[0])")
 POOL="postswap_devset${VARIANT}"; [ "$VARIANT" = "_256" ] && POOL=postswap_devset
 [ -d "data/preprocessed/evaluate/${POOL}" ] || { echo "no testing set data/preprocessed/evaluate/${POOL}"; exit 1; }
-scripts/training/eval_testing_set.sh "$CK" "$CFG" "results/${EXP}/eval_log.jsonl" "$POOL"
-.venv/bin/python scripts/training/eval_native.py --checkpoint "$CK" --config "$CFG" \
+scripts/evaluation/eval_testing_set.sh "$CK" "$CFG" "results/${EXP}/eval_log.jsonl" "$POOL"
+.venv/bin/python scripts/evaluation/eval_native.py --checkpoint "$CK" --config "$CFG" \
     --inputs "data/preprocessed/evaluate/${POOL}/inputs" --log "results/${EXP}/eval_log_native.jsonl" \
     2>/dev/null | tail -2
 echo "[$EXP] $RUN done  ($(date +%H:%M))"

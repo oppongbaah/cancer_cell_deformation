@@ -28,7 +28,7 @@ echo "[$EXP] fold $FOLD: training  ($(date +%H:%M))"
 grep -E 'randswap fold|per-cell balanced|Early stopping|Reloaded best' "$LOG" || true
 
 echo "[$EXP] fold $FOLD: scoring the test cells at native resolution"
-.venv/bin/python scripts/training/eval_native.py --checkpoint "${CKROOT}/fold_${FOLD}/unet_best.pt" \
+.venv/bin/python scripts/evaluation/eval_native.py --checkpoint "${CKROOT}/fold_${FOLD}/unet_best.pt" \
     --config "$CFG" --fold-dir "${ROOT}/fold_${FOLD}" \
     --log "results/${EXP}/eval_log_native.jsonl" 2>/dev/null | tee -a "$LOG"
 echo "[$EXP] fold $FOLD done  ($(date +%H:%M))"
