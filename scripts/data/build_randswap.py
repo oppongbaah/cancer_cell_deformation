@@ -66,7 +66,7 @@ def trap_centre(masks: list[Path]) -> tuple[int, int]:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--config", type=Path, required=True)
-    ap.add_argument("--fold", required=True, help="1..k, or 'final' (every cell trains)")
+    ap.add_argument("--fold", required=True, help="1..k, or 'deploy' (every cell trains: the deployment model)")
     args = ap.parse_args()
 
     commit = committed(args.config)

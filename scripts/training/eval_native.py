@@ -66,6 +66,8 @@ def main() -> None:
                     help="randswap fold folder: test inputs, native masks and this fold's crop "
                          "centre all come from its split.json (overrides --inputs/--gt-dir)")
     ap.add_argument("--log", type=Path, default=None)
+    ap.add_argument("--fold", default=None, help="CV round to record in the log (summarize_cv.py reads it); "
+                    "needed when the checkpoint is not <...>/fold_<k>/unet_best.pt, e.g. unet_last.pt")
     args = ap.parse_args()
 
     conf = load_config(str(args.config))
@@ -119,7 +121,7 @@ def main() -> None:
         with args.log.open("a") as fh:
             for scope, m in [*per_cell.items(), ("ALL CELLS", pooled)]:
                 fh.write(json.dumps({
-                    "timestamp": stamp, "checkpoint": ck_record,
+                    "timestamp": stamp, "checkpoint": ck_record, **({"fold": str(args.fold)} if args.fold else {}),
                     "members": [str(c) for c in args.checkpoint] if len(args.checkpoint) > 1 else None,
                     "config": str(args.config),
                     "resolution": "native", "input": f"{x.shape[1]}x{x.shape[0]}",

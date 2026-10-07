@@ -50,7 +50,7 @@ class Frame:
 
 @dataclass
 class FoldAssignment:
-    fold: str                              # "1".."k" or "final"
+    fold: str                              # "1".."k" or "deploy"
     train: List[str]
     val: List[str]
     test: List[str]
@@ -129,13 +129,13 @@ def make_folds(roster: Dict[str, str], cfg) -> List[List[str]]:
 
 
 def assign(roster: Dict[str, str], cfg, fold: str) -> FoldAssignment:
-    """Train / val / test cells for ``fold`` ("1".."k", or "final" = every cell trains)."""
+    """Train / val / test cells for ``fold`` ("1".."k", or "deploy" = every cell trains: the deployment model)."""
     folds = make_folds(roster, cfg)
-    if fold == "final":
-        return FoldAssignment("final", sorted(roster), [], [], dict(roster))
+    if fold == "deploy":
+        return FoldAssignment("deploy", sorted(roster), [], [], dict(roster))
     k = int(fold)
     if not 1 <= k <= len(folds):
-        raise ValueError(f"fold must be 1..{len(folds)} or 'final', got {fold}")
+        raise ValueError(f"fold must be 1..{len(folds)} or 'deploy', got {fold}")
     test = folds[k - 1]
     rest = sorted(c for c in roster if c not in test)
     val = sorted(random.Random(f"{cfg.cell_split_seed}-val-{k}").sample(rest, cfg.val_cells))

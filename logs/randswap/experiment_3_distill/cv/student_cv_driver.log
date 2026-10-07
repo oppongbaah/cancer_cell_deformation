@@ -1,0 +1,53 @@
+$ /home/mega/work/thesis/cancer_cell_deformation/.venv/bin/python -u scripts/data/build_distill_data.py --round 1
+$ /home/mega/work/thesis/cancer_cell_deformation/.venv/bin/python -u scripts/training/train_unet.py --config configs/randswap/experiment_3_distill/student_cv.yaml --fold 1 --epochs 39 --save-last --tag student_cv_fold_1 --results-dir results/randswap/experiment_3_distill
+$ /home/mega/work/thesis/cancer_cell_deformation/.venv/bin/python scripts/training/eval_native.py --checkpoint checkpoints/randswap/experiment_3_distill/student_cv/fold_1/unet_last.pt --name student_cv_fold_1 --fold 1 --config configs/randswap/experiment_3_distill/student_cv.yaml --fold-dir data/preprocessed/randswap/experiment_3_distill/fold_1 --log results/randswap/experiment_3_distill/eval_log_native.jsonl
+round 1 done (39 epochs)
+$ /home/mega/work/thesis/cancer_cell_deformation/.venv/bin/python -u scripts/data/build_distill_data.py --round 2
+$ /home/mega/work/thesis/cancer_cell_deformation/.venv/bin/python -u scripts/training/train_unet.py --config configs/randswap/experiment_3_distill/student_cv.yaml --fold 2 --epochs 30 --save-last --tag student_cv_fold_2 --results-dir results/randswap/experiment_3_distill
+$ /home/mega/work/thesis/cancer_cell_deformation/.venv/bin/python scripts/training/eval_native.py --checkpoint checkpoints/randswap/experiment_3_distill/student_cv/fold_2/unet_last.pt --name student_cv_fold_2 --fold 2 --config configs/randswap/experiment_3_distill/student_cv.yaml --fold-dir data/preprocessed/randswap/experiment_3_distill/fold_2 --log results/randswap/experiment_3_distill/eval_log_native.jsonl
+round 2 done (30 epochs)
+$ /home/mega/work/thesis/cancer_cell_deformation/.venv/bin/python -u scripts/data/build_distill_data.py --round 3
+$ /home/mega/work/thesis/cancer_cell_deformation/.venv/bin/python -u scripts/training/train_unet.py --config configs/randswap/experiment_3_distill/student_cv.yaml --fold 3 --epochs 29 --save-last --tag student_cv_fold_3 --results-dir results/randswap/experiment_3_distill
+$ /home/mega/work/thesis/cancer_cell_deformation/.venv/bin/python scripts/training/eval_native.py --checkpoint checkpoints/randswap/experiment_3_distill/student_cv/fold_3/unet_last.pt --name student_cv_fold_3 --fold 3 --config configs/randswap/experiment_3_distill/student_cv.yaml --fold-dir data/preprocessed/randswap/experiment_3_distill/fold_3 --log results/randswap/experiment_3_distill/eval_log_native.jsonl
+round 3 done (29 epochs)
+$ /home/mega/work/thesis/cancer_cell_deformation/.venv/bin/python -u scripts/training/train_unet.py --config configs/randswap/experiment_3_distill/student_cv.yaml --fold 4 --epochs 28 --save-last --tag student_cv_fold_4 --results-dir results/randswap/experiment_3_distill
+$ /home/mega/work/thesis/cancer_cell_deformation/.venv/bin/python scripts/training/eval_native.py --checkpoint checkpoints/randswap/experiment_3_distill/student_cv/fold_4/unet_last.pt --name student_cv_fold_4 --fold 4 --config configs/randswap/experiment_3_distill/student_cv.yaml --fold-dir data/preprocessed/randswap/experiment_3_distill/fold_4 --log results/randswap/experiment_3_distill/eval_log_native.jsonl
+round 4 done (28 epochs)
+$ /home/mega/work/thesis/cancer_cell_deformation/.venv/bin/python -u scripts/data/build_distill_data.py --round 5
+$ /home/mega/work/thesis/cancer_cell_deformation/.venv/bin/python -u scripts/training/train_unet.py --config configs/randswap/experiment_3_distill/student_cv.yaml --fold 5 --epochs 26 --save-last --tag student_cv_fold_5 --results-dir results/randswap/experiment_3_distill
+$ /home/mega/work/thesis/cancer_cell_deformation/.venv/bin/python scripts/training/eval_native.py --checkpoint checkpoints/randswap/experiment_3_distill/student_cv/fold_5/unet_last.pt --name student_cv_fold_5 --fold 5 --config configs/randswap/experiment_3_distill/student_cv.yaml --fold-dir data/preprocessed/randswap/experiment_3_distill/fold_5 --log results/randswap/experiment_3_distill/eval_log_native.jsonl
+round 5 done (26 epochs)
+$ /home/mega/work/thesis/cancer_cell_deformation/.venv/bin/python scripts/training/summarize_cv.py --exp randswap/experiment_3_distill --run student_cv
+fold  test cells                         val          best ep int. val
+   1  high_cell2 high_cell3 low_cell2    low_cell4         30   0.9744
+   2  high_cell6 high_cell7 low_cell3    high_cell9        11   0.9256
+   3  high_cell1 high_cell8 low_cell1    low_cell3         29   0.9702
+   4  high_cell10 high_cell4 low_cell5   low_cell3          9   0.9517
+   5  high_cell9 low_cell4 low_cell6     low_cell5         25   0.9761
+
+  high-1    fold 3  DSC 0.697  prec 0.839  rec 0.595
+  high-10   fold 4  DSC 0.721  prec 0.598  rec 0.910
+  high-2    fold 1  DSC 0.977  prec 0.981  rec 0.974
+  high-3    fold 1  DSC 0.775  prec 0.974  rec 0.644
+  high-4    fold 4  DSC 0.432  prec 0.280  rec 0.945
+  high-6    fold 2  DSC 0.864  prec 0.900  rec 0.831
+  high-7    fold 2  DSC 0.842  prec 0.738  rec 0.982
+  high-8    fold 3  DSC 0.675  prec 0.935  rec 0.528
+  high-9    fold 5  DSC 0.901  prec 0.834  rec 0.978
+  low-1     fold 3  DSC 0.781  prec 0.974  rec 0.651
+  low-2     fold 1  DSC 0.973  prec 0.983  rec 0.963
+  low-3     fold 2  DSC 0.914  prec 0.977  rec 0.860
+  low-4     fold 5  DSC 0.963  prec 0.973  rec 0.954
+  low-5     fold 4  DSC 0.978  prec 0.979  rec 0.978
+  low-6     fold 5  DSC 0.931  prec 0.928  rec 0.934
+
+  rounds_done        5
+  cells_scored       15
+  per_cell_mean_dsc  0.8283
+  per_cell_sd        0.152
+  worst_cell         high_cell4
+  worst_dsc          0.4315
+  high_mean_dsc      0.7648
+  low_mean_dsc       0.9234
+  pooled_dsc         0.8048
+  median_best_epoch  25

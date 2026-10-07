@@ -266,7 +266,7 @@ class SegmentationTrainer:
         self,
         model: UNet,
         train_loader: DataLoader,
-        val_loader: DataLoader,
+        val_loader: Optional[DataLoader],
         conf: CelldformConfig,
     ) -> None:
         self.conf = conf
@@ -370,7 +370,12 @@ class SegmentationTrainer:
         for epoch in range(self.start_epoch, n_epochs + 1):
             t0 = time.time()
             train_loss, train_dsc = self._train_one_epoch()
-            val_loss, val_dsc = self._validate()
+            if self.val_loader is None:
+                # Fixed-length run (e.g. the randswap deployment model): no cell is held out, so there is
+                # nothing to select an epoch on -- train exactly n_epochs and keep the last weights.
+                val_loss, val_dsc = float("nan"), float("nan")
+            else:
+                val_loss, val_dsc = self._validate()
             self._step_scheduler(val_dsc)
 
             history["train_loss"].append(train_loss)
@@ -384,6 +389,11 @@ class SegmentationTrainer:
                 f"train_loss={train_loss:.4f}  train_DSC={train_dsc:.4f}  "
                 f"val_loss={val_loss:.4f}  val_DSC={val_dsc:.4f}  ({elapsed:.1f}s)"
             )
+
+            if self.val_loader is None:
+                if epoch == n_epochs:
+                    self._save_checkpoint("unet_deploy.pt", epoch, val_dsc)
+                continue
 
             if val_dsc > best_dsc:
                 best_dsc = val_dsc
@@ -465,18 +475,31 @@ class SegmentationTrainer:
         k = max(1, self.conf.training.grad_accum_steps)
         n_batches = len(self.train_loader)
         self.optimizer.zero_grad()
-        for i, (images, masks) in enumerate(self.train_loader):
+        dw, T = self.conf.training.distill_weight, self.conf.training.distill_temperature
+        n_seen = 0
+        for i, batch in enumerate(self.train_loader):
+            images, masks = batch[0], batch[1]
             images = images.to(self.device, non_blocking=True)
             masks = masks.to(self.device, non_blocking=True).to(target_dtype)
             with torch.amp.autocast(self.device_type, enabled=self.use_amp):
                 logits = self.model(images)
                 loss = self.criterion(logits, masks)
+                if dw > 0 and len(batch) == 3:
+                    # Knowledge distillation (Hinton et al. 2015): match the teacher's
+                    # temperature-softened class probabilities, per pixel. T^2 restores the
+                    # gradient scale the softening removes.
+                    teacher = batch[2].to(self.device, non_blocking=True).float()
+                    t_soft = torch.softmax(torch.log(teacher.clamp_min(1e-6)) / T, dim=1)
+                    s_log = torch.log_softmax(logits.float() / T, dim=1)
+                    kl = torch.nn.functional.kl_div(s_log, t_soft, reduction="none").sum(1).mean()
+                    loss = loss + dw * T * T * kl
             self.scaler.scale(loss / k).backward()
             if (i + 1) % k == 0 or i + 1 == n_batches:
                 self.scaler.step(self.optimizer)
                 self.scaler.update()
                 self.optimizer.zero_grad()
             total_loss += loss.item() * images.size(0)
+            n_seen += images.size(0)
 
             with torch.no_grad():
                 if self.out_channels == 1:
@@ -488,8 +511,10 @@ class SegmentationTrainer:
                         (preds.cpu() == 1), (masks.cpu() == 1)
                     ) * images.size(0)
 
-        n = len(self.train_loader.dataset)
-        return total_loss / n, total_dsc / n
+        # Samples actually drawn, not the dataset size: a WeightedRandomSampler may draw fewer
+        # (distillation keeps the CV epoch budget while the dataset grows ~5x), and dividing by
+        # len(dataset) printed train_DSC ~0.18 for a model at ~0.95 (2026-10-01).
+        return total_loss / n_seen, total_dsc / n_seen
 
     def _validate(self) -> Tuple[float, float]:
         """Returns (val_loss, val_dsc). For multiclass, val_dsc is the

@@ -12,6 +12,9 @@ pandas>=2.0
 pyyaml>=6.0
 tqdm>=4.65
 
+# Segmentation benchmark (nnU-Net v2; needs Python >= 3.10)
+nnunetv2>=2.5
+
 # API (optional)
 # fastapi>=0.100
 # uvicorn>=0.23

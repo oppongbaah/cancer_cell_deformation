@@ -11,8 +11,8 @@ counts). Writes results/<exp>/<run>_cv_rounds.csv, <run>_cv_cells.csv, <run>_cv_
 
 Headline = PER-CELL MEAN Dice over every cell (each tested once, by a model that never saw
 it), so a cell with 50 annotated frames counts no more than one with 20. Pooled Dice (all
-test frames' pixels together) is reported beside it. The median best epoch sets the final
-model's fixed training length.
+test frames' pixels together) is reported beside it. The median best epoch sets the
+deployment model's fixed training length.
 """
 from __future__ import annotations
 
@@ -46,14 +46,19 @@ def main() -> None:
     scores: dict[tuple[str, str], dict] = {}
     for line in (R / "eval_log_native.jsonl").read_text().splitlines():
         r = json.loads(line)
+        # Our runs: the round is in the checkpoint path (fold_<k>/unet_best.pt). nnU-Net runs log
+        # it explicitly as "fold" -- nnU-Net's own fold folders are 0-based.
         m = re.search(r"/fold_(\w+)/unet_best\.pt$", r["checkpoint"])
-        if m and r["filter"]:
-            scores[(m.group(1), r["filter"])] = r["metrics"]["1"]      # latest entry wins
+        fold = r.get("fold") or (m.group(1) if m else None)
+        if fold and r["filter"]:
+            scores[(fold, r["filter"])] = r["metrics"]["1"]            # latest entry wins
 
     rounds, cells = [], []
     for split in sorted(R.glob(f"{args.run}_fold_*_split.json")):
         rec = json.loads(split.read_text())
         k = rec["fold"]
+        if k == "deploy":           # the all-cell deployment model: no test cells, nothing to summarise
+            continue
         ep, val = best_epoch(L / f"{args.run}_fold_{k}.log")
         row = {"fold": k, "test_cells": " ".join(rec["cells"]["test"]),
                "val_cell": " ".join(rec["cells"]["val"]), "crop_center": rec.get("crop_center"),
@@ -71,7 +76,8 @@ def main() -> None:
     if not cells:
         raise SystemExit("no scored test cells yet")
     dsc = [c["dsc"] for c in cells]
-    summary = {"rounds_done": len(rounds), "cells_scored": len(cells),
+    summary = {"rounds_done": len({c["fold"] for c in cells}),   # rounds with scored cells
+                "cells_scored": len(cells),
                "per_cell_mean_dsc": st.mean(dsc), "per_cell_sd": st.stdev(dsc) if len(dsc) > 1 else None,
                "worst_cell": min(cells, key=lambda c: c["dsc"])["cell"], "worst_dsc": min(dsc)}
     for cls in ("high", "low"):
@@ -96,7 +102,7 @@ def main() -> None:
     print(f"{'fold':>4}  {'test cells':<34} {'val':<12} {'best ep':>7} {'int. val':>8}")
     for r in rounds:
         print(f"{r['fold']:>4}  {r['test_cells']:<34} {r['val_cell']:<12} {str(r['best_epoch']):>7} "
-              f"{r['internal_val_dsc'] if r['internal_val_dsc'] is None else round(r['internal_val_dsc'], 4):>8}")
+              f"{'-' if r['internal_val_dsc'] is None else round(r['internal_val_dsc'], 4):>8}")
     print()
     for c in sorted(cells, key=lambda c: (c["her2"], c["cell"])):
         print(f"  {c['cell'].replace('_cell', '-'):<9} fold {c['fold']}  DSC {c['dsc']:.3f}  "

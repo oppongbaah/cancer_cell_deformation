@@ -38,8 +38,8 @@ def test_assignment_partitions_the_roster():
         a = assign(ROSTER, cfg(), str(k))
         assert (len(a.train), len(a.val), len(a.test)) == (11, 1, 3)
         assert sorted(a.train + a.val + a.test) == sorted(ROSTER)
-    final = assign(ROSTER, cfg(), "final")
-    assert sorted(final.train) == sorted(ROSTER) and not final.val and not final.test
+    deploy = assign(ROSTER, cfg(), "deploy")
+    assert sorted(deploy.train) == sorted(ROSTER) and not deploy.val and not deploy.test
 
 
 @pytest.mark.parametrize("kw", [{"train_cells": 10}, {"test_cells": 4, "train_cells": 10}])

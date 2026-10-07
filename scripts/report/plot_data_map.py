@@ -4,7 +4,7 @@ Dataset Organization figure (randswap): where every cell and frame goes.
 
 One map, read left to right:
   * every real cell (grouped by HER2 class) and the 2021 legacy frames, one row each;
-  * its role in each cross-validation round R1..R5 and in the final model --
+  * its role in each cross-validation round R1..R5 and in the deployment model --
     train / validation / test -- with the Test DSC printed in the round that tested it;
   * how many annotated frames it gives segmentation, and how many feature
     frames it gives the classifier.
@@ -59,7 +59,7 @@ def main() -> None:
 
     recs = [json.loads(p.read_text()) for p in sorted(R.glob(f"{a.run}_fold_*_split.json"),
                                                       key=lambda p: p.name)]
-    recs = [r for r in recs if r["fold"] != "final"]
+    recs = [r for r in recs if r["fold"] != "deploy"]
     her2 = recs[0]["her2"]
     ann = recs[0]["annotated_frames_per_cell"]
     n_legacy = recs[0]["n_legacy_frames"]
@@ -67,7 +67,7 @@ def main() -> None:
     fac = Counter(parse_stem(p.stem)[0] for p in a.factory.glob("*.jpg"))
     cells = sorted(her2, key=lambda c: (her2[c] != "high", int(c.split("cell")[1])))
     n_high = sum(her2[c] == "high" for c in cells)
-    rounds = [f"R{r['fold']}" for r in recs] + ["Final"]
+    rounds = [f"R{r['fold']}" for r in recs] + ["Deploy"]
 
     def role(cell, k):
         if k == len(recs):
@@ -107,7 +107,7 @@ def main() -> None:
 
     # ── column headers ──────────────────────────────────────────────────────
     for k, name in enumerate(rounds):
-        x = gx0 + k * cw + (0.25 if name == "Final" else 0)
+        x = gx0 + k * cw + (0.25 if name == "Deploy" else 0)
         ax.text(x + cw / 2 - 0.06, -0.75, name, ha="center", va="center", fontsize=10.5,
                 color=INK, weight="bold")
     ax.text(gx0 + 2.5 * cw, -1.3, "cross-validation rounds", ha="center", fontsize=8.6, color=MUTED)

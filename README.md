@@ -38,6 +38,14 @@ pip install -e ".[annotation]"   # adds napari for mask annotation
 pip install -e ".[hpc]"          # adds mpi4py for Anvil / SLURM
 ```
 
+Python 3.10 or newer is required. The core install includes **nnU-Net v2** (`nnunetv2`), the
+segmentation benchmark. `scripts/training/run_nnunet_cv.py` imports it directly, so it runs in
+whichever environment launched it (local venv, conda on Anvil, a SLURM job) and sets nnU-Net's
+three data folders itself (`nnUNet_raw`, `nnUNet_preprocessed`, `nnUNet_results`):
+
+    python scripts/training/run_nnunet_cv.py --setup     # dataset + plan/preprocess, once
+    python scripts/training/run_nnunet_cv.py             # 5 rounds: train, predict, score
+
 One-time, after cloning — notebook outputs are stripped on commit by a git filter whose
 command lives in `.git/config` (not committed), so it has to be registered locally:
 

@@ -141,6 +141,11 @@ class TrainingCfg:
                                    # present: loss = a*CE + (1-a)*FTL + lovasz_weight*Lovasz. It is a
                                    # convex surrogate of 1 - IoU, so a frame whose cell is lost entirely
                                    # scores ~1 and is punished hard -- the per-cell collapse. 0 = off.
+    distill_weight: float = 0.0    # > 0 ADDS a knowledge-distillation term: distill_weight * T^2 *
+                                   # KL(teacher || student) on temperature-T softened class probabilities,
+                                   # per pixel. Needs <fold_dir>/train/soft/<stem>.npy teacher targets
+                                   # (scripts/data/build_distill_data.py). 0 = off (every run before 10/1).
+    distill_temperature: float = 2.0
     dice_exclude_background: bool = False  # multiclass only. False (default) keeps the historical
                                            # behaviour: _DiceCELoss averages Dice over ALL classes,
                                            # background included. Background Dice sits at ~0.9996 from
@@ -463,6 +468,8 @@ def _parse_training(t: dict) -> TrainingCfg:
         tversky_beta=float(t.get("tversky_beta", 0.3)),
         focal_gamma=float(t.get("focal_gamma", 0.75)),
         lovasz_weight=float(t.get("lovasz_weight", 0.0)),
+        distill_weight=float(t.get("distill_weight", 0.0)),
+        distill_temperature=float(t.get("distill_temperature", 2.0)),
         dice_exclude_background=bool(t.get("dice_exclude_background", False)),
         domain_oversample_weight=float(t.get("domain_oversample_weight", 1.0)),
         augment_noise_std=float(noise_std),

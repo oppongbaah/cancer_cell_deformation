@@ -9,16 +9,16 @@ description = "Real-time deep learning framework for quantitative cancer cell de
 readme = "README.md"
 license = { text = "MIT" }
 authors = [{ name = "Isaac Oppong-Baah", email = "oppongbaahisaacmega@gmail.com" }]
-requires-python = ">=3.9"
+requires-python = ">=3.10"   # nnunetv2 needs 3.10+
 keywords = ["cancer", "cell-deformation", "optical-tweezers", "deep-learning", "u-net", "segmentation", "biomedical"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Scientific/Engineering :: Bio-Informatics",
     "Topic :: Scientific/Engineering :: Image Processing",
@@ -36,6 +36,10 @@ dependencies = [
     "pandas>=2.0",
     "pyyaml>=6.0",
     "tqdm>=4.65",
+    # nnU-Net v2: the segmentation benchmark (randswap experiment_1_nnunet). Pulls its own
+    # deps (batchgenerators, dynamic-network-architectures, SimpleITK, ...); it does not
+    # replace torch. torch 2.9.x is excluded by nnunetv2 itself.
+    "nnunetv2>=2.5",
 ]
 
 [project.optional-dependencies]

@@ -36,6 +36,10 @@ CELL_LABEL = {c: c.replace("_cell", "-") for c in CELLS}
 # surface, so every mark is direct-labelled and the report carries the tables.
 GREY, C1A, C1B, C2, C3 = "#8a8985", "#2a78d6", "#eb6834", "#1baf7a", "#eda100"
 C4 = "#4a3aa7"   # exp 4 (cross-validation): slot 7, validated adjacent to the others
+C6 = "#7a4a00"   # exp 7 (MegaNet, the distilled student): dark brown, all-pairs CVD-safe with C1A..C5
+CE = "#3d3d3a"   # exp 6 (ensemble ours + nnU-Net): dark neutral + diamond, always direct-labelled
+C5 = "#b0306a"   # exp 5 (nnU-Net): deep magenta -- every pair with C1A..C4 passes CVD (>= 9.1)
+                 # and normal vision (>= 15) all-pairs; validate_palette.js, 2026-10-01
 INK, INK2, MUTED, GRID, SURF = "#0b0b0b", "#52514e", "#8a8985", "#e6e5e1", "#fcfcfb"
 
 
@@ -90,18 +94,39 @@ def summary(out: Path) -> None:
     seeds = [f"postswap_ftl_cw142_s{s}" for s in (42, 43, 44, 45)]
     lov = [f"e1b_lovasz_s{s}" for s in (42, 43, 44, 45)]
     cv = load_cv()
+    nn_dir = Path("results/randswap/experiment_1_nnunet")
+    # nnU-Net joins Figure 2 only once all five rounds are scored: a partial CV (3 cells) beside
+    # ours (15) would read as one comparison when it is not.
+    nn_done = ((nn_dir / "nnunet_cv_summary.json").exists() and
+               json.loads((nn_dir / "nnunet_cv_summary.json").read_text())["rounds_done"] == 5)
+    nn = load_cv("randswap/experiment_1_nnunet", "nnunet") if nn_done else None
+    nn_lat = (json.loads((nn_dir / "latency_ms.json").read_text())
+              if (nn_dir / "latency_ms.json").exists() else None)
     # (group label, colour, [(run label, metrics, kind)])   kind: ens | single | cv
     # Seeded experiments show their ENSEMBLE only (user, 2026-10-01); single runs stay.
     groups = [
         ("Baseline\nensemble of 4, 256", GREY, [("ensemble", base["ENSEMBLE_baseline_x4"], "ens")]),
         ("1a  SGD\n256", C1A, [("SGD s43", e1a["e1a_sgd_nesterov"], "single")]),
         ("1b  + Lovász\nensemble of 4, 256", C1B, [("ensemble", e1b["ENSEMBLE_lovasz_x4"], "ens")]),
-        ("2  resolution\nLovász s42, batch 4×4", C2, [("resize 256", e2["e2a_res256_b4"], "single"),
+        ("2  resolution\nLovász s42", C2, [("resize 256", e2["e2a_res256_b4"], "single"),
                                                      ("resize 512", e2["e2b_res512_b4"], "single")]),
-        ("3  cropping\nLovász s42, batch 4×4", C3, [("crop 512", e3["e3a_crop512_b4"], "single"),
+        ("3  cropping\nLovász s42", C3, [("crop 512", e3["e3a_crop512_b4"], "single"),
                                                    ("crop 384", e3["e3b_crop384_b4"], "single")]),
-        ("4  cross-validation\ncrop 384, 5 rounds", C4, [("crop 384,\n15 random cells", cv, "cv")]),
+        ("4  CV, U-Net\ncrop 384", C4, [("crop 384,\n15 random cells", cv, "cv")]),
     ]
+    if nn is not None:
+        groups.append(("5  nnU-Net\n100 epochs", C5, [("nnU-Net,\n15 random cells", nn, "cv")]))
+    sd = Path("results/randswap/experiment_3_distill/cv")
+    st_done = ((sd / "student_cv_cv_summary.json").exists() and
+               json.loads((sd / "student_cv_cv_summary.json").read_text())["rounds_done"] == 5)
+    stu = load_cv("randswap/experiment_3_distill/cv", "student_cv") if st_done else None
+    ed = Path("results/randswap/experiment_2_ensemble")
+    ens = (load_cv("randswap/experiment_2_ensemble", "ensemble")
+           if (ed / "ensemble_cv_summary.json").exists() else None)
+    if ens is not None:
+        groups.append(("6  ensemble\nU-Net + nnU-Net", CE, [("ensemble,\n15 random cells", ens, "ens")]))
+    if stu is not None:
+        groups.append(("7  MegaNet\nstudent", C6, [("MegaNet,\n15 random cells", stu, "cv")]))
 
     fig = plt.figure(figsize=(12.4, 8.6), facecolor="white")
     gs = fig.add_gridspec(2, 1, height_ratios=[1.55, 1], hspace=0.42)
@@ -114,6 +139,7 @@ def summary(out: Path) -> None:
     ax.axhline(ref, color=GREY, lw=1, ls=(0, (4, 3)))
 
     x, xt, xl, best = 0.0, [], [], (None, -1)
+    cv_x0 = None
     for gi, (glabel, col, runs) in enumerate(groups):
         x0 = x
         seedx, seedv = [], []
@@ -138,17 +164,20 @@ def summary(out: Path) -> None:
             x += 1.15 if kind != "seed" else 0.95
         xt.append((x0 + x - 1) / 2); xl.append(glabel)
         if col == C4:
-            # The CV is scored on 15 RANDOMLY drawn cells, every other run on the 4
-            # hand-picked ones: shade it so the two are not read as one comparison.
-            ax.axvspan(x0 - 0.55, x - 0.6, color=C4, alpha=0.06, lw=0, zorder=0)
-            ax.text((x0 + x - 1.15) / 2, 0.985, "different test set", ha="center", va="top",
-                    fontsize=7.6, color=C4, style="italic")
+            cv_x0 = x0
+        if cv_x0 is not None and gi == len(groups) - 1:
+            # The CV runs (ours, nnU-Net) are scored on 15 RANDOMLY drawn cells, every other
+            # run on the 4 hand-picked ones: shade them so the two are not read as one comparison.
+            ax.axvspan(cv_x0 - 0.55, x - 0.6, color=C4, alpha=0.06, lw=0, zorder=0)
+            ax.text((cv_x0 + x - 1.15) / 2, 0.985, "different test set: 15 random cells",
+                    ha="center", va="top", fontsize=7.6, color=C4, style="italic")
         x += 0.9
         if gi < len(groups) - 1:
             ax.axvline(x - 0.95, color=GRID, lw=1)
     ax.set_xticks(xt, xl, fontsize=8.6, color=INK)
     ax.set_xlim(-1.2, x - 0.5)
-    ax.set_ylim(0.44, 1.0)
+    lowest = min(min(cell_range(m)[0], pooled(m)) for _, _, runs in groups for _, m, _ in runs)
+    ax.set_ylim(min(0.44, lowest - 0.06), 1.0)      # room for the lowest bar's label above the ticks
     ax.set_title("(a)  Every run on one grid — dot = Pooled DSC, bar = worst to best testing cell",
                  loc="left", fontsize=10, color=INK, pad=10)
     ax.legend(handles=[Line2D([], [], marker="o", ls="", color=MUTED, label="single model / one seed"),
@@ -157,7 +186,7 @@ def summary(out: Path) -> None:
                        Line2D([], [], color=MUTED, lw=2, alpha=0.5, label="range across the testing cells (4; CV: 15)"),
                        Line2D([], [], color=GREY, lw=1, ls=(0, (4, 3)),
                               label=f"baseline ensemble ({ref:.3f}), the reference")],
-              loc="lower right", fontsize=7.4, frameon=False, ncol=3)
+              loc="lower left", fontsize=7.4, frameon=False, ncol=3)
 
     # (b) accuracy against speed
     bx = fig.add_subplot(gs[1])
@@ -174,17 +203,33 @@ def summary(out: Path) -> None:
            ("crop 512", lat["single_512_crop"], pooled(e3["e3a_crop512_b4"]), C3),
            ("crop 384", lat["single_384_crop"], pooled(e3["e3b_crop384_b4"]), C3),
            ("CV, 15 cells", lat["single_384_crop"], pooled(cv), C4)]
+    if nn is not None and nn_lat is not None:
+        pts.append(("nnU-Net, 15 cells", nn_lat["nnunet_tta"], pooled(nn), C5))
+    if ens is not None and nn_lat is not None:
+        pts.append(("ensemble, 15 cells", nn_lat["ensemble_tta"], pooled(ens), CE))
+    if stu is not None:      # same architecture and crop as ours: measured 37.9 ms (vs 37.7), so the 384 figure
+        pts.append(("MegaNet, 15 cells", nn_lat["meganet"] if nn_lat and "meganet" in nn_lat
+                    else lat["single_384_crop"], pooled(stu), C6))
     offs = {"SGD s43": (6, 5), "resize 256 (Lovász s42)": (6, -6),
             "baseline ensemble": (-9, -6), "Lovász ensemble": (-9, 2), "resize 512": (6, 4),
-            "crop 512": (-9, 7), "crop 384": (8, 0), "CV, 15 cells": (8, 0)}
+            "crop 512": (-9, 7), "crop 384": (8, 0), "CV, 15 cells": (8, 0), "nnU-Net, 15 cells": (-9, 0),
+            "MegaNet, 15 cells": (8, -2), "ensemble, 15 cells": (-9, 0)}
+    XMAX = 70
     for label, ms, v, col in pts:
+        if ms > XMAX:
+            # Far off the axis (nnU-Net: ~400 ms): an arrow at the edge, labelled with its real
+            # time, so the real-time models are not squashed into one corner.
+            bx.scatter([XMAX - 1.2], [v], s=90, marker=">", color=col, edgecolor="white", linewidth=1.2, zorder=4)
+            bx.annotate(f"{label}  {v:.3f}  —  {ms:.0f} ms", (XMAX - 1.2, v), xytext=(-9, 0),
+                        textcoords="offset points", fontsize=7.8, color=INK, ha="right", va="center")
+            continue
         bx.scatter([ms], [v], s=64, color=col, edgecolor="white", linewidth=1.6, zorder=4,
-                   marker="D" if "ensemble" in label else "s" if label.startswith("CV") else "o")
+                   marker="D" if "ensemble" in label else "s" if "15 cells" in label else "o")
         dx, dy = offs[label]
         bx.annotate(f"{label}  {v:.3f}", (ms, v), xytext=(dx, dy), textcoords="offset points",
                     fontsize=7.8, color=INK, ha="left" if dx > 0 else "right", va="center")
-    bx.set_xlim(18, 70)
-    bx.set_ylim(min(p[2] for p in pts) - 0.03, 0.92)
+    bx.set_xlim(18, XMAX)
+    bx.set_ylim(min(p[2] for p in pts) - 0.03, max(0.92, max(p[2] for p in pts) + 0.015))
     bx.set_xlabel("full pipeline, ms per frame (fp32, RTX 4060)", color=INK2, fontsize=9)
     bx.set_title("(b)  Accuracy against speed — only the left of the dashed line keeps up with the camera",
                  loc="left", fontsize=10, color=INK, pad=8)

@@ -80,10 +80,11 @@ cd cancer_cell_deformation
 module load anaconda
 conda create -n celldform python=3.10 -y
 conda activate celldform
-pip install -e ".[hpc]"
+pip install -e ".[hpc]"          # core deps incl. nnunetv2 (needs Python >= 3.10) + mpi4py
 
 # Verify
 celldform-train-unet --help
+nnUNetv2_train -h                # nnU-Net benchmark installed
 ```
 
 ---
