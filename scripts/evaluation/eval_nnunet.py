@@ -37,8 +37,10 @@ def _scores(tp: int, fp: int, fn: int) -> dict:
 
 
 def score(round_: str | int, pred_dir: Path | str, checkpoint: Path | str,
-          test_json: Path | str = TEST_JSON, log: Path | str | None = None) -> dict:
-    """Score one round's predictions; append to ``log`` (eval_native.py's schema + "fold")."""
+          test_json: Path | str = TEST_JSON, log: Path | str | None = None,
+          trainer: str = "nnUNetTrainer_100epochs") -> dict:
+    """Score one round's predictions; append to ``log`` (eval_native.py's schema + "fold").
+    ``trainer`` is recorded in the log's "config" field."""
     t = json.loads(Path(test_json).read_text())[str(round_)]
     acc: dict[str, list[int]] = defaultdict(lambda: [0, 0, 0])
     for s in t["stems"]:
@@ -71,7 +73,7 @@ def score(round_: str | int, pred_dir: Path | str, checkpoint: Path | str,
             for scope, m in [*per_cell.items(), ("ALL CELLS", pooled)]:
                 fh.write(json.dumps({
                     "timestamp": stamp, "checkpoint": str(checkpoint), "fold": str(round_),
-                    "members": None, "config": "nnUNetTrainer_100epochs / nnUNetPlans / 2d",
+                    "members": None, "config": f"{trainer} / nnUNetPlans / 2d",
                     "resolution": "native", "input": f"{gt.shape[1]}x{gt.shape[0]}",
                     "filter": None if scope == "ALL CELLS" else scope, "metrics": {"1": m},
                     "per_cell_mean_dsc": mean_cell if scope == "ALL CELLS" else None}) + "\n")
@@ -87,9 +89,10 @@ def main() -> None:
     ap.add_argument("--test-json", type=Path,
                     default=TEST_JSON)
     ap.add_argument("--log", type=Path, default=None)
+    ap.add_argument("--trainer", default="nnUNetTrainer_100epochs", help="nnU-Net trainer, recorded in the log")
     a = ap.parse_args()
 
-    score(a.round, a.pred_dir, a.checkpoint, a.test_json, a.log)
+    score(a.round, a.pred_dir, a.checkpoint, a.test_json, a.log, a.trainer)
 
 
 if __name__ == "__main__":
