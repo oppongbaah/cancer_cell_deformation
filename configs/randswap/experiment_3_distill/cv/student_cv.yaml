@@ -1,6 +1,6 @@
 # EXPERIMENT 6 student CV (2026-10-01): each round trains for the FIXED epoch our CV model reached in that round
 # (39, 30, 29, 28, 26 -- cv_baseline_cv_rounds.csv) and is scored on its last-epoch weights, so every round
-# compares the same epoch. Passed the round-4 check first (0.833 vs 0.757). scripts/training/run_student_cv.py
+# compares the same epoch. Passed the round-4 check first (0.833 vs 0.757). scripts/training/train_student_cv.py
 # EXPERIMENT 6 -- distillation student (2026-10-01). Pilot on randswap round 4 first:
 #   python scripts/data/build_distill_data.py --round 4
 #   python scripts/training/train_unet.py --config configs/randswap/experiment_3_distill/pilot/student.yaml --fold 4
@@ -14,7 +14,7 @@
 #  PROTOCOL: commit this file BEFORE the first draw (build_randswap.py enforces it) and
 #  accept the split as it comes -- never edit the seed or counts to get a different one.
 #
-#  Per round:  scripts/training/run_randswap.sh randswap/experiment_0_cv_baseline cv_baseline <fold 1..5>
+#  Per round:  python scripts/training/train_cv_fold.py randswap/experiment_0_cv_baseline cv_baseline <fold 1..5>
 # ════════════════════════════════════════════════════════════════════════════
 
 # ─── Cell-level split (whole cells, never frames) ────────────────────────────

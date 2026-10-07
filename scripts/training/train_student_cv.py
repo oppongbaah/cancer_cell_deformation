@@ -2,8 +2,8 @@
 """
 Distillation student CV (Experiment 6): every randswap round, against our CV model at the same epoch.
 
-    python scripts/training/run_student_cv.py                 # rounds 1..5
-    python scripts/training/run_student_cv.py --rounds 2 3
+    python scripts/training/train_student_cv.py                 # rounds 1..5
+    python scripts/training/train_student_cv.py --rounds 2 3
 
 Per round k: build the distillation data if missing (build_distill_data.py: nnU-Net fold k-1 labels
 the round's training cells), train the student for the FIXED epoch our CV model reached in round k

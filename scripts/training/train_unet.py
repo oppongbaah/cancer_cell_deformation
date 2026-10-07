@@ -14,8 +14,8 @@ Pre-training workflow:
 Usage (local):
     python scripts/training/train_unet.py --config configs/default.yaml
 
-Usage (HPC / Anvil):
-    sbatch scripts/hpc_train_unet.sh
+Usage (HPC / NSU), from the repo root:
+    sbatch scripts/hpc/training/train_unet.sh [train_unet.py args]
 
 The script expects two directories configured in the YAML:
     data.frames_dir — preprocessed 256×256 grayscale PNG frames

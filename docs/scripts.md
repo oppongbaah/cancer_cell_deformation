@@ -6,9 +6,11 @@
     scripts/
       data/        organize_dataset · extract_frames · preprocess_frames
       annotation/  annotate · annotate_frame · preview_masks · validate_masks
-      training/    train_unet · distill · run_experiment.sh · run_randswap*.sh · run_*_cv.py
+      training/    train_unet · train_experiment · train_cv_fold · train_deploy_model ·
+                   train_nnunet_cv · train_student_cv · distill_ensemble
       evaluation/  evaluate_unet · eval_native · eval_nnunet · summarize_cv · compare_postswap · ...
       inference/   infer · predict_single_frame
+      hpc/         SLURM jobs for the NSU cluster: training/ and evaluation/ mirror the folders above (see hpc.md)
       report/      build_report_assets and the figure/table generators it drives
     ```
 
@@ -16,7 +18,7 @@
     between folders means fixing that hop. `report/render_holdout_comparison.py`
     additionally reaches into `annotation/` for `preview_masks`. Training and evaluation
     reach across too (split 2026-10-07): `evaluation/evaluate_unet.py` imports `CellDataset`
-    from `training/train_unet.py`, and `training/run_nnunet_cv.py` imports `score` from
+    from `training/train_unet.py`, and `training/train_nnunet_cv.py` imports `score` from
     `evaluation/eval_nnunet.py`.
 
 
@@ -381,16 +383,20 @@ below **0.161** prints as `INCONCLUSIVE`:
 
 ---
 
-## `training/run_postswap.sh` — train + evaluate one run, filed correctly
+## `training/train_experiment.py` — train + evaluate one run, filed correctly
 
 ```bash
-scripts/training/run_postswap.sh postswap_ftl_cw142_res384_s42
+python scripts/training/train_experiment.py postswap/experiment_1b_loss e1b_lovasz_s42
+python scripts/training/train_experiment.py postswap/experiment_0a_seed_baseline postswap_ftl_cw142_s46 --seed 46
 ```
 
-Expects `configs/postswap/<run-name>.yaml`. Trains, evaluates on all four development
-cells plus all cells together, writes the log to `logs/postswap/`, moves the training curve into
-`results/postswap/`, echoes the split assignment, and finishes by running
-`compare_postswap.py` against the baseline.
+Expects `configs/<experiment>/<run>.yaml` whose `checkpoint_dir` is `checkpoints/<experiment>/<run>`.
+Trains (log in `logs/<experiment>/<run>.log`, curves in `results/<experiment>/`), then scores the
+checkpoint on the testing set per cell and pooled at the config's own size
+(`evaluation/eval_testing_set.py` → `results/<experiment>/eval_log.jsonl`) and at native
+resolution (`evaluation/eval_native.py` → `eval_log_native.jsonl`). Extra arguments go to
+`train_unet.py`. Compare runs afterwards with `compare_postswap.py`. This replaces the old
+`run_postswap.sh` (= `train_experiment.py postswap/experiment_0a_seed_baseline <run>`).
 
 Use it rather than calling `train_unet.py` directly, so artefacts land in the right
 folders and the comparison happens automatically.

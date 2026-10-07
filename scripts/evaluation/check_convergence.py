@@ -86,7 +86,7 @@ def main() -> None:
   multi-seed mean down for a reason that has nothing to do with the change under test.
 
   Re-run them with a different seed before pooling:
-      scripts/training/run_postswap.sh <run-name>
+      python scripts/training/train_experiment.py postswap/experiment_0a_seed_baseline <run-name>
 
   Then re-check. Keep the tolerance fixed rather than tuning it to admit a run.""")
     sys.exit(1)

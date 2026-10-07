@@ -81,5 +81,5 @@ labels = CellClassifier.load("checkpoints/svm.pkl").predict(features_df)
 | [Scripts Reference](scripts.md) | Every script in `scripts/` with options and examples |
 | [CLI Reference](cli.md) | All `celldform-*` console commands |
 | [GPU & Hardware](gpu.md) | Which stages use the GPU and how to configure it |
-| [HPC Guide](hpc.md) | Running on Anvil / SLURM |
+| [HPC Guide](hpc.md) | Running on NSU / SLURM |
 | [API Reference](api/acquisition.md) | Auto-generated class and method documentation |

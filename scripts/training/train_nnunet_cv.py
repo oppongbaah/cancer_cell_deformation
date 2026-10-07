@@ -2,14 +2,14 @@
 """
 nnU-Net benchmark: the randswap cross-validation, round for round, with nnU-Net in place of our U-Net.
 
-    python scripts/training/run_nnunet_cv.py --setup          # dataset + plan/preprocess, once
-    python scripts/training/run_nnunet_cv.py                  # train + predict + score rounds 1..5
-    python scripts/training/run_nnunet_cv.py --rounds 3 4     # some rounds only
-    python scripts/training/run_nnunet_cv.py --rounds 2 --continue-training   # resume an interrupted round
+    python scripts/training/train_nnunet_cv.py --setup          # dataset + plan/preprocess, once
+    python scripts/training/train_nnunet_cv.py                  # train + predict + score rounds 1..5
+    python scripts/training/train_nnunet_cv.py --rounds 3 4     # some rounds only
+    python scripts/training/train_nnunet_cv.py --rounds 2 --continue-training   # resume an interrupted round
 
 Pure Python: nnU-Net is IMPORTED (nnunetv2 is a project dependency), never called through
 `nnUNetv2_*` executables at a fixed path, so this runs from any environment that has the
-project installed -- the local .venv, a conda env on Anvil, a SLURM job -- with whatever
+project installed -- the local .venv, a conda env on NSU, a SLURM job -- with whatever
 `python` launched it. The three nnU-Net folders are set here (unless already exported) before
 nnU-Net reads them; nnU-Net looks them up lazily, at use, not at import.
 

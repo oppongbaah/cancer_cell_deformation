@@ -28,7 +28,7 @@ Architecture position
 
 HPC note
 --------
-For HPC batch runs (Anvil/Purdue), `device="cuda"` and `num_workers > 0`
+For HPC batch runs (NSU cluster), `device="cuda"` and `num_workers > 0`
 should be passed.  The pipeline is stateless across frames so it is safe
 to share across processes without locking.
 """

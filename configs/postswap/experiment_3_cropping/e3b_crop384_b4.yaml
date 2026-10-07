@@ -8,7 +8,7 @@
 #  Base: e2b_res512_b4 (Lovasz, seed 42, micro-batch 4 x 4-step accumulation) with ONE
 #  change -- the input is a native 384x384 crop instead of the whole frame resized to 512.
 #  Scored at native resolution (eval_native.py pastes the crop back into the frame).
-#  Run with: scripts/training/run_experiment.sh postswap/experiment_3_cropping e3b_crop384_b4
+#  Run with: python scripts/training/train_experiment.py postswap/experiment_3_cropping e3b_crop384_b4
 # ════════════════════════════════════════════════════════════════════════════
 # ════════════════════════════════════════════════════════════════════════════
 #  POST-SWAP REFERENCE RUN — Way Forward item 1 (2026-09-17)

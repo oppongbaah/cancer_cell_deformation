@@ -35,16 +35,16 @@ python3 -m venv .venv && source .venv/bin/activate
 
 pip install -e ".[dev]"          # core + dev tools
 pip install -e ".[annotation]"   # adds napari for mask annotation
-pip install -e ".[hpc]"          # adds mpi4py for Anvil / SLURM
+pip install -e ".[hpc]"          # adds mpi4py for NSU / SLURM
 ```
 
 Python 3.10 or newer is required. The core install includes **nnU-Net v2** (`nnunetv2`), the
-segmentation benchmark. `scripts/training/run_nnunet_cv.py` imports it directly, so it runs in
-whichever environment launched it (local venv, conda on Anvil, a SLURM job) and sets nnU-Net's
+segmentation benchmark. `scripts/training/train_nnunet_cv.py` imports it directly, so it runs in
+whichever environment launched it (local venv, a conda env on NSU, a SLURM job) and sets nnU-Net's
 three data folders itself (`nnUNet_raw`, `nnUNet_preprocessed`, `nnUNet_results`):
 
-    python scripts/training/run_nnunet_cv.py --setup     # dataset + plan/preprocess, once
-    python scripts/training/run_nnunet_cv.py             # 5 rounds: train, predict, score
+    python scripts/training/train_nnunet_cv.py --setup     # dataset + plan/preprocess, once
+    python scripts/training/train_nnunet_cv.py             # 5 rounds: train, predict, score
 
 One-time, after cloning — notebook outputs are stripped on commit by a git filter whose
 command lives in `.git/config` (not committed), so it has to be registered locally:
@@ -91,23 +91,27 @@ See [docs/workflow.md](docs/workflow.md) for the full step-by-step guide.
 
 ---
 
-## HPC Training (Anvil)
+## HPC Training (NSU)
 
-U-Net training runs **12× faster** on Anvil's A100 GPUs (~0.3 s/epoch) than on a local GPU.
+U-Net training runs as a SLURM job on the NSU cluster's Tesla V100 GPUs (partition `gpu`).
 
 ```bash
-# On Anvil — request a GPU session via OnDemand, then in the VSCode terminal:
-cd $SCRATCH/thesis
+# On NSU, once: clone and install into a conda env
 git clone https://github.com/oppongbaah/cancer_cell_deformation.git
 cd cancer_cell_deformation
-module load anaconda
-conda create -n celldform python=3.10 -y && conda activate celldform
+module load Anaconda3/2025.06-1
+conda activate celldform            # create once: conda create -n celldform python=3.11 -y
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu126   # V100 needs sm_70; PyPI's cu130 lacks it
 pip install -e ".[hpc]"
-celldform-train-unet --config configs/default.yaml
+mkdir -p logs/hpc
+
+# Each run, from the repo root
+sbatch scripts/hpc/training/train_unet.sh                                  # configs/default.yaml
+sbatch scripts/hpc/training/train_unet.sh --config configs/multiclass_experiment_256.yaml
+sbatch scripts/hpc/evaluation/eval_native.sh --checkpoint CK --config CFG   # every script has a job under scripts/hpc/
 ```
 
-Upload `data/preprocessed/` via the OnDemand file browser before training.
-Download `checkpoints/unet_best.pt` via the same browser after training.
+Upload `data/preprocessed/` with `rsync` before training; fetch `checkpoints/` the same way after.
 
 See the full guide: [docs/hpc.md](docs/hpc.md)
 

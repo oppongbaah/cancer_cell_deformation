@@ -32,7 +32,7 @@ THRESHOLD = 2 * SD * (2 ** 0.5) # ~0.139 -- smallest believable single-run diffe
 
 def load(log: Path) -> dict[str, dict[str, dict]]:
     if not log.exists():
-        raise SystemExit(f"No eval log at {log}. Run scripts/training/run_postswap.sh first.")
+        raise SystemExit(f"No eval log at {log}. Run python scripts/training/train_experiment.py postswap/experiment_0a_seed_baseline <run> first.")
     out: dict[str, dict[str, dict]] = defaultdict(dict)
     for line in log.read_text().splitlines():
         if not line.strip():

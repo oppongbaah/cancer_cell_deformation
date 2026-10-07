@@ -16,7 +16,7 @@ Preswap numbers were also measured on a 2-cell set early on and a 4-cell set lat
 each row says which.
 
 Run a new experiment with
-`scripts/training/run_experiment.sh <era>/<experiment> <run>`; it trains, scores the
+`python scripts/training/train_experiment.py <era>/<experiment> <run>`; it trains, scores the
 run on the testing set and files everything above. The move into this layout is
 recorded, path by path, in `scripts/maintenance/reorg_experiments_20260930.py`.
 
@@ -53,7 +53,7 @@ seeds**. One run resolves only ±0.139, so a delta against it is a screen, not a
 | Experiment | Question | Runs | What it found |
 |---|---|---|---|
 | `experiment_0_cv_baseline` | How does the 384-crop configuration do on randomly drawn cells? | 5 CV rounds | Stratified 5-fold over all 15 cells (11 : 1 : 3, seed 42, config committed `ada18ff` before the draw). **Per-cell mean DSC 0.855 ± 0.114, Test DSC 0.861** (native) — vs 0.897 on the hand-picked 4 cells, so the old testing set was optimistic. **High HER2 0.802 vs low 0.934**; worst high-4 0.625 (over-predicts), high-8 0.712 and low-6 0.762 (under-predict). Internal val 0.946–0.978 every round. Median best epoch 29 → final model length. Results: `results/randswap/experiment_0_cv_baseline/cv_baseline_cv_*`. |
-| `experiment_1_nnunet` | Is our pipeline as good as nnU-Net? | 5 CV rounds | nnU-Net v2 (2d, `nnUNetTrainer_100epochs`, raw 1228x922 frames, last epoch) on the SAME randswap rounds and test frames (`scripts/training/run_nnunet_cv.py`). **Pooled 0.949 vs ours 0.861, per-cell 0.945 vs 0.855**, every round; high HER2 0.930 vs 0.802. But **417 ms/frame (231 without TTA, network alone fp16 62)** vs our 37.8 — never real time. Reported as a BASELINE only. |
+| `experiment_1_nnunet` | Is our pipeline as good as nnU-Net? | 5 CV rounds | nnU-Net v2 (2d, `nnUNetTrainer_100epochs`, raw 1228x922 frames, last epoch) on the SAME randswap rounds and test frames (`scripts/training/train_nnunet_cv.py`). **Pooled 0.949 vs ours 0.861, per-cell 0.945 vs 0.855**, every round; high HER2 0.930 vs 0.802. But **417 ms/frame (231 without TTA, network alone fp16 62)** vs our 37.8 — never real time. Reported as a BASELINE only. |
 | `experiment_2_ensemble` | Does averaging ours + nnU-Net help? | 5 CV rounds | 0.5/0.5 softmax average, conditions fixed in advance (`scripts/evaluation/eval_ensemble_cv.py`). **FAILED 1 of 4**: pooled 0.936 vs nnU-Net 0.949. Our confident over-prediction outvotes nnU-Net (high-4 -0.105, high-7 -0.070). Failed experiment. |
 | `experiment_3_distill` | Can a real-time student learn from nnU-Net? | `pilot/` round 4; `cv/` 5 rounds | Student = our recipe + KL to nnU-Net (w 1.0, T 2) + ~2,200 nnU-Net-labelled extra frames per round, fixed epochs. Pilot: val-picked epoch 0.587, fixed 28 epochs 0.833 vs 0.757. **CV FAILED**: per-cell 0.828 vs 0.855, pooled 0.805 vs 0.861 (round 4 here 0.617 — single runs are not evidence). Failed experiment; our model stays deployment + feature masks. |
 

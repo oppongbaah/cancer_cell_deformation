@@ -8,7 +8,7 @@
 #  PROTOCOL: commit this file BEFORE the first draw (build_randswap.py enforces it) and
 #  accept the split as it comes -- never edit the seed or counts to get a different one.
 #
-#  Per round:  scripts/training/run_randswap.sh randswap/experiment_0_cv_baseline cv_baseline <fold 1..5>
+#  Per round:  python scripts/training/train_cv_fold.py randswap/experiment_0_cv_baseline cv_baseline <fold 1..5>
 # ════════════════════════════════════════════════════════════════════════════
 
 # ─── Cell-level split (whole cells, never frames) ────────────────────────────

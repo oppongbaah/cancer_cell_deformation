@@ -1,165 +1,195 @@
-# HPC Guide (Anvil)
+# HPC Guide (NSU)
 
-Running `celldform` U-Net training on Purdue Anvil via ACCESS.
-Verified workflow: **12× speedup** over a local GPU (0.3 s/epoch on Anvil A100 vs 3.8 s/epoch locally).
+Running `celldform` U-Net training on the NSU HPC cluster with SLURM.
 
----
+| | |
+|---|---|
+| Node | `casev-hpc-lg01` (login and compute) |
+| Partitions | `standard` (default), `gpu` — both on the same node, no time limit |
+| GPUs | 3× Tesla V100-PCIE-32GB (driver 580, CUDA ≤ 13) |
+| CPU / RAM | 80 cores, ~500 GB |
+| Account / QOS | not required |
 
-## Prerequisites
-
-- An ACCESS account with an Anvil allocation (or added as a sub-user by your advisor)
-- Access to the [Anvil OnDemand portal](https://ondemand.anvil.rcac.purdue.edu)
+!!! note "V100, not A100"
+    The V100 has FP16 tensor cores but **no BF16 and no TF32**. `training.use_amp: true` uses
+    FP16 autocast plus a `GradScaler` (`celldform/segmentation/trainer.py`), which is what the
+    V100 accelerates, so leave it on. Epoch times measured earlier on other hardware do not
+    carry over; time a short run before sizing `--time`.
 
 ---
 
 ## Recommended Workflow
 
-The split below keeps large raw data local and only sends what the training loop actually needs to Anvil.
-
 | Step | Where |
 |------|--------|
 | Annotate masks | Local machine (`scripts/annotation/annotate.py`) |
 | Preprocess frames | Local machine (`scripts/data/preprocess_frames.py --masks`) |
-| Upload preprocessed data | Anvil OnDemand file browser |
-| Clone code | Anvil terminal (`git clone`) |
-| Train U-Net | Anvil (A100 GPU) |
-| Download checkpoint | Anvil OnDemand file browser |
-| Inference, evaluation, biomechanics | Local machine |
+| Upload preprocessed data | `rsync`/`scp` to NSU |
+| Clone code, create conda env | NSU login shell |
+| Train / evaluate | NSU, `sbatch scripts/hpc/{training,evaluation}/*.sh` (V100) |
+| Download checkpoint | `rsync`/`scp` from NSU |
+| Inference, evaluation, biomechanics | Local machine (or NSU) |
 
 ---
 
-## Step 1 — Start an Interactive Session
-
-1. Log in to [ondemand.anvil.rcac.purdue.edu](https://ondemand.anvil.rcac.purdue.edu)
-2. Go to **Interactive Apps → Code Server (VS Code)**
-3. Request resources — recommended for U-Net training:
-    - Partition: `gpu`
-    - CPUs: `8`  (more than 16 gives no benefit — workers idle waiting for the GPU)
-    - GPUs: `1`
-    - Memory: `32 GB`
-    - Time: `2–4 hours`
-4. Click **Launch** and wait for the session to start, then **Connect to VS Code**
-
----
-
-## Step 2 — Upload Preprocessed Data
-
-Anvil uses Duo two-factor authentication, which blocks standard `scp`/`rsync` without extra configuration. The easiest alternative is the OnDemand file browser.
-
-1. On the OnDemand dashboard go to **Files** in the top menu
-2. Navigate to `/anvil/scratch/YOUR_USERNAME/thesis/cancer_cell_deformation/data/`
-   (create the folder first if it does not exist)
-3. Click **Upload** and drag in your local `data/preprocessed/` folder
-
-Only `preprocessed/` is needed — do not upload `data/raw/` (large videos, not used in training).
-
-!!! tip "scp with Duo"
-    If you prefer the terminal, `scp` works when you append `,push` to your password:
-    ```bash
-    scp -r data/preprocessed/ YOUR_USERNAME@anvil.rcac.purdue.edu:/anvil/scratch/YOUR_USERNAME/thesis/cancer_cell_deformation/data/preprocessed/
-    # When prompted: yourpassword,push  (triggers a Duo push to your phone)
-    ```
-
----
-
-## Step 3 — Clone the Code
-
-In the VSCode terminal on Anvil:
+## Step 1 — Clone the Code
 
 ```bash
-cd $SCRATCH/thesis
+cd ~/Desktop/Isaac/thesis            # or wherever you keep the project
 git clone https://github.com/oppongbaah/cancer_cell_deformation.git
 cd cancer_cell_deformation
+mkdir -p logs/hpc                    # SLURM writes job logs here and will not create it
 ```
 
 ---
 
-## Step 4 — Set Up the Environment
+## Step 2 — Set Up the Environment
+
+Use the cluster's Anaconda module and the `celldform` conda env (once, on the login node):
 
 ```bash
-module load anaconda
-conda create -n celldform python=3.10 -y
+module load Anaconda3/2025.06-1
+conda create -n celldform python=3.11 -y     # skip if it already exists (conda env list)
 conda activate celldform
-pip install -e ".[hpc]"          # core deps incl. nnunetv2 (needs Python >= 3.10) + mpi4py
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu126   # FIRST -- see below
+pip install -e ".[hpc]"    # core deps incl. nnunetv2 (needs Python >= 3.10) + mpi4py
 
-# Verify
-celldform-train-unet --help
-nnUNetv2_train -h                # nnU-Net benchmark installed
+# Verify (the GPUs are visible on the login node too)
+python -c "import torch; print(torch.__version__, torch.cuda.is_available(), torch.cuda.get_device_name(0))"
+nnUNetv2_train -h
 ```
+
+Notes for NSU:
+
+- Batch jobs don't run your `~/.bashrc`, so the job script loads the module itself and sources
+  `$EBROOTANACONDA3/etc/profile.d/conda.sh` before running `conda activate celldform`.
+- **Install torch from the `cu126` index.** The default PyPI wheel is now built for CUDA 13
+  (`+cu130`), which has no kernels for the V100 (compute capability 7.0; `cu130` starts at
+  7.5). It installs fine, then warns *"does not include kernels for this GPU"* and fails on the
+  first CUDA op. The `cu126` build includes `sm_70`. To check:
+  `python -c "import torch; print(torch.__version__, torch.cuda.get_arch_list())"` must list
+  `sm_70`. If a later `pip install` pulls in a `+cu130` torch again, reinstall the same version
+  from `cu126`: `pip uninstall -y torch torchvision && pip install torch==<ver> torchvision==<ver>
+  --index-url https://download.pytorch.org/whl/cu126`.
+- Don't build the env on the `PyTorch/2.9.1-CUDA-12.6.0` module: **nnunetv2 excludes torch
+  2.9.x** (`torch!=2.9.*`). Let pip choose torch; its wheels bundle the CUDA runtime, and the
+  driver (580) supports it.
+- Every script in `scripts/training/` and `scripts/evaluation/` is Python, and the ones that
+  chain others (`train_experiment.py`, `train_cv_fold.py`, ...) run each step with whichever
+  python launched them. `python scripts/...` therefore uses the conda env on NSU and `.venv`
+  locally, with nothing to configure.
 
 ---
 
-## Step 5 — Configure Paths for Anvil
+## Step 3 — Upload Preprocessed Data
 
-Edit `configs/default.yaml` to point to the uploaded data:
+From your local machine:
+
+```bash
+rsync -avP data/preprocessed/ YOUR_USERNAME@NSU_HPC_HOST:~/Desktop/Isaac/thesis/cancer_cell_deformation/data/preprocessed/
+```
+
+Only `preprocessed/` is needed. Do not upload `data/raw/`, which holds the large videos and is not used in training.
+
+---
+
+## Step 4 — Check Paths in the Config
+
+Data paths in `configs/*.yaml` are relative to the repo root, so they work unchanged as long as
+the job runs from there (both the batch script and `celldform-hpc-submit` do). The settings
+that matter on NSU:
 
 ```yaml
 device: cuda
 
-data:
-  frames_dir: "$SCRATCH/thesis/cancer_cell_deformation/data/preprocessed/train/01_annotate_pool/inputs"
-  masks_dir:  "$SCRATCH/thesis/cancer_cell_deformation/data/preprocessed/train/01_annotate_pool/labels"
-
-checkpoint_dir: "$SCRATCH/thesis/cancer_cell_deformation/checkpoints"
-
 training:
-  num_workers: 8   # 8–16 is sufficient; beyond 16 adds no throughput
-  batch_size: 32   # increase to 64–128 once you have ≥ 100 annotated masks
-  use_amp: true    # enables A100 BF16/TF32 — ~2–4× throughput gain
+  num_workers: 8   # match --cpus-per-task; beyond 16 adds no throughput
+  batch_size: 32   # a V100 has 32 GB; raise once you have >= 100 annotated masks
+  use_amp: true    # FP16 autocast on V100 tensor cores
 ```
 
 !!! warning "Reproducibility across runs"
-    `training.cudnn_benchmark` (default `true`, matching PyTorch's own default) trades reproducibility for speed by re-timing convolution kernels against runtime hardware state — verified locally to make same-`seed` reruns land on different results even with `cudnn_deterministic: true` also set (see `CLAUDE.md`'s "Training non-determinism found" note). Not yet re-verified on Anvil's A100s specifically — if you need a run to be reproducible, set `cudnn_benchmark: false` explicitly rather than assuming the local finding carries over untested.
+    `training.cudnn_benchmark` (default `true`, matching PyTorch's own default) trades reproducibility for speed by re-timing convolution kernels against runtime hardware state. It was verified locally to make same-`seed` reruns land on different results even with `cudnn_deterministic: true` also set (see `CLAUDE.md`'s "Training non-determinism found" note). This has not been re-verified on NSU's V100s. If you need a run to be reproducible, set `cudnn_benchmark: false` explicitly.
 
 ---
 
-## Step 6 — Verify GPU and Train
+## Step 5 — Submit Jobs
+
+Every training and evaluation script has a SLURM job script under `scripts/hpc/`, mirroring
+`scripts/training/` and `scripts/evaluation/`. Submit **from the repo root**. Arguments after
+the script name are passed straight to the underlying script:
 
 ```bash
-# Confirm the A100 is visible
-python -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device_name(0))"
-
-# Train
-celldform-train-unet --config configs/default.yaml
+sbatch scripts/hpc/training/train_unet.sh                                       # configs/default.yaml
+sbatch scripts/hpc/training/train_unet.sh --config configs/multiclass_experiment_256.yaml --seed 43
+sbatch scripts/hpc/training/train_experiment.sh postswap/experiment_1b_loss e1b_lovasz_s42
+sbatch --array=1-5 scripts/hpc/training/train_cv_fold.sh randswap/experiment_0_cv_baseline cv_baseline
+sbatch scripts/hpc/evaluation/eval_native.sh --checkpoint CK --config CFG --log results/<exp>/eval_log_native.jsonl
+sbatch scripts/hpc/evaluation/summarize_cv.sh --exp randswap/experiment_0_cv_baseline --run cv_baseline
 ```
 
-Expected throughput: **~0.3 s/epoch** on a single A100.
+| Job script | Runs | Partition | Resources (default) |
+|---|---|---|---|
+| `training/train_unet.sh` | `scripts/training/train_unet.py` (no args → `--config configs/default.yaml`) | gpu | 1 V100, 8 CPU, 32 GB, 12 h |
+| `training/distill_ensemble.sh` | `scripts/training/distill_ensemble.py` | gpu | 1 V100, 8 CPU, 32 GB, 12 h |
+| `training/train_experiment.sh` | `scripts/training/train_experiment.py <experiment> <run> [train args]`: train + score | gpu | 1 V100, 8 CPU, 32 GB, 12 h |
+| `training/train_cv_fold.sh` | `scripts/training/train_cv_fold.py <experiment> <run> <fold>`; under `--array` the fold is the array index | gpu | 1 V100, 8 CPU, 32 GB, 12 h |
+| `training/train_deploy_model.sh` | `scripts/training/train_deploy_model.py <experiment> <run>` | gpu | 1 V100, 8 CPU, 32 GB, 12 h |
+| `training/train_nnunet_cv.sh` | `scripts/training/train_nnunet_cv.py` (`--setup` once first) | gpu | 1 V100, 16 CPU, 64 GB, 72 h |
+| `training/train_student_cv.sh` | `scripts/training/train_student_cv.py` | gpu | 1 V100, 8 CPU, 32 GB, 48 h |
+| `evaluation/evaluate_unet.sh` | `scripts/evaluation/evaluate_unet.py` | gpu | 1 V100, 8 CPU, 32 GB, 2 h |
+| `evaluation/eval_native.sh` | `scripts/evaluation/eval_native.py` | gpu | 1 V100, 8 CPU, 32 GB, 2 h |
+| `evaluation/eval_testing_set.sh` | `scripts/evaluation/eval_testing_set.py <ckpt> <config> <log> [pool]` | gpu | 1 V100, 8 CPU, 32 GB, 2 h |
+| `evaluation/ensemble_eval.sh` | `scripts/evaluation/ensemble_eval.py` | gpu | 1 V100, 8 CPU, 32 GB, 2 h |
+| `evaluation/eval_ensemble_cv.sh` | `scripts/evaluation/eval_ensemble_cv.py` | gpu | 1 V100, 8 CPU, 64 GB, 8 h |
+| `evaluation/latency_benchmark.sh` | `scripts/evaluation/latency_benchmark.py` (add `--exclusive` for publishable timings) | gpu | 1 V100, 8 CPU, 32 GB, 2 h |
+| `evaluation/eval_nnunet.sh` | `scripts/evaluation/eval_nnunet.py` | standard | 4 CPU, 16 GB, 1 h |
+| `evaluation/summarize_cv.sh` | `scripts/evaluation/summarize_cv.py` | standard | 4 CPU, 16 GB, 30 min |
+| `evaluation/compare_postswap.sh` | `scripts/evaluation/compare_postswap.py` | standard | 4 CPU, 16 GB, 30 min |
+| `evaluation/check_convergence.sh` | `scripts/evaluation/check_convergence.py` | standard | 4 CPU, 16 GB, 30 min |
+
+The old `run_postswap.sh <run>` is gone. Use `train_experiment.sh postswap/experiment_0a_seed_baseline <run>`.
+
+Override resources at submit time without editing a file, e.g. `sbatch --time=24:00:00 --mem=64G ...`.
+`sbatch --test-only <job script>` validates the request without submitting. Every job sources
+`scripts/hpc/_common.sh`, which activates the `celldform` conda env (`--export=ALL,CONDA_ENV=<name>`
+for another) and prints the job's GPU and torch build.
+
+**Logs.** Each job writes `logs/hpc/<job-name>_<jobid>.out` (stdout and stderr together). A
+matching **`.err` file exists only when the job failed**: non-zero exit, time limit or
+`scancel`. It holds the job's stderr plus a closing line giving the exit code or the
+SIGTERM. Successful jobs leave no `.err`, so `ls logs/hpc/*.err` lists the failures.
+
+`celldform-hpc-submit` generates the `train_unet` job on the fly and submits it (same setup, via `_common.sh`):
+
+```bash
+celldform-hpc-submit --config configs/default.yaml
+celldform-hpc-submit --config configs/default.yaml --time 24:00:00 --dry-run   # print, don't submit
+```
+
+Defaults: `--partition gpu --time 12:00:00 --cpus 8 --gpus 1 --mem 32G --conda-env celldform`, no account or QOS (pass `--account`/`--qos` only if NSU starts requiring them).
+
+Monitoring (SLURM accounting is disabled on NSU, so `sacct` returns nothing; use the logs):
+
+```bash
+squeue -u $USER                                   # queued/running status
+squeue -u $USER --start                           # estimated start time, if SLURM has computed one
+scontrol show job <jobid>                         # details while it is queued/running
+tail -f logs/hpc/<job-name>_<jobid>.out           # live output; the last line gives the exit code
+ls logs/hpc/*.err                                 # which jobs failed
+scancel <jobid>                                   # cancel
+```
+
+The node has 3 V100s, so up to three single-GPU jobs (e.g. three seeds or CV folds) run side by side.
 
 ---
 
-## Step 7 — Download the Checkpoint
+## Step 6 — Download the Checkpoint
 
-1. On the OnDemand dashboard go to **Files**
-2. Navigate to `/anvil/scratch/YOUR_USERNAME/thesis/cancer_cell_deformation/checkpoints/`
-3. Select `unet_best.pt` and click **Download**
-4. Move it into your local `checkpoints/` folder
-
----
-
-## SLURM Batch Jobs (Optional)
-
-For unattended overnight runs instead of an interactive session, use `celldform-hpc-submit` — it generates the SLURM script and submits it in one step (there is no checked-in `scripts/hpc_train_unet.sh`; the script is written fresh each time from `celldform/cli.py:hpc_submit()`):
+From your local machine:
 
 ```bash
-celldform-hpc-submit --account YOUR_ALLOCATION --config configs/default.yaml
-# --dry-run prints the generated script without submitting, e.g. to sanity-check it first
-```
-
-Defaults: `--partition ai --qos ai --time 01:00:00 --cpus 8 --gpus 1 --mem 32G` — override any of these as flags. The generated job writes:
-
-```
-#SBATCH --output=logs/unet_%j.out
-#SBATCH --error=logs/unet_%j.err
-```
-
-relative to wherever you run the command from (the cloned repo root on Anvil), so `logs/` is created automatically.
-
-```bash
-squeue -u $USER                                  # monitor queued/running status
-squeue -u $USER --start                           # estimated start time, if SLURM has computed one yet
-sacct -u $USER -j <jobid> --format=State,ExitCode # did it COMPLETE, FAIL, TIMEOUT, OOM, ...? after it leaves the queue
-tail -f logs/unet_<jobid>.out                     # stream live output (bookended by "Job started"/"Job finished" lines)
-scancel <jobid>                                   # cancel if needed
+rsync -avP YOUR_USERNAME@NSU_HPC_HOST:~/Desktop/Isaac/thesis/cancer_cell_deformation/checkpoints/ checkpoints/
 ```
 
 ---
@@ -167,13 +197,13 @@ scancel <jobid>                                   # cancel if needed
 ## Iterative Training Cycle
 
 ```
-Local                              Anvil
+Local                              NSU
 ─────────────────────              ──────────────────────────────────
 scripts/annotation/annotate.py
 scripts/data/preprocess_frames.py
-                      upload preprocessed/ via OnDemand file browser ──►
-                                           celldform-train-unet
-                      ◄── download unet_best.pt via OnDemand file browser
+                      rsync data/preprocessed/ ──►
+                                  sbatch scripts/hpc/training/train_unet.sh
+                      ◄── rsync checkpoints/
 scripts/evaluation/evaluate_unet.py
 ```
 

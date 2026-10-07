@@ -16,7 +16,7 @@ A snapshot of the active config is written to the checkpoint directory at
 the start of training for full experiment reproducibility.
 
 HPC note: pass ``device="cuda"`` in the config and set num_workers > 0
-to fully utilise GPU + multi-core prefetching on Anvil / HPC clusters.
+to fully utilise GPU + multi-core prefetching on the NSU cluster / HPC.
 """
 
 from __future__ import annotations

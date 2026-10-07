@@ -6,7 +6,7 @@
 #  trained from scratch, so the change is the only difference from s43. One run still
 #  resolves only ~+-0.13 of evaluated DSC (four-seed sd 0.049), and s43 is the best
 #  of those four seeds -- read any delta against that.
-#  Run with: scripts/training/run_experiment.sh postswap/experiment_1b_loss e1b_lovasz_s42
+#  Run with: python scripts/training/train_experiment.py postswap/experiment_1b_loss e1b_lovasz_s42
 # ════════════════════════════════════════════════════════════════════════════
 # ════════════════════════════════════════════════════════════════════════════
 #  POST-SWAP REFERENCE RUN — Way Forward item 1 (2026-09-17)

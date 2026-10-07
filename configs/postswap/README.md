@@ -12,7 +12,7 @@ logs/postswap/<experiment>/           <run-name>.log  (training stdout, incl. th
 results/postswap/<experiment>/        eval_log.jsonl + training-curve PNGs
 
 experiments: experiment_0a_seed_baseline, experiment_0b_distillation, experiment_1a_optimizer, experiment_1b_loss, experiment_2_resolution
-run one:     scripts/training/run_experiment.sh postswap/<experiment> <run-name>
+run one:     python scripts/training/train_experiment.py postswap/<experiment> <run-name>
 data/preprocessed/train/postswap_multiclass_256/     451 frames, 22 groups
 data/preprocessed/evaluate/postswap_devset/          172 annotated dev frames
 ```

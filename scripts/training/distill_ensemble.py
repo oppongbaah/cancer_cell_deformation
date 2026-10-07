@@ -24,9 +24,9 @@ How it works
 
 Usage
 -----
-python scripts/training/distill.py                      # cache targets, then train
-python scripts/training/distill.py --cache-only         # just build the targets
-python scripts/training/distill.py --temperature 3 --lambda-hard 0.5
+python scripts/training/distill_ensemble.py                      # cache targets, then train
+python scripts/training/distill_ensemble.py --cache-only         # just build the targets
+python scripts/training/distill_ensemble.py --temperature 3 --lambda-hard 0.5
 """
 from __future__ import annotations
 
