@@ -38,3 +38,4 @@ Epoch 007/100  train_loss=0.5900  train_DSC=0.9281  val_loss=0.8454  val_DSC=0.4
 Epoch 008/100  train_loss=0.5668  train_DSC=0.9327  val_loss=0.8445  val_DSC=0.4430  (13.5s)
 Epoch 009/100  train_loss=0.5394  train_DSC=0.9412  val_loss=0.7794  val_DSC=0.4692  (13.6s)
 Epoch 010/100  train_loss=0.5184  train_DSC=0.9406  val_loss=0.6859  val_DSC=0.4227  (13.4s)
+Epoch 011/100  train_loss=0.4980  train_DSC=0.9491  val_loss=0.8174  val_DSC=0.4320  (13.6s)

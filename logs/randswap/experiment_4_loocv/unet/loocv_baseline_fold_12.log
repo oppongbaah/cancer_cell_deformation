@@ -86,3 +86,31 @@ Epoch 049/100  train_loss=0.1751  train_DSC=0.9650  val_loss=0.1696  val_DSC=0.8
 Epoch 050/100  train_loss=0.1719  train_DSC=0.9648  val_loss=0.1683  val_DSC=0.8566  (14.1s)
 Epoch 051/100  train_loss=0.1666  train_DSC=0.9644  val_loss=0.1650  val_DSC=0.8635  (14.2s)
 Epoch 052/100  train_loss=0.1717  train_DSC=0.9634  val_loss=0.1705  val_DSC=0.8394  (14.1s)
+Epoch 053/100  train_loss=0.1662  train_DSC=0.9637  val_loss=0.1750  val_DSC=0.8348  (14.2s)
+Early stopping: no val_DSC improvement > 0.001 for 20 epochs (best=0.8920 at epoch 33). Stopping at epoch 53/100.
+
+[celldform] Reloaded best checkpoint for final evaluation: epoch 33
+
+Final validation metrics:
+  [trapped_cell]
+    dsc: 0.9038
+    iou: 0.8245
+    precision: 0.9179
+    recall: 0.8901
+  [class_2]
+    dsc: 0.9644
+    iou: 0.9313
+    precision: 0.9561
+    recall: 0.9729
+  [mean]
+    dsc: 0.9341
+    iou: 0.8779
+    precision: 0.9370
+    recall: 0.9315
+/home/hpcadmin/Desktop/Isaac/thesis/cancer_cell_deformation/celldform/utils/visualization.py:155: UserWarning: This figure includes Axes that are not compatible with tight_layout, so results might be incorrect.
+  fig.tight_layout()
+Training curves saved to results/randswap/experiment_4_loocv/unet/unet_training_curves_v14_loocv_baseline_fold_12.png
+fold_12  (native 1228x922, 19 frames, input 384x384)
+  low-3     DSC 0.967  prec 0.952  rec 0.982
+  pooled    DSC 0.967  prec 0.952  rec 0.982
+  per-cell mean DSC 0.967
