@@ -65,3 +65,5 @@ Epoch 030/100  train_loss=0.2262  train_DSC=0.9567  val_loss=0.1840  val_DSC=0.9
 Epoch 031/100  train_loss=0.2313  train_DSC=0.9526  val_loss=0.1671  val_DSC=0.9495  (14.0s)
 Epoch 032/100  train_loss=0.2145  train_DSC=0.9557  val_loss=0.1893  val_DSC=0.9460  (13.9s)
 Epoch 033/100  train_loss=0.2162  train_DSC=0.9552  val_loss=0.1591  val_DSC=0.9540  (13.9s)
+Epoch 034/100  train_loss=0.2095  train_DSC=0.9580  val_loss=0.1890  val_DSC=0.9549  (14.0s)
+Epoch 035/100  train_loss=0.2032  train_DSC=0.9588  val_loss=0.1436  val_DSC=0.9554  (13.9s)

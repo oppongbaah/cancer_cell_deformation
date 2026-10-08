@@ -1,0 +1,24 @@
+[celldform] job 109 (loocv_unet) on casev-hpc-lg01 started Thu Oct  8 03:37:50 PM EDT 2026
+[celldform] args: randswap/experiment_4_loocv/unet loocv_baseline
+index, name, memory.total [MiB], driver_version
+0, Tesla V100-PCIE-32GB, 32768 MiB, 580.173.02
+[celldform] torch 2.14.1+cu126 | cuda True | Tesla V100-PCIE-32GB
+[randswap/experiment_4_loocv/unet] fold 1: drawing the split and building data  (15:37)
+fold 1:
+  train 13 cells (86.7%)   580 frames incl. 200 legacy  high-1(51), high-10(50), high-2(20), high-3(20), high-4(20), high-6(20), high-7(20), high-8(19), low-1(20), low-3(19), low-4(19), low-5(51), low-6(51)
+  val    1 cells ( 6.7%)    24 frames  low-2(24)
+  test   1 cells ( 6.7%)    50 frames  high-9(50)
+  crop 384: centre (579, 532) from the 13 training cells; legacy (648, 373)
+  -> data/preprocessed/randswap/experiment_4_loocv/fold_1  (604 train/val frames, 20 test frames)
+[randswap/experiment_4_loocv/unet] fold 1: training  (15:38)
+[celldform] randswap fold 1: test ['high_cell9']  val ['low_cell2']  (split drawn at config commit 135a0144)
+[celldform] per-cell balanced sampling over 13 cells (19-51 frames each -> 29.2 effective)
+Early stopping: no val_DSC improvement > 0.001 for 20 epochs (best=0.9729 at epoch 27). Stopping at epoch 37/100.
+[celldform] Reloaded best checkpoint for final evaluation: epoch 27
+[randswap/experiment_4_loocv/unet] fold 1: scoring the test cells at native resolution
+fold_1  (native 1228x922, 20 frames, input 384x384)
+  high-9    DSC 0.912  prec 0.889  rec 0.936
+  pooled    DSC 0.912  prec 0.889  rec 0.936
+  per-cell mean DSC 0.912
+[randswap/experiment_4_loocv/unet] fold 1 done  (15:46)
+[celldform] job 109 finished (exit 0) Thu Oct  8 03:46:41 PM EDT 2026
