@@ -51,11 +51,62 @@ dev        = ["pytest>=7.4", "pytest-cov>=4.1", "black>=23.0", "ruff>=0.1",
               "nbstripout>=0.7", "nbclient>=0.9", "nbformat>=5.9"]
 
 [project.scripts]
-celldform-extract-frames    = "celldform.cli:extract_frames"
-celldform-organize-dataset  = "celldform.cli:organize_dataset"
-celldform-train-unet        = "celldform.cli:train_unet"
-celldform-infer             = "celldform.cli:infer"
-celldform-hpc-submit        = "celldform.cli:hpc_submit"
+# Every non-HPC script under scripts/, plus the umbrella `celldform` -- see celldform/cli.py and docs/cli.md.
+celldform                       = "celldform.cli:main"
+celldform-organize-dataset      = "celldform.cli:organize_dataset"
+celldform-hpc-submit            = "celldform.cli:hpc_submit"
+# data
+celldform-extract-frames        = "celldform.cli:extract_frames"
+celldform-preprocess-frames     = "celldform.cli:preprocess_frames"
+celldform-build-randswap        = "celldform.cli:build_randswap"
+celldform-build-nnunet-dataset  = "celldform.cli:build_nnunet_dataset"
+celldform-build-distill-data    = "celldform.cli:build_distill_data"
+# annotation
+celldform-annotate              = "celldform.cli:annotate"
+celldform-annotate-frame        = "celldform.cli:annotate_frame"
+celldform-preview-masks         = "celldform.cli:preview_masks"
+celldform-validate-masks        = "celldform.cli:validate_masks"
+# training
+celldform-train-unet            = "celldform.cli:train_unet"
+celldform-train-experiment      = "celldform.cli:train_experiment"
+celldform-train-cv-fold         = "celldform.cli:train_cv_fold"
+celldform-train-deploy-model    = "celldform.cli:train_deploy_model"
+celldform-train-nnunet-cv       = "celldform.cli:train_nnunet_cv"
+celldform-train-student-cv      = "celldform.cli:train_student_cv"
+celldform-distill-ensemble      = "celldform.cli:distill_ensemble"
+# evaluation
+celldform-evaluate-unet         = "celldform.cli:evaluate_unet"
+celldform-eval-native           = "celldform.cli:eval_native"
+celldform-eval-testing-set      = "celldform.cli:eval_testing_set"
+celldform-eval-nnunet           = "celldform.cli:eval_nnunet"
+celldform-ensemble-eval         = "celldform.cli:ensemble_eval"
+celldform-eval-ensemble-cv      = "celldform.cli:eval_ensemble_cv"
+celldform-summarize-cv          = "celldform.cli:summarize_cv"
+celldform-compare-postswap      = "celldform.cli:compare_postswap"
+celldform-check-convergence     = "celldform.cli:check_convergence"
+celldform-latency-benchmark     = "celldform.cli:latency_benchmark"
+# inference
+celldform-infer                 = "celldform.cli:infer"
+celldform-predict-single-frame  = "celldform.cli:predict_single_frame"
+celldform-harvest-factory       = "celldform.cli:harvest_factory"
+# report
+celldform-build-report-assets   = "celldform.cli:build_report_assets"
+celldform-make-report-tables    = "celldform.cli:make_report_tables"
+celldform-make-cell-gif         = "celldform.cli:make_cell_gif"
+celldform-diagnose-false-positives = "celldform.cli:diagnose_false_positives"
+celldform-render-holdout-comparison = "celldform.cli:render_holdout_comparison"
+celldform-view-soft-target      = "celldform.cli:view_soft_target"
+celldform-plot-cell-sizes       = "celldform.cli:plot_cell_sizes"
+celldform-plot-cv               = "celldform.cli:plot_cv"
+celldform-plot-data-map         = "celldform.cli:plot_data_map"
+celldform-plot-experiments      = "celldform.cli:plot_experiments"
+celldform-plot-model-comparison = "celldform.cli:plot_model_comparison"
+celldform-plot-nnunet-epochs    = "celldform.cli:plot_nnunet_epochs"
+celldform-plot-percell-metrics  = "celldform.cli:plot_percell_metrics"
+celldform-plot-pool-flow        = "celldform.cli:plot_pool_flow"
+celldform-plot-resize-vs-crop   = "celldform.cli:plot_resize_vs_crop"
+celldform-plot-split-change     = "celldform.cli:plot_split_change"
+celldform-plot-sweep-dsc        = "celldform.cli:plot_sweep_dsc"
 
 [project.urls]
 Repository = "https://github.com/oppongbaah/cancer_cell_deformation"

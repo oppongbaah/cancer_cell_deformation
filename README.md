@@ -75,14 +75,17 @@ labels    = CellClassifier.load("checkpoints/svm.pkl").predict(
 
 ## Workflow (brief)
 
+Every script is also a `celldform-*` command (`celldform` lists them all; see [docs/cli.md](docs/cli.md)):
+
 ```bash
-celldform-organize-dataset                              # Stage 0 — organise raw data
-python scripts/annotation/annotate.py                             # annotate training images
-python scripts/annotation/validate_masks.py                       # validate masks
-python scripts/data/preprocess_frames.py --masks            # Stage 2 — preprocess
-celldform-train-unet --config configs/default.yaml     # Stage 3 — train U-Net
-python scripts/evaluation/evaluate_unet.py --checkpoint ...       # evaluate on holdout set
-celldform-infer <input> --unet-ckpt ... --classifier-ckpt ...  # Stages 1–6 inference
+celldform-organize-dataset                                  # Stage 0 — organise raw data
+celldform-annotate                                          # annotate training images (needs .[annotation])
+celldform-validate-masks                                    # validate masks
+celldform-preprocess-frames --masks                         # Stage 2 — preprocess
+celldform-train-unet --config configs/default.yaml          # Stage 3 — train U-Net
+celldform-train-experiment <experiment> <run>               # ... or train + score one filed experiment run
+celldform-evaluate-unet --checkpoint ...                    # evaluate on the holdout set
+celldform-infer --video <video> --unet-ckpt ... --classifier-ckpt ...   # Stages 1–6 on a video
 ```
 
 See [docs/workflow.md](docs/workflow.md) for the full step-by-step guide.

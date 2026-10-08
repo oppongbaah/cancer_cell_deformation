@@ -194,12 +194,14 @@ Every run appends its full-precision metrics to `results/preswap/preswap_eval_lo
 Not yet started as of 2026-09-04 — the U-Net recipe is still being tuned (see [Training Results — Next Steps](training.md#next-steps)). This step generates predicted masks for the classifier training pool once it is.
 
 ```bash
-python scripts/data/preprocess_frames.py --pool 03_mask_factory
-
-celldform-infer data/preprocessed/inference/03_mask_factory/inputs \
-    --unet-ckpt checkpoints/multiclass_experiment_256_bf64_scale_cos/unet_best.pt \
-    --output-dir data/predicted_masks/03_mask_factory
+celldform-harvest-factory            # ensemble s42-s45 -> data/factory/ensemble4, features -> results/factory
 ```
+
+`celldform-harvest-factory` (`scripts/inference/harvest_factory.py`) segments every `03_mask_factory`
+frame with the seed ensemble at native resolution and extracts the classifier features; see its
+docstring and `--help`. It replaced the command previously shown here
+(`celldform-infer <image folder> ...`), which never ran inference: the old `celldform-infer` was a
+stub that loaded the checkpoint and stopped.
 
 !!! warning "`checkpoints/unet_best.pt` is not the right path"
     That default path belongs to `configs/default.yaml` (binary, 256×256) — not the frozen multiclass pipeline actually being trained. Use whatever checkpoint [Training Results](training.md) currently names as best (`checkpoints/multiclass_experiment_256_bf64_scale_cos/unet_best.pt` as of 2026-09-10), and update this doc when that changes.
@@ -231,9 +233,10 @@ There is no separate classifier-only firewall pool anymore — `04_clf_arena` wa
 ```bash
 python scripts/data/preprocess_frames.py --image-dir data/frames/02_unet_holdout/final_test \
     --output-dir data/preprocessed/inference/final_test/inputs
-
-celldform-infer data/preprocessed/inference/final_test/inputs \
-    --unet-ckpt checkpoints/multiclass_experiment_256_bf64_scale_cos/unet_best.pt \
-    --classifier-ckpt checkpoints/svm.pkl \
-    --output-dir results/final_test
 ```
+
+!!! warning "No command runs the full pipeline on a folder of frames yet"
+    The `celldform-infer <image folder> ...` command previously shown here never worked (the old
+    `celldform-infer` was a stub). Today `celldform-infer` takes a video (`--video`), and
+    `celldform-harvest-factory` segments a pool and extracts features. The blind test needs a
+    folder-based equivalent of one of them before it can run.

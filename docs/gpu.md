@@ -36,9 +36,12 @@ device: "cpu"    # force CPU
 
 ### Via CLI flag
 
+Training takes the device from the config only (`celldform-train-unet` has no `--device`). Inference
+and the single-frame check accept an override:
+
 ```bash
-celldform-train-unet --config configs/default.yaml --device cuda
-celldform-infer input/ --unet-ckpt checkpoints/unet_best.pt --device cpu
+celldform-infer --video data/videos/experiment_01.mp4 --unet-ckpt checkpoints/unet_best.pt --device cpu
+celldform-predict-single-frame --checkpoint checkpoints/unet_best.pt --frame <frame.png> --device cpu
 ```
 
 ---

@@ -216,9 +216,16 @@ def gate_table(path: Path) -> None:
 
 
 if __name__ == "__main__":
-    if "--gate-only" in sys.argv:
+    import argparse
+    ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    ap.add_argument("--gate-only", action="store_true",
+                    help="skip the 5-round GPU evaluation; recompute the verdict from the existing log")
+    ap.add_argument("--tables", type=Path, default=None,
+                    help="with --gate-only: also write <dir>/ensemble_gate.tex")
+    args = ap.parse_args()
+    if args.gate_only:
         gate()
-        if "--tables" in sys.argv:
-            gate_table(Path(sys.argv[sys.argv.index("--tables") + 1]) / "ensemble_gate.tex")
+        if args.tables:
+            gate_table(args.tables / "ensemble_gate.tex")
     else:
         main()

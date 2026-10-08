@@ -17,7 +17,7 @@ Outputs land in the report repo, not here:
     <report-root>/main_work/tables/*.tex    \\input{}-able LaTeX tables
 
 After running, recompile the report:
-    cd <report-root>/main_work && pdflatex -interaction=nonstopmode progress_report_10_1_26.tex
+    cd <report-root>/main_work && pdflatex -interaction=nonstopmode progress_report_10_8_26.tex
 
 Run it after ANY change to the pools, the masks, or results/preswap/preswap_eval_log.jsonl.
 The comparison-strip jobs additionally need the two checkpoints they name to be
@@ -107,6 +107,7 @@ def jobs(img: Path, tab: Path) -> dict[str, list[str]]:
                     "--distill-exp", "randswap/experiment_3_distill/cv", "--distill-run", "student_cv",
                     "--out", str(img), "--tables", str(tab)],
         "model-comparison": ["scripts/report/plot_model_comparison.py", "--out", str(img), "--tables", str(tab)],
+        "nnunet-epochs": ["scripts/report/plot_nnunet_epochs.py", "--out", str(img), "--tables", str(tab)],
         "distill-labels": ["scripts/report/view_soft_target.py", "--round", "4", "--stem", "high_cell7_002525",
                            "domain_high_cell7_002585", "--output", str(img / "distill_soft_targets.png")],
         "ensemble-gate": ["scripts/evaluation/eval_ensemble_cv.py", "--gate-only", "--tables", str(tab)],
@@ -141,7 +142,7 @@ def main() -> None:
     p.add_argument("--compile", action="store_true",
                    help="After building assets, run pdflatex the required number of times "
                         "and delete the temp files")
-    p.add_argument("--tex", default="progress_report_10_1_26.tex",
+    p.add_argument("--tex", default="progress_report_10_8_26.tex",
                    help="Report .tex to compile with --compile")
     args = p.parse_args()
 

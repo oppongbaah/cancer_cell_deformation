@@ -8,7 +8,9 @@
 #     in order;
 #   * loads module Anaconda3/2025.06-1 and activates conda env $CONDA_ENV (default celldform);
 #   * exports PYTHON (the env's python) for run_py;
-#   * prints the job, node, GPU and torch build it got.
+#   * prints the job, node, GPU and torch build it got;
+#   * when the job exits 0, commits and pushes its outputs (scripts/hpc/_autocommit.sh; opt out
+#     with sbatch --export=ALL,AUTOCOMMIT=0).
 #
 # The job scripts set no `#SBATCH --error`: SLURM creates that file at job start whether or not
 # anything goes wrong, so the error file is managed here instead.
@@ -27,6 +29,11 @@ _hpc_finish() {
         echo "[celldform] job FAILED (exit $rc) at $(date) -- stderr kept in $HPC_ERR" >>"$HPC_ERR"
     fi
     echo "[celldform] job ${SLURM_JOB_ID:-local} finished (exit $rc) $(date)"
+    # Success only: commit + push the run's outputs (scripts/hpc/_autocommit.sh). It runs after the
+    # last line above, so the committed .out is complete; its outcome goes to logs/hpc/autocommit.log.
+    if [ "$rc" -eq 0 ] && [ -n "${SLURM_JOB_ID:-}" ]; then
+        ( set +eu; source scripts/hpc/_autocommit.sh && hpc_autocommit ) || true
+    fi
 }
 trap _hpc_finish EXIT
 # Time limit, scancel and preemption send SIGTERM. Exit non-zero so the .err is kept.
@@ -34,6 +41,7 @@ trap 'echo "[celldform] terminated by SIGTERM (time limit, scancel or preemption
 
 echo "[celldform] job ${SLURM_JOB_ID:-local} (${SLURM_JOB_NAME:-celldform}) on ${SLURMD_NODENAME:-$(hostname)} started $(date)"
 echo "[celldform] args: ${*:-(none)}"
+HPC_ARGS="${*:-}"   # recorded in the auto-commit message
 
 CONDA_ENV="${CONDA_ENV:-celldform}"
 set +u                           # Lmod's init and conda's activate reference unset variables

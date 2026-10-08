@@ -97,3 +97,6 @@ configs/notebook/
 checkpoints/notebook/
 logs/notebook/
 results/notebook/
+
+# One line per finished SLURM job: what scripts/hpc/_autocommit.sh committed/pushed. Local only.
+logs/hpc/autocommit.log

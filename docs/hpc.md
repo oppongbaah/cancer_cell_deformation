@@ -160,6 +160,22 @@ matching **`.err` file exists only when the job failed**: non-zero exit, time li
 `scancel`. It holds the job's stderr plus a closing line giving the exit code or the
 SIGTERM. Successful jobs leave no `.err`, so `ls logs/hpc/*.err` lists the failures.
 
+**Auto-commit.** When a job exits 0, `scripts/hpc/_autocommit.sh` commits its outputs and pushes
+them to the current branch on GitHub. A failed, cancelled or timed-out job commits nothing.
+
+- *What is committed:* that job's `logs/hpc/<job>_<jobid>.out`, plus `results/` and `logs/` as far
+  as `.gitignore` admits them (eval logs `*.jsonl`, training logs `*.log`). Figures, CSVs and
+  checkpoints stay out. **Code is never committed by a job**, and anything else you have staged or
+  edited is left as it is (`git commit --only`).
+- *Where:* the current branch, never `main`/`master` (on those it does nothing). Jobs finishing
+  together commit one at a time (a lock in `.git/`).
+- *How it pushes:* over SSH with the repo's deploy key `~/.ssh/celldform_deploy` (GitHub → repo
+  Settings → Deploy keys, write access). Your own remote and credentials are not used. If a
+  push fails, the commit stays local and the job still succeeds; push it yourself.
+- *Record:* one line per job in `logs/hpc/autocommit.log` (not tracked), e.g.
+  `committed 55a2b28 on feat-hpc and pushed`.
+- *Switches:* `sbatch --export=ALL,AUTOCOMMIT=0 ...` skips it; `AUTOCOMMIT_PUSH=0` commits without pushing.
+
 `celldform-hpc-submit` generates the `train_unet` job on the fly and submits it (same setup, via `_common.sh`):
 
 ```bash

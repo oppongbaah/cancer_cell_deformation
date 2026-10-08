@@ -22,7 +22,7 @@
     `evaluation/eval_nnunet.py`.
 
 
-All scripts live under `scripts/<stage>/` and are thin wrappers or standalone tools. Run them directly with `python scripts/<stage>/<name>.py`. The installed CLI (`celldform-*`, see [CLI Reference](cli.md)) targets `celldform.cli` and is unaffected by this layout.
+All scripts live under `scripts/<stage>/` and are thin wrappers or standalone tools. Run them directly with `python scripts/<stage>/<name>.py`, or as the console command `celldform-<name>` (underscores become dashes): every script outside `hpc/` and `maintenance/` has one, and `celldform` lists them all. See [CLI Reference](cli.md).
 
 ---
 
