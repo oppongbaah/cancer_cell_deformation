@@ -49,3 +49,49 @@ Epoch 016/100  train_loss=0.4148  train_DSC=0.9472  val_loss=0.4629  val_DSC=0.8
 Epoch 017/100  train_loss=0.4000  train_DSC=0.9398  val_loss=0.4216  val_DSC=0.9704  (13.1s)
   → Checkpoint saved: checkpoints/randswap/experiment_4_loocv/unet/loocv_baseline/fold_5/unet_best.pt  (DSC=0.9704)
 Epoch 018/100  train_loss=0.3851  train_DSC=0.9402  val_loss=0.4121  val_DSC=0.9422  (13.2s)
+Epoch 019/100  train_loss=0.3594  train_DSC=0.9469  val_loss=0.4286  val_DSC=0.8942  (13.2s)
+Epoch 020/100  train_loss=0.3551  train_DSC=0.9426  val_loss=0.3667  val_DSC=0.9596  (13.1s)
+Epoch 021/100  train_loss=0.3418  train_DSC=0.9409  val_loss=0.3874  val_DSC=0.9291  (13.1s)
+Epoch 022/100  train_loss=0.3275  train_DSC=0.9422  val_loss=0.3554  val_DSC=0.9305  (13.3s)
+Epoch 023/100  train_loss=0.3230  train_DSC=0.9314  val_loss=0.2940  val_DSC=0.9647  (13.1s)
+Epoch 024/100  train_loss=0.3015  train_DSC=0.9432  val_loss=0.3435  val_DSC=0.9384  (13.5s)
+Epoch 025/100  train_loss=0.2874  train_DSC=0.9540  val_loss=0.3023  val_DSC=0.9682  (13.1s)
+Epoch 026/100  train_loss=0.2710  train_DSC=0.9501  val_loss=0.2850  val_DSC=0.9529  (13.5s)
+Epoch 027/100  train_loss=0.2645  train_DSC=0.9482  val_loss=0.2929  val_DSC=0.9599  (13.1s)
+Epoch 028/100  train_loss=0.2690  train_DSC=0.9395  val_loss=0.3716  val_DSC=0.8156  (13.3s)
+Epoch 029/100  train_loss=0.2530  train_DSC=0.9525  val_loss=0.2871  val_DSC=0.9449  (13.3s)
+Epoch 030/100  train_loss=0.2379  train_DSC=0.9565  val_loss=0.2865  val_DSC=0.8864  (13.1s)
+Epoch 031/100  train_loss=0.2342  train_DSC=0.9527  val_loss=0.2491  val_DSC=0.9699  (13.2s)
+Epoch 032/100  train_loss=0.2256  train_DSC=0.9573  val_loss=0.3266  val_DSC=0.8970  (13.3s)
+Epoch 033/100  train_loss=0.2246  train_DSC=0.9512  val_loss=0.4085  val_DSC=0.6665  (13.3s)
+Epoch 034/100  train_loss=0.2215  train_DSC=0.9550  val_loss=0.2780  val_DSC=0.9183  (13.1s)
+Epoch 035/100  train_loss=0.2159  train_DSC=0.9571  val_loss=0.2552  val_DSC=0.9612  (13.7s)
+Epoch 036/100  train_loss=0.1995  train_DSC=0.9594  val_loss=0.3803  val_DSC=0.7120  (13.5s)
+Epoch 037/100  train_loss=0.2134  train_DSC=0.9557  val_loss=0.2672  val_DSC=0.9468  (13.3s)
+Early stopping: no val_DSC improvement > 0.001 for 20 epochs (best=0.9704 at epoch 17). Stopping at epoch 37/100.
+
+[celldform] Reloaded best checkpoint for final evaluation: epoch 17
+
+Final validation metrics:
+  [trapped_cell]
+    dsc: 0.9704
+    iou: 0.9424
+    precision: 0.9759
+    recall: 0.9649
+  [class_2]
+    dsc: 0.7295
+    iou: 0.5742
+    precision: 0.6253
+    recall: 0.8754
+  [mean]
+    dsc: 0.8499
+    iou: 0.7583
+    precision: 0.8006
+    recall: 0.9201
+/home/hpcadmin/Desktop/Isaac/thesis/cancer_cell_deformation/celldform/utils/visualization.py:155: UserWarning: This figure includes Axes that are not compatible with tight_layout, so results might be incorrect.
+  fig.tight_layout()
+Training curves saved to results/randswap/experiment_4_loocv/unet/unet_training_curves_v4_loocv_baseline_fold_5.png
+fold_5  (native 1228x922, 20 frames, input 384x384)
+  low-6     DSC 0.769  prec 0.963  rec 0.641
+  pooled    DSC 0.769  prec 0.963  rec 0.641
+  per-cell mean DSC 0.769
