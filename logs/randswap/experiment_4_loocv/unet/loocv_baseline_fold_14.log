@@ -74,3 +74,44 @@ Epoch 039/100  train_loss=0.2016  train_DSC=0.9592  val_loss=0.1611  val_DSC=0.9
 Epoch 040/100  train_loss=0.2049  train_DSC=0.9558  val_loss=0.2262  val_DSC=0.9401  (13.2s)
 Epoch 041/100  train_loss=0.2067  train_DSC=0.9524  val_loss=0.1413  val_DSC=0.9520  (13.2s)
 Epoch 042/100  train_loss=0.1956  train_DSC=0.9621  val_loss=0.1476  val_DSC=0.9516  (13.3s)
+Epoch 043/100  train_loss=0.1874  train_DSC=0.9613  val_loss=0.1373  val_DSC=0.9545  (13.0s)
+Epoch 044/100  train_loss=0.2000  train_DSC=0.9587  val_loss=0.2093  val_DSC=0.9108  (13.1s)
+Epoch 045/100  train_loss=0.1979  train_DSC=0.9531  val_loss=0.2517  val_DSC=0.8174  (13.3s)
+Epoch 046/100  train_loss=0.1849  train_DSC=0.9643  val_loss=0.1373  val_DSC=0.9533  (13.1s)
+Epoch 047/100  train_loss=0.1794  train_DSC=0.9641  val_loss=0.1382  val_DSC=0.9547  (13.2s)
+Epoch 048/100  train_loss=0.1809  train_DSC=0.9645  val_loss=0.1379  val_DSC=0.9506  (13.1s)
+Epoch 049/100  train_loss=0.1923  train_DSC=0.9563  val_loss=0.1234  val_DSC=0.9531  (13.4s)
+Epoch 050/100  train_loss=0.1970  train_DSC=0.9529  val_loss=0.1768  val_DSC=0.9327  (13.2s)
+Epoch 051/100  train_loss=0.1840  train_DSC=0.9646  val_loss=0.1532  val_DSC=0.9487  (13.2s)
+Epoch 052/100  train_loss=0.1859  train_DSC=0.9621  val_loss=0.1421  val_DSC=0.9485  (13.1s)
+Epoch 053/100  train_loss=0.1822  train_DSC=0.9613  val_loss=0.1789  val_DSC=0.9049  (13.1s)
+Epoch 054/100  train_loss=0.1762  train_DSC=0.9606  val_loss=0.1255  val_DSC=0.9463  (13.2s)
+Epoch 055/100  train_loss=0.1744  train_DSC=0.9614  val_loss=0.1305  val_DSC=0.9469  (13.1s)
+Epoch 056/100  train_loss=0.1745  train_DSC=0.9620  val_loss=0.1209  val_DSC=0.9508  (13.1s)
+Early stopping: no val_DSC improvement > 0.001 for 20 epochs (best=0.9560 at epoch 36). Stopping at epoch 56/100.
+
+[celldform] Reloaded best checkpoint for final evaluation: epoch 36
+
+Final validation metrics:
+  [trapped_cell]
+    dsc: 0.9559
+    iou: 0.9155
+    precision: 0.9810
+    recall: 0.9320
+  [class_2]
+    dsc: 0.9286
+    iou: 0.8667
+    precision: 0.9276
+    recall: 0.9295
+  [mean]
+    dsc: 0.9422
+    iou: 0.8911
+    precision: 0.9543
+    recall: 0.9307
+/home/hpcadmin/Desktop/Isaac/thesis/cancer_cell_deformation/celldform/utils/visualization.py:155: UserWarning: This figure includes Axes that are not compatible with tight_layout, so results might be incorrect.
+  fig.tight_layout()
+Training curves saved to results/randswap/experiment_4_loocv/unet/unet_training_curves_v13_loocv_baseline_fold_14.png
+fold_14  (native 1228x922, 20 frames, input 384x384)
+  high-10   DSC 0.736  prec 0.602  rec 0.947
+  pooled    DSC 0.736  prec 0.602  rec 0.947
+  per-cell mean DSC 0.736
