@@ -1,0 +1,50 @@
+fold 7:
+  train 13 cells (86.7%)   614 frames incl. 200 legacy  high-1(51), high-10(50), high-2(20), high-3(20), high-7(20), high-8(19), high-9(50), low-1(20), low-2(24), low-3(19), low-4(19), low-5(51), low-6(51)
+  val    1 cells ( 6.7%)    20 frames  high-4(20)
+  test   1 cells ( 6.7%)    20 frames  high-6(20)
+  crop 384: centre (580, 532) from the 13 training cells; legacy (648, 373)
+  -> data/preprocessed/randswap/experiment_4_loocv/fold_7  (634 train/val frames, 20 test frames)
+[celldform] randswap fold 7: test ['high_cell6']  val ['high_cell4']  (split drawn at config commit 135a0144)
+[celldform] Dataset split (group-aware, 25 groups) — train: 614  val: 20
+[celldform]   split assignment (seed=42)
+[celldform]     val  : high_cell4(20)
+[celldform]     train: high_cell1(51), low_cell5(51), low_cell6(51), high_cell10(50), high_cell9(50), low_cell2(24), high_cell2(20), high_cell3(20), high_cell7(20), low_cell1(20), high_cell8(19), low_cell3(19), low_cell4(19), legacy(200)
+[celldform]   WARNING: 'high_cell4' is 20 of 20 validation frames (100%) — validation is mostly one group, so checkpoint selection and early stopping are steered by that single cell, and it is absent from training.
+[celldform]   note: cell group(s) held out of training this run: high_cell4
+[celldform] per-cell balanced sampling over 13 cells (19-51 frames each -> 31.8 effective)
+[celldform] Config snapshot → checkpoints/randswap/experiment_4_loocv/unet/loocv_baseline/fold_7/config.yaml
+
+============================================================
+  Platform info [before training]
+============================================================
+  OS          : Linux 7.0.0-30-generic (x86_64)
+  Python      : 3.11.17
+  PyTorch     : 2.14.1+cu126
+  Device      : Tesla V100-PCIE-32GB (GPU 0)
+  CUDA        : 12.6
+  VRAM        : 31.7 GB
+============================================================
+
+Epoch 001/100  train_loss=0.9597  train_DSC=0.3842  val_loss=0.8481  val_DSC=0.6474  (15.5s)
+  → Checkpoint saved: checkpoints/randswap/experiment_4_loocv/unet/loocv_baseline/fold_7/unet_best.pt  (DSC=0.6474)
+Epoch 002/100  train_loss=0.7911  train_DSC=0.8203  val_loss=0.9300  val_DSC=0.4361  (14.4s)
+Epoch 003/100  train_loss=0.7201  train_DSC=0.8762  val_loss=0.9455  val_DSC=0.4213  (14.4s)
+Epoch 004/100  train_loss=0.6794  train_DSC=0.9012  val_loss=0.7583  val_DSC=0.5570  (14.1s)
+Epoch 005/100  train_loss=0.6439  train_DSC=0.9185  val_loss=0.8029  val_DSC=0.4925  (14.1s)
+Epoch 006/100  train_loss=0.6129  train_DSC=0.9303  val_loss=0.8444  val_DSC=0.4388  (14.3s)
+Epoch 007/100  train_loss=0.5860  train_DSC=0.9372  val_loss=0.7816  val_DSC=0.4680  (14.2s)
+Epoch 008/100  train_loss=0.5687  train_DSC=0.9383  val_loss=0.7287  val_DSC=0.5253  (14.1s)
+Epoch 009/100  train_loss=0.5520  train_DSC=0.9322  val_loss=0.5821  val_DSC=0.7427  (14.5s)
+  → Checkpoint saved: checkpoints/randswap/experiment_4_loocv/unet/loocv_baseline/fold_7/unet_best.pt  (DSC=0.7427)
+Epoch 010/100  train_loss=0.5255  train_DSC=0.9407  val_loss=0.7299  val_DSC=0.4989  (14.1s)
+Epoch 011/100  train_loss=0.5022  train_DSC=0.9457  val_loss=0.7866  val_DSC=0.4614  (14.2s)
+Epoch 012/100  train_loss=0.4834  train_DSC=0.9460  val_loss=0.7717  val_DSC=0.4549  (14.0s)
+Epoch 013/100  train_loss=0.4600  train_DSC=0.9481  val_loss=0.7743  val_DSC=0.4564  (14.2s)
+Epoch 014/100  train_loss=0.4429  train_DSC=0.9510  val_loss=0.7680  val_DSC=0.4686  (14.3s)
+Epoch 015/100  train_loss=0.4316  train_DSC=0.9391  val_loss=0.5643  val_DSC=0.5745  (14.2s)
+Epoch 016/100  train_loss=0.4098  train_DSC=0.9515  val_loss=0.7379  val_DSC=0.4713  (14.2s)
+Epoch 017/100  train_loss=0.3814  train_DSC=0.9564  val_loss=0.6960  val_DSC=0.4840  (14.2s)
+Epoch 018/100  train_loss=0.3638  train_DSC=0.9525  val_loss=0.5370  val_DSC=0.5695  (14.1s)
+Epoch 019/100  train_loss=0.3486  train_DSC=0.9563  val_loss=0.7235  val_DSC=0.4720  (13.9s)
+Epoch 020/100  train_loss=0.3327  train_DSC=0.9589  val_loss=0.6576  val_DSC=0.5109  (14.1s)
+Epoch 021/100  train_loss=0.3101  train_DSC=0.9586  val_loss=0.7302  val_DSC=0.3230  (14.1s)
