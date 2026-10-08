@@ -1,0 +1,51 @@
+fold 5:
+  train 13 cells (86.7%)   584 frames incl. 200 legacy  high-1(51), high-10(50), high-2(20), high-3(20), high-4(20), high-6(20), high-7(20), high-8(19), high-9(50), low-1(20), low-2(24), low-4(19), low-5(51)
+  val    1 cells ( 6.7%)    19 frames  low-3(19)
+  test   1 cells ( 6.7%)    51 frames  low-6(51)
+  crop 384: centre (580, 532) from the 13 training cells; legacy (648, 373)
+  -> data/preprocessed/randswap/experiment_4_loocv/fold_5  (603 train/val frames, 20 test frames)
+[celldform] randswap fold 5: test ['low_cell6']  val ['low_cell3']  (split drawn at config commit 135a0144)
+[celldform] Dataset split (group-aware, 25 groups) — train: 584  val: 19
+[celldform]   split assignment (seed=42)
+[celldform]     val  : low_cell3(19)
+[celldform]     train: high_cell1(51), low_cell5(51), high_cell10(50), high_cell9(50), low_cell2(24), high_cell2(20), high_cell3(20), high_cell4(20), high_cell6(20), high_cell7(20), low_cell1(20), high_cell8(19), low_cell4(19), legacy(200)
+[celldform]   WARNING: 'low_cell3' is 19 of 19 validation frames (100%) — validation is mostly one group, so checkpoint selection and early stopping are steered by that single cell, and it is absent from training.
+[celldform]   note: cell group(s) held out of training this run: low_cell3
+[celldform] per-cell balanced sampling over 13 cells (19-51 frames each -> 29.5 effective)
+[celldform] Config snapshot → checkpoints/randswap/experiment_4_loocv/unet/loocv_baseline/fold_5/config.yaml
+
+============================================================
+  Platform info [before training]
+============================================================
+  OS          : Linux 7.0.0-30-generic (x86_64)
+  Python      : 3.11.17
+  PyTorch     : 2.14.1+cu126
+  Device      : Tesla V100-PCIE-32GB (GPU 0)
+  CUDA        : 12.6
+  VRAM        : 31.7 GB
+============================================================
+
+Epoch 001/100  train_loss=0.9632  train_DSC=0.3743  val_loss=0.8581  val_DSC=0.5986  (14.7s)
+  → Checkpoint saved: checkpoints/randswap/experiment_4_loocv/unet/loocv_baseline/fold_5/unet_best.pt  (DSC=0.5986)
+Epoch 002/100  train_loss=0.8095  train_DSC=0.7707  val_loss=0.9078  val_DSC=0.0588  (13.4s)
+Epoch 003/100  train_loss=0.7333  train_DSC=0.8517  val_loss=0.7448  val_DSC=0.7958  (13.4s)
+  → Checkpoint saved: checkpoints/randswap/experiment_4_loocv/unet/loocv_baseline/fold_5/unet_best.pt  (DSC=0.7958)
+Epoch 004/100  train_loss=0.6875  train_DSC=0.8874  val_loss=0.6735  val_DSC=0.9041  (13.1s)
+  → Checkpoint saved: checkpoints/randswap/experiment_4_loocv/unet/loocv_baseline/fold_5/unet_best.pt  (DSC=0.9041)
+Epoch 005/100  train_loss=0.6566  train_DSC=0.8978  val_loss=0.6648  val_DSC=0.8531  (13.3s)
+Epoch 006/100  train_loss=0.6206  train_DSC=0.9189  val_loss=0.6244  val_DSC=0.9319  (12.9s)
+  → Checkpoint saved: checkpoints/randswap/experiment_4_loocv/unet/loocv_baseline/fold_5/unet_best.pt  (DSC=0.9319)
+Epoch 007/100  train_loss=0.5898  train_DSC=0.9343  val_loss=0.5888  val_DSC=0.9503  (13.1s)
+  → Checkpoint saved: checkpoints/randswap/experiment_4_loocv/unet/loocv_baseline/fold_5/unet_best.pt  (DSC=0.9503)
+Epoch 008/100  train_loss=0.5849  train_DSC=0.9069  val_loss=0.5940  val_DSC=0.9168  (13.2s)
+Epoch 009/100  train_loss=0.5550  train_DSC=0.9259  val_loss=0.5827  val_DSC=0.9180  (13.3s)
+Epoch 010/100  train_loss=0.5354  train_DSC=0.9317  val_loss=0.5568  val_DSC=0.9171  (13.5s)
+Epoch 011/100  train_loss=0.5079  train_DSC=0.9434  val_loss=0.5629  val_DSC=0.8225  (13.0s)
+Epoch 012/100  train_loss=0.4886  train_DSC=0.9377  val_loss=0.5049  val_DSC=0.9397  (13.1s)
+Epoch 013/100  train_loss=0.4780  train_DSC=0.9330  val_loss=0.5004  val_DSC=0.9364  (13.2s)
+Epoch 014/100  train_loss=0.4545  train_DSC=0.9458  val_loss=0.5170  val_DSC=0.8791  (13.1s)
+Epoch 015/100  train_loss=0.4471  train_DSC=0.9323  val_loss=0.5424  val_DSC=0.7449  (13.0s)
+Epoch 016/100  train_loss=0.4148  train_DSC=0.9472  val_loss=0.4629  val_DSC=0.8920  (13.2s)
+Epoch 017/100  train_loss=0.4000  train_DSC=0.9398  val_loss=0.4216  val_DSC=0.9704  (13.1s)
+  → Checkpoint saved: checkpoints/randswap/experiment_4_loocv/unet/loocv_baseline/fold_5/unet_best.pt  (DSC=0.9704)
+Epoch 018/100  train_loss=0.3851  train_DSC=0.9402  val_loss=0.4121  val_DSC=0.9422  (13.2s)
