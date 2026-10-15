@@ -1,0 +1,6 @@
+[celldform] job 105 (loocv_nnunet_r13) on casev-hpc-lg01 started Sat Oct 10 08:48:32 AM EDT 2026
+[celldform] args: --src-exp randswap/experiment_4_loocv/unet --src-run loocv_baseline --dataset-id 502 --dataset-name CellTrapLOOCV --exp randswap/experiment_4_loocv/nnunet --trainer nnUNetTrainer --rounds 13 --no-summary
+Failed to initialize NVML: Driver/library version mismatch
+NVML library version: 580.178
+[celldform] job 105 finished (exit 18) Sat Oct 10 08:48:33 AM EDT 2026
+[celldform] job FAILED (exit 18) at Sat Oct 10 08:48:33 AM EDT 2026 -- stderr kept in logs/hpc/loocv_nnunet_r13_105.err
