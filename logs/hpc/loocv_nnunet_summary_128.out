@@ -1,0 +1,45 @@
+[celldform] job 128 (loocv_nnunet_summary) on casev-hpc-lg01 started Thu Oct 15 08:53:37 PM EDT 2026
+[celldform] args: --exp randswap/experiment_4_loocv/nnunet --run nnunet
+fold  test cells                         val          best ep int. val
+   1  high_cell9                         low_cell2       None        -
+   2  low_cell5                          high_cell7      None        -
+   3  high_cell8                         low_cell1       None        -
+   4  high_cell7                         low_cell2       None        -
+   5  low_cell6                          low_cell3       None        -
+   6  low_cell4                          high_cell2      None        -
+   7  high_cell6                         high_cell4      None        -
+   8  high_cell2                         low_cell5       None        -
+   9  low_cell1                          low_cell6       None        -
+  10  high_cell3                         low_cell3       None        -
+  11  high_cell4                         low_cell1       None        -
+  12  low_cell3                          high_cell6      None        -
+  13  high_cell1                         low_cell5       None        -
+  14  high_cell10                        low_cell1       None        -
+  15  low_cell2                          high_cell4      None        -
+
+  high-1    fold 13  DSC 0.854  prec 0.751  rec 0.989
+  high-10   fold 14  DSC 0.725  prec 0.602  rec 0.912
+  high-2    fold 8  DSC 0.979  prec 0.976  rec 0.981
+  high-3    fold 10  DSC 0.923  prec 0.974  rec 0.878
+  high-4    fold 11  DSC 0.952  prec 0.945  rec 0.959
+  high-6    fold 7  DSC 0.916  prec 0.910  rec 0.923
+  high-7    fold 4  DSC 0.975  prec 0.965  rec 0.986
+  high-8    fold 3  DSC 0.973  prec 0.978  rec 0.968
+  high-9    fold 1  DSC 0.971  prec 0.968  rec 0.973
+  low-1     fold 9  DSC 0.965  prec 0.977  rec 0.952
+  low-2     fold 15  DSC 0.974  prec 0.984  rec 0.964
+  low-3     fold 12  DSC 0.975  prec 0.973  rec 0.976
+  low-4     fold 6  DSC 0.976  prec 0.986  rec 0.966
+  low-5     fold 2  DSC 0.982  prec 0.978  rec 0.986
+  low-6     fold 5  DSC 0.964  prec 0.939  rec 0.991
+
+  rounds_done        15
+  cells_scored       15
+  per_cell_mean_dsc  0.9402
+  per_cell_sd        0.0685
+  worst_cell         high_cell10
+  worst_dsc          0.7254
+  high_mean_dsc      0.9187
+  low_mean_dsc       0.9725
+  pooled_dsc         0.9454
+[celldform] job 128 finished (exit 0) Thu Oct 15 08:53:38 PM EDT 2026
