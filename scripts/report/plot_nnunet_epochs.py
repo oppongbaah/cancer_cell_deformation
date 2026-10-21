@@ -51,9 +51,17 @@ def scores(exp: str) -> dict[tuple[str, str], dict]:
     return last
 
 
+# Cluster job logs (scripts/hpc/, committed to the repo) carry nnU-Net's full training output; used
+# when the run's checkpoints -- which stay on the cluster -- are not on this machine.
+HPC_LOGS = {LONG_EXP: "nnunet1000_r{r}_*.out"}
+
+
 def train_logs(exp: str, trainer: str) -> list[Path]:
     folds = sorted((REPO / "checkpoints" / exp).glob(f"Dataset*/{trainer}__nnUNetPlans__2d/fold_*"))
-    return [sorted(f.glob("training_log_*.txt"))[-1] for f in folds if (f / "checkpoint_final.pth").exists()]
+    logs = [sorted(f.glob("training_log_*.txt"))[-1] for f in folds if (f / "checkpoint_final.pth").exists()]
+    if logs or exp not in HPC_LOGS:
+        return logs
+    return [sorted((REPO / "logs" / "hpc").glob(HPC_LOGS[exp].format(r=r)))[-1] for r in range(1, 6)]
 
 
 def epoch_seconds(logs: list[Path]) -> list[float]:
@@ -127,8 +135,10 @@ def main() -> None:
 
     logs = train_logs(LONG_EXP, LONG_TRAINER)
     curves = {r: ema(cell_val_dice(p)) for r, p in zip(rounds, logs)}
-    val_cell = {r: json.loads((REPO / "results" / LONG_EXP / f"nnunet_fold_{r}_split.json").read_text())
-                ["cells"]["val"][0] for r in rounds}
+    def split(r):                # both lengths ran the same rounds; the 1000-epoch split files stay on the cluster
+        f = REPO / "results" / LONG_EXP / f"nnunet_fold_{r}_split.json"
+        return json.loads((f if f.exists() else REPO / "results" / SHORT_EXP / f.name).read_text())
+    val_cell = {r: split(r)["cells"]["val"][0] for r in rounds}
     floor = 0.85
     for i, (bx, (r, c)) in enumerate(zip(bxs, curves.items())):
         bx.plot(range(len(c)), c, color=NNU, lw=1.3, zorder=3)
@@ -165,24 +175,26 @@ def main() -> None:
         return f"{short(k[1])} ({m[k]['dsc']:.3f})"
 
     pr = lambda p: f"{p['prec']:.3f} / {p['rec']:.3f}"
-    rows = [(f"Pooled DSC, round {r}", *b(pooled(S, [k for k in cells if k[0] == r])["pooled"],
-                                           pooled(L, [k for k in cells if k[0] == r])["pooled"])) for r in rounds]
+    # Headline = per-cell mean (user decision 2026-10-15): each cell one equal vote; Pooled DSC second.
+    rmean = lambda m, r: st.mean(m[k]["dsc"] for k in cells if k[0] == r)
+    sd = lambda m: st.stdev(m[k]["dsc"] for k in cells)
+    rows = [(f"Per-cell mean, round {r}", *b(rmean(S, r), rmean(L, r))) for r in rounds]
     PS, PL = pooled(S, cells), pooled(L, cells)
-    rows += [(r"\textbf{Pooled DSC, all 15 cells}", *b(PS["pooled"], PL["pooled"])),
-             ("Per-cell mean DSC", *b(ms, ml)),
+    bs, bl = b(ms, ml)
+    rows += [(r"\textbf{Per-cell mean DSC, all 15 cells}", rf"{bs} $\pm$ {sd(S):.3f}", rf"{bl} $\pm$ {sd(L):.3f}"),
+             ("Pooled DSC, all 15 cells", *b(PS["pooled"], PL["pooled"])),
              ("Precision / recall, 15 cells", pr(PS), pr(PL)),
              None]
     hi = lambda m: st.mean(m[k]["dsc"] for k in cells if k[1].startswith("high"))
     lw = lambda m: st.mean(m[k]["dsc"] for k in cells if k[1].startswith("low"))
     better, worse = sum(v > TIE for v in d.values()), sum(v < -TIE for v in d.values())
     up = sum(v > 0 for v in d.values())
-    r_up = sum(pooled(L, [k for k in cells if k[0] == r])["pooled"] > pooled(S, [k for k in cells if k[0] == r])["pooled"]
-               for r in rounds)
+    r_up = sum(rmean(L, r) > rmean(S, r) for r in rounds)
     rows += [(rf"\hiHER{{High HER2}} mean ({n_high} cells)", *b(hi(S), hi(L))),
              (rf"\loHER{{Low HER2}} mean ({len(cells) - n_high} cells)", *b(lw(S), lw(L))),
              ("Worst cell", worst(S), worst(L)),
              (rf"Cells higher at 1000 / by $>{TIE}$", "---", f"{up} of {len(cells)} / {better} ({worse} lower by $>{TIE}$)"),
-             ("Rounds higher at 1000 (Pooled DSC)", "---", f"{r_up} of {len(rounds)}"),
+             ("Rounds higher at 1000 (per-cell mean)", "---", f"{r_up} of {len(rounds)}"),
              None]
     es, el = epoch_seconds(train_logs(SHORT_EXP, SHORT_TRAINER)), epoch_seconds(logs)
     n_s, n_l = len(train_logs(SHORT_EXP, SHORT_TRAINER)), len(logs)

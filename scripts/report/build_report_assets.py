@@ -108,6 +108,8 @@ def jobs(img: Path, tab: Path) -> dict[str, list[str]]:
                     "--out", str(img), "--tables", str(tab)],
         "model-comparison": ["scripts/report/plot_model_comparison.py", "--out", str(img), "--tables", str(tab)],
         "nnunet-epochs": ["scripts/report/plot_nnunet_epochs.py", "--out", str(img), "--tables", str(tab)],
+        "loocv": ["scripts/report/plot_loocv.py", "--out", str(img), "--tables", str(tab)],
+        "protocols": ["scripts/report/plot_protocols.py", "--output", str(img / "protocols.png")],
         "distill-labels": ["scripts/report/view_soft_target.py", "--round", "4", "--stem", "high_cell7_002525",
                            "domain_high_cell7_002585", "--output", str(img / "distill_soft_targets.png")],
         "ensemble-gate": ["scripts/evaluation/eval_ensemble_cv.py", "--gate-only", "--tables", str(tab)],
