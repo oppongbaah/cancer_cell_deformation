@@ -1,0 +1,240 @@
+#!/usr/bin/env python3
+"""
+Why high-1 is excluded from the features (22 October report, feature extraction).
+
+Two panels, both from disk:
+  (a) high-1 and high-9 -- the two smallest cells after high-10, ~700 px each -- at the same laser steps:
+      each cell's raw frame (labelled with its laser step), then the hand-drawn mask (green) and the outline of the mask of the
+      model that never saw the cell (white), on black, with every pixel where they differ in yellow, the
+      pixel counts and the size ratio. Cropped around the hand mask's centre.
+  (b) every cell's mask size relative to its hand mask, for every model that never saw it (the four
+      cross-validated nnU-Net runs' eval logs: predicted / hand-drawn trapped-cell pixels over the cell's
+      20 hand-masked frames), against the cell-validation limits (0.85-1.15). A model error that changes
+      with the run would scatter; a bias that repeats in every run belongs to the cell. nnU-Net runs only:
+      the U-Net draws high-1 at about its hand size (0.89x, 0.94x), but scores worse on most other cells,
+      so it is not the feature model (said in the report text, not drawn).
+
+    python scripts/report/plot_high1_exclusion.py --model nnunet100_5fold --output ../masters_thesis/images/high1_exclusion.png
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from pathlib import Path
+
+import cv2
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from matplotlib.lines import Line2D
+from matplotlib.patches import Patch
+
+REPO = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(REPO))
+from celldform.features.quality import select_trapped_region  # noqa: E402
+from celldform.features.segmenters import DATASET_5FOLD, five_fold_records  # noqa: E402
+
+CELL, REF = "high_cell1", "high_cell9"
+RUNS = {   # label -> experiment whose eval log scores every cell with the model that never saw it
+    "nnU-Net 100 ep, 5-fold": ("randswap/experiment_1_nnunet", "o"),
+    "nnU-Net 1000 ep, 5-fold": ("randswap/experiment_1b_nnunet_1000ep", "s"),
+    "nnU-Net 1000 ep, leave-one-out": ("randswap/experiment_4_loocv/nnunet", "D"),
+}
+LIMITS = (0.85, 1.15)            # cell validation, scripts/features/extract_features.py CELL_SIZE_BIAS
+TRUTH, DIFF, PRED = (0.18, 0.80, 0.30), (1.0, 0.82, 0.12), "#ffffff"   # green ground truth, yellow difference, white prediction
+HIGH, LOW = "#2a78d6", "#eb6834"
+INK, INK2, GRID = "#0b0b0b", "#52514e", "#e6e5e1"
+
+
+def short(c: str) -> str:
+    return c.replace("_cell", "-")
+
+
+def size_ratios() -> pd.DataFrame:
+    rows = {}
+    for label, (exp, _) in RUNS.items():
+        for line in (REPO / "results" / exp / "eval_log_native.jsonl").read_text().splitlines():
+            r = json.loads(line)
+            if r["filter"]:
+                m = r["metrics"]["1"]
+                rows.setdefault(label, {})[r["filter"]] = (m["tp"] + m["fp"]) / (m["tp"] + m["fn"])
+    return pd.DataFrame(rows)
+
+
+def tile(model: str, stem: str, gt_path: Path, trap: tuple[float, float], half: int = 30) -> dict:
+    """Raw crop, the mask map (black background: hand mask green, every differing pixel yellow, the model's
+    outline white), cropped around the hand mask's centre; and the full-frame pixel counts."""
+    raw = cv2.imread(str(REPO / "data/nnunet/raw" / DATASET_5FOLD / "imagesTr" / f"{stem}_0000.png"), cv2.IMREAD_GRAYSCALE)
+    gt = cv2.imread(str(gt_path), cv2.IMREAD_UNCHANGED) == 1
+    lab = cv2.imread(str(REPO / "data/features" / model / "test/labels" / f"{stem}.png"), cv2.IMREAD_UNCHANGED)
+    reg, _ = select_trapped_region(lab == 1, trap)
+    pr = reg["mask"].astype(bool) if reg else np.zeros_like(gt)
+    ys, xs = np.nonzero(gt)
+    cy, cx = int(ys.mean()), int(xs.mean())
+    win = np.s_[cy - half:cy + half, cx - half:cx + half]
+    g, p = gt[win], pr[win]
+    rgb = np.zeros(g.shape + (3,))
+    rgb[g] = TRUTH                   # the hand mask (ground truth) ...
+    rgb[g ^ p] = DIFF                # ... with every pixel where the model differs from it in yellow
+    def outline(m: np.ndarray) -> list:
+        return [c[:, 0, :] for c in cv2.findContours(m.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)[0]]
+    return {"raw": raw[win], "map": rgb, "pred_edge": outline(p), "gt": g, "pr": p, "ratio": pr.sum() / max(gt.sum(), 1),
+            "hand": int(gt.sum()), "model": int(pr.sum()),
+            "extra": int((pr & ~gt).sum()), "missed": int((gt & ~pr).sum())}
+
+
+def write_table(cell: str, cols: list, output: Path) -> None:
+    """One cell's pixel counts behind its tile figure: ratio = predicted / ground truth
+    = (ground truth + extra - missed) / ground truth."""
+    def fmt(t: dict) -> list[str]:
+        out = r"\textcolor{warnred}{\textbf{%.2f}}" if not LIMITS[0] <= t["ratio"] <= LIMITS[1] else "%.2f"
+        return [f"{t['hand']}", f"{t['model']}", f"+{t['extra']}", f"$-${t['missed']}", out % t["ratio"]]
+    lines = [r"% GENERATED by scripts/report/plot_high1_exclusion.py -- do not edit by hand.",
+             r"\begin{tabular}{l rrrrr}", r"\toprule",
+             rf"\hiHER{{{short(cell)}}}, step & Ground truth & Predicted & Extra & Missed & Ratio \\", r"\midrule"]
+    for step, t in cols:
+        lines.append(" & ".join([str(step), *fmt(t)]) + r" \\")
+    lines += [r"\bottomrule", r"\end{tabular}", ""]
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text("\n".join(lines))
+    print(f"-> {output}")
+
+
+def hand_only(t: dict) -> np.ndarray:
+    """The hand-drawn mask alone, green on black -- the reference the next row is compared with."""
+    return np.where(t["gt"][..., None], np.array(TRUTH), 0.0)
+
+
+def model_only(t: dict) -> np.ndarray:
+    """The model's mask alone, white on black."""
+    return np.where(t["pr"][..., None], np.array(matplotlib.colors.to_rgb(PRED)), 0.0)
+
+
+def tile_figure(cell: str, cols: list, output: Path) -> None:
+    """One cell, one column per laser step: frame, ground truth, predicted mask, difference."""
+    rows = ("frame", "ground truth", "predicted", "difference")
+    fig = plt.figure(figsize=(7.4, 6.4), facecolor="white")
+    gs = fig.add_gridspec(len(rows), len(cols), hspace=0.07, wspace=0.04, top=0.93)
+    for i, (step, t) in enumerate(cols):
+        for row, (img, kind) in enumerate(((t["raw"], "frame"), (hand_only(t), "hand"), (model_only(t), "model"),
+                                           (t["map"], "diff"))):
+            ax = fig.add_subplot(gs[row, i])
+            ax.imshow(img, cmap="gray" if kind == "frame" else None, vmin=0, vmax=255, interpolation="nearest")
+            if kind == "diff":           # the predicted mask, as its outline over the difference map
+                for c in t["pred_edge"]:
+                    ax.plot(*np.vstack([c, c[:1]]).T, color=PRED, lw=1.4)
+            ax.set_xticks([])
+            ax.set_yticks([])
+            for sp in ax.spines.values():
+                sp.set_color(GRID if kind == "frame" else "#000000")
+            if kind == "frame":
+                ax.text(0.04, 0.95, f"step {step}", transform=ax.transAxes, fontsize=7.2, color=INK, va="top",
+                        fontweight="bold", bbox=dict(boxstyle="round,pad=0.15", fc="white", ec="none", alpha=0.85))
+            elif kind in ("hand", "model"):
+                ax.text(0.04, 0.05, f"{t[kind]} px", transform=ax.transAxes, fontsize=7.2, color="white",
+                        fontweight="bold", va="bottom")
+            else:
+                out = t["ratio"] > LIMITS[1] or t["ratio"] < LIMITS[0]
+                ax.text(0.04, 0.05, f"{t['ratio']:.2f}×", transform=ax.transAxes, fontsize=7.4, color="white",
+                        fontweight="bold", va="bottom",
+                        bbox=dict(boxstyle="round,pad=0.15", fc="#c62828" if out else "#2e7d32", ec="none"))
+                ax.text(0.96, 0.95, f"+{t['extra']}", transform=ax.transAxes, fontsize=6.8, color=DIFF,
+                        ha="right", va="top", fontweight="bold")
+                ax.text(0.96, 0.80, f"−{t['missed']}", transform=ax.transAxes, fontsize=6.8, color=DIFF,
+                        ha="right", va="top", fontweight="bold")
+            if i == 0:
+                ax.set_ylabel(f"{short(cell)}\n{rows[row]}", fontsize=7.6, color=HIGH, fontweight="bold",
+                              linespacing=0.95)
+                ax.yaxis.set_label_coords(-0.1, 0.5)
+    fig.legend(handles=[Patch(color=TRUTH, label="ground truth"),
+                        Patch(fc=PRED, ec="#555", lw=0.6, label="predicted mask"),
+                        Patch(color=DIFF, label="difference (+ extra, − missed px)"),
+                        Patch(color="#c62828", label="size ratio outside the limits")],
+               loc="lower left", bbox_to_anchor=(0.115, 0.935), ncol=4, fontsize=7.2, frameon=False,
+               handlelength=1.1, handletextpad=0.4, columnspacing=1.0)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(output, dpi=200, bbox_inches="tight", facecolor="white")
+    plt.close(fig)
+    print(f"-> {output}")
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    ap.add_argument("--model", default="nnunet100_5fold", help="run whose saved test-frame masks panel (a) draws")
+    ap.add_argument("--output", type=Path, required=True)
+    ap.add_argument("--sizes-output", type=Path, required=True, help="panel (b): every cell's size ratio, every run")
+    ap.add_argument("--table-output", type=Path, help="LaTeX table of high-1's pixel counts")
+    ap.add_argument("--ref-output", type=Path, help="the same tile figure for the reference cell (high-9)")
+    ap.add_argument("--ref-table-output", type=Path, help="LaTeX table of the reference cell's pixel counts")
+    a = ap.parse_args()
+    gt = {s: REPO / m for r in five_fold_records().values() for s, m in r["test_masks_native"].items()}
+    chk = pd.read_csv(REPO / "results/features" / a.model / "checks_test.csv")
+    ratios = size_ratios()
+    cells = sorted(ratios.index, key=lambda c: (not c.startswith("high"), int(c.split("cell")[1])))
+
+    n = 5
+    picks = chk[chk.cell == CELL].sort_values("laser_step")
+    picks = picks.iloc[np.linspace(1, len(picks) - 1, n).round().astype(int)]
+    ref_rows = chk[chk.cell == REF].set_index("laser_step")
+    cols1, cols9 = [], []
+    for _, r in picks.iterrows():        # the reference cell at its nearest hand-masked step
+        q = ref_rows.iloc[np.abs(ref_rows.index - r.laser_step).argmin()]
+        cols1.append((int(r.laser_step), tile(a.model, r.stem, gt[r.stem], (r.trap_x, r.trap_y))))
+        cols9.append((int(q.name), tile(a.model, q.stem, gt[q.stem], (q.trap_x, q.trap_y))))
+    tile_figure(CELL, cols1, a.output)
+    if a.ref_output:
+        tile_figure(REF, cols9, a.ref_output)
+    if a.table_output:
+        write_table(CELL, cols1, a.table_output)
+    if a.ref_table_output:
+        write_table(REF, cols9, a.ref_table_output)
+
+    fig, bx = plt.subplots(figsize=(7.4, 2.5), facecolor="white")
+    bx.axhspan(*LIMITS, color="#e8f3ea", zorder=0)
+    bx.axhline(1, color="#1b7a3a", lw=0.8, ls=(0, (4, 3)), zorder=1)
+    bx.text(len(cells) - 0.45, LIMITS[1] + 0.012, "cell-validation limits", ha="right", va="bottom", fontsize=7,
+            color="#1b7a3a")
+    offs = np.linspace(-0.24, 0.24, len(RUNS))
+    for (label, (_, mk)), dx in zip(RUNS.items(), offs):
+        for j, c in enumerate(cells):
+            v = ratios.loc[c, label]
+            col = HIGH if c.startswith("high") else LOW
+            bx.scatter(j + dx, v, marker=mk, s=22, facecolor=col if c == CELL else "white", edgecolor=col,
+                       lw=1.0, zorder=3)
+    j = cells.index(CELL)
+    lo, hi = ratios.loc[CELL].min(), ratios.loc[CELL].max()
+    bx.annotate(f"{short(CELL)}: {lo:.2f}–{hi:.2f}×, outside the limits in every run", xy=(j + 0.3, (lo + hi) / 2),
+                xytext=(j + 1.6, hi + 0.02), fontsize=7.6, color=INK, va="center",
+                arrowprops=dict(arrowstyle="-", color=INK2, lw=0.7))
+    k = cells.index("high_cell10")
+    v = ratios.loc["high_cell10"].max()
+    bx.annotate("high-10, leave-one-out round 14\n(under investigation)", xy=(k + 0.12, v), xytext=(k + 0.7, v),
+                fontsize=6.8, color=INK2, va="center", arrowprops=dict(arrowstyle="-", color=INK2, lw=0.6))
+    bx.set_xticks(range(len(cells)))
+    bx.set_xticklabels([short(c) for c in cells], fontsize=7.2, rotation=0)
+    for t, c in zip(bx.get_xticklabels(), cells):
+        t.set_color(HIGH if c.startswith("high") else LOW)
+    bx.set_xlim(-0.6, len(cells) - 0.4)
+    bx.set_ylim(0.8, max(1.6, ratios.max().max() + 0.06))
+    bx.set_ylabel("predicted / ground truth", fontsize=7.8, color=INK2)
+    bx.set_title("Every cell, every model that never saw it", fontsize=8.8, color=INK, loc="left", pad=4)
+    bx.legend(handles=[Line2D([], [], ls="", marker=mk, mfc="white", mec=INK2, label=label)
+                       for label, (_, mk) in RUNS.items()], loc="upper center", bbox_to_anchor=(0.5, -0.13), fontsize=6.8, frameon=False, ncol=3,
+              handletextpad=0.2, columnspacing=1.0)
+    bx.tick_params(colors=INK2, labelsize=7.2, length=0)
+    for sp in ("top", "right"):
+        bx.spines[sp].set_visible(False)
+    for sp in ("left", "bottom"):
+        bx.spines[sp].set_color(GRID)
+    bx.grid(axis="y", color=GRID, lw=0.7)
+    bx.set_axisbelow(True)
+    fig.savefig(a.sizes_output, dpi=200, bbox_inches="tight", facecolor="white")
+    plt.close(fig)
+    print(f"-> {a.sizes_output}")
+
+
+if __name__ == "__main__":
+    main()
