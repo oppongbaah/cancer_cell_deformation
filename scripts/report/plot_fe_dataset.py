@@ -5,7 +5,8 @@ Dataset Organization figure for the feature-extraction reports (22 October repor
 Segmentation is closed; what matters now is which frames the features come from and what checks them.
 One row per cell (HER2 high above low), one column per laser-power step:
 
-  * feature frame  -- one per laser step (every 200th video frame); segmented, gated, measured
+  * feature frames -- up to 6 per laser step (the step frame and 5 more within the step; one square per
+                      step); segmented, gated, measured
   * hand-masked    -- the cell's 5-fold test frames (~20); never measured for features, used only to
                       check that the model segments THIS cell well (cell validation)
 
@@ -42,9 +43,9 @@ from pathlib import Path
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
-from matplotlib.lines import Line2D
-from matplotlib.patches import FancyBboxPatch, Patch
+from matplotlib.patches import FancyBboxPatch
 
 REPO = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(REPO))
@@ -53,6 +54,7 @@ from celldform.features.segmenters import MODELS, plan, round_of  # noqa: E402
 HIGH, LOW = "#2a78d6", "#eb6834"
 FEAT, MASK = "#9fc9a8", "#1b5e2b"
 INK, INK2, GRID, SURF = "#0b0b0b", "#52514e", "#e6e5e1", "#fcfcfb"
+FRAMES_PER_STEP = 200
 TRAIN, VAL, TEST = "#d6d5cf", "#4a3aa7", "#008300"     # role colours of plot_protocols.py
 
 
@@ -219,6 +221,154 @@ def write_models_table(model: str, cells: list[str], res: Path, output: Path) ->
     print(f"-> {output}")
 
 
+ROUND_COLS = ["#6a51a3", "#1b8a6b", "#b8327a", "#8a7a12", "#4d6a8a"]   # 5-fold rounds R1..R5
+POWER_LO, POWER_HI = "#fbeec4", "#d9861c"                            # laser power, low -> high
+
+
+def plot_overview(model: str, feat: pd.DataFrame, chk: pd.DataFrame, output: Path, example: str = "high_cell2",
+                  zoom_step: int = 7) -> None:
+    """The dataset on one figure.
+      (a) one recording: the 50 laser steps (power rising), the hand-masked frames along it, and one step
+          enlarged -- its 6 feature frames at their offsets, and the hand-masked frame that falls in it;
+      (b) the 15 cells, one row each: the round whose checkpoint segments it (the one that never saw it),
+          its feature frames and hand masks, and the trapped cell's height in the frame (two groups =
+          two recording positions)."""
+    from matplotlib.colors import LinearSegmentedColormap
+    cells = sorted(feat.cell.unique(), key=lambda c: (not c.startswith("high"), int(c.split("cell")[1])))
+    rnd = round_of(model)
+    recs = {r["round"]: r for r in plan(model)}
+    n_rounds = len(recs)
+    rcol = (lambda k: ROUND_COLS[(k - 1) % len(ROUND_COLS)]) if n_rounds <= len(ROUND_COLS) else (lambda k: VAL)
+    power = LinearSegmentedColormap.from_list("power", [POWER_LO, POWER_HI])
+    n_steps = int(feat.laser_step.max()) + 1
+
+    fig = plt.figure(figsize=(7.4, 6.9), facecolor="white")
+    outer = fig.add_gridspec(2, 1, height_ratios=[1.0, 2.3], hspace=0.16)
+
+    # ── (a) one recording ───────────────────────────────────────────────────
+    ax = fig.add_subplot(outer[0])
+    ax.set_xlim(-0.5, n_steps + 0.5)
+    ax.set_ylim(-2.75, 1.7)
+    ax.axis("off")
+    for s in range(n_steps):
+        ax.add_patch(plt.Rectangle((s, 0), 0.92, 0.42, color=power(s / (n_steps - 1)), lw=0))
+    hm = chk[chk.cell == example]
+    ax.scatter(hm.frame_index / FRAMES_PER_STEP, [0.68] * len(hm), s=16, facecolor="white", edgecolor=MASK, lw=1.0,
+               zorder=3)
+    ax.text(-0.6, 0.21, "50 laser\nsteps", ha="right", va="center", fontsize=6.8, color=INK2, linespacing=0.9)
+    ax.text(-0.6, 0.72, "hand masks", ha="right", va="center", fontsize=6.8, color=MASK)
+    ax.annotate("", xy=(n_steps, 1.08), xytext=(0, 1.08),
+                arrowprops=dict(arrowstyle="-|>", color=POWER_HI, lw=1.1, mutation_scale=8))
+    # the enlarged step
+    z0, z1, zy = 4.0, n_steps - 4.0, -1.55
+    ax.add_patch(plt.Polygon([[zoom_step, 0], [zoom_step + 0.92, 0], [z1, zy + 0.5], [z0, zy + 0.5]],
+                             color=power(zoom_step / (n_steps - 1)), alpha=0.28, lw=0))
+    ax.add_patch(plt.Rectangle((zoom_step - 0.08, -0.06), 1.08, 0.54, fill=False, ec=INK, lw=0.9))
+    ax.plot([z0, z1], [zy, zy], color=INK2, lw=1.0)
+    span = z1 - z0
+    for t in range(0, 201, 50):
+        x = z0 + span * t / 200
+        ax.plot([x, x], [zy - 0.08, zy + 0.08], color=INK2, lw=0.8)
+        ax.text(x, zy - 0.2, f"{t}", ha="center", va="top", fontsize=6.4, color=INK2)
+    ax.text(z1 + 0.6, zy, "frames into\nthe step", ha="left", va="center", fontsize=6.4, color=INK2, linespacing=0.9)
+    offs = sorted(feat[feat.cell == example].offset.unique())
+    for o in offs:
+        x = z0 + span * o / 200
+        ax.scatter([x], [zy + 0.3], marker="s", s=34, color=FEAT, edgecolor="#3f7a4d", lw=0.6, zorder=3)
+    k = hm[hm.laser_step == zoom_step]
+    for _, r in k.iterrows():
+        x = z0 + span * (r.frame_index % FRAMES_PER_STEP) / 200
+        ax.scatter([x], [zy + 0.3], s=58, facecolor="none", edgecolor=MASK, lw=1.2, zorder=4)
+        ax.annotate("hand-masked frame", xy=(x, zy + 0.42), xytext=(x + 7.5, zy + 0.95), fontsize=6.6, color=MASK,
+                    ha="left", va="center", arrowprops=dict(arrowstyle="-", color=MASK, lw=0.7))
+    ax.text(z0, zy + 0.95, f"step {zoom_step} enlarged: {len(offs)} feature frames (squares)",
+            ha="left", va="center", fontsize=6.9, color="#3f7a4d", fontweight="bold")
+    ax.text(n_steps / 2, -2.6, "5 cells (high-1, -9, -10, low-5, -6) start their step frames at offset 100, so "
+            "they have 5 per step; a frame already hand-masked is not taken twice",
+            ha="center", va="center", fontsize=6.5, color=INK2, style="italic")
+    ax.text(-6.5, 1.5, f"(a) One recording ({short(example)}): 22 fps, about 10 000 frames; the laser power rises "
+            f"one step every 200 frames ($\\approx$9 s)", ha="left", va="center", fontsize=8.8, color=INK)
+
+    # ── (b) the 15 cells ────────────────────────────────────────────────────
+    inner = outer[1].subgridspec(1, 4, width_ratios=[1.05, 1.5, 0.45, 1.6], wspace=0.08)
+    y = {c: i + (0.6 if c.startswith("low") else 0) for i, c in enumerate(cells)}
+    ymax = max(y.values()) + 0.7
+    axs = [fig.add_subplot(inner[j]) for j in range(4)]
+    for a_ in axs:
+        a_.set_ylim(ymax, -1.3)
+        a_.set_yticks([])
+        a_.spines[["top", "right", "left"]].set_visible(False)
+        a_.spines["bottom"].set_color(GRID)
+        a_.tick_params(colors=INK2, labelsize=6.6, length=0)
+    # round chips
+    a0 = axs[0]
+    a0.set_xlim(0, 1)
+    a0.spines["bottom"].set_visible(False)
+    a0.set_xticks([])
+    for c in cells:
+        col = HIGH if c.startswith("high") else LOW
+        a0.text(0.0, y[c], short(c), ha="left", va="center", fontsize=7.6, color=col, fontweight="bold")
+        k_ = rnd[c]
+        a0.add_patch(FancyBboxPatch((0.5, y[c] - 0.34), 0.42, 0.68, boxstyle="round,pad=0,rounding_size=0.12",
+                                    facecolor=rcol(k_), edgecolor="none"))
+        a0.text(0.71, y[c], f"R{k_}", ha="center", va="center", fontsize=6.8, color="white", fontweight="bold")
+    a0.text(0.71, -0.95, "round\ncheckpoint", ha="center", va="bottom", fontsize=6.6, color=INK2, linespacing=0.9)
+    # feature frames
+    a1 = axs[1]
+    nf = feat.cell.value_counts()
+    a1.barh([y[c] for c in cells], [nf[c] for c in cells], height=0.62, color=FEAT, lw=0)
+    for c in cells:
+        a1.text(nf[c] + 4, y[c], f"{nf[c]}", ha="left", va="center", fontsize=6.6, color=INK2)
+    a1.set_xlim(0, 340)
+    a1.set_xticks([0, 100, 200, 300])
+    a1.set_title("feature frames", fontsize=7.2, color="#3f7a4d", pad=1, y=0.985)
+    # hand masks
+    a2 = axs[2]
+    nh = chk.cell.value_counts()
+    a2.set_xlim(0, 1)
+    a2.set_xticks([])
+    a2.spines["bottom"].set_visible(False)
+    for c in cells:
+        a2.scatter([0.28], [y[c]], s=26, facecolor="white", edgecolor=MASK, lw=1.0)
+        a2.text(0.5, y[c], f"{nh.get(c, 0)}", ha="left", va="center", fontsize=6.6, color=MASK)
+    a2.set_title("hand\nmasks", fontsize=7.2, color=MASK, pad=1, y=0.97, linespacing=0.9)
+    # trap height
+    a3 = axs[3]
+    ty = feat.groupby("cell").trap_y.first()
+    lo_, hi_ = feat.groupby("cell").local_trap_y.min(), feat.groupby("cell").local_trap_y.max()
+    x_lo, x_hi = min(ty.min(), lo_.min()) - 8, max(ty.max(), hi_.max()) + 8
+    gap = np.sort(ty.values)
+    cut = gap[np.argmax(np.diff(gap))] + np.max(np.diff(gap)) / 2
+    a3.axvspan(x_lo, cut - 18, color="#efeee9", zorder=0)
+    a3.axvspan(cut + 18, x_hi, color="#efeee9", zorder=0)
+    for c in cells:
+        col = HIGH if c.startswith("high") else LOW
+        a3.plot([lo_[c], hi_[c]], [y[c]] * 2, color=col, lw=3.0, alpha=0.3, solid_capstyle="round")
+        a3.scatter([ty[c]], [y[c]], s=20, color=col, zorder=3)
+    a3.set_xlim(x_lo, x_hi)
+    odd = [c for c in cells if not c.startswith("high") and ty[c] > cut]
+    for c in odd:
+        a3.annotate(f"{short(c)}: recorded\nat the high\ncells' position", xy=(ty[c] - 3, y[c]),
+                    xytext=(cut, y[c] + 1.7), fontsize=6.3, color=INK2, ha="center", va="center",
+                    arrowprops=dict(arrowstyle="-", color=INK2, lw=0.6))
+    a3.set_title("trapped cell's height y (px)", fontsize=7.2, color=INK, pad=1, y=0.985)
+    a3.text(0.5, -0.075, "dot: median over the video; bar: range over the steps", transform=a3.transAxes,
+            ha="center", va="top", fontsize=6.2, color=INK2)
+    n_hi = sum(c.startswith("high") for c in cells)
+    for lab, ys, col in (("HER2 high", [y[c] for c in cells[:n_hi]], HIGH), ("HER2 low", [y[c] for c in cells[n_hi:]], LOW)):
+        a0.annotate("", xy=(-0.08, min(ys) - 0.4), xytext=(-0.08, max(ys) + 0.4), xycoords="data",
+                    arrowprops=dict(arrowstyle="-", color=col, lw=2.0), annotation_clip=False)
+        a0.text(-0.17, (min(ys) + max(ys)) / 2, lab, rotation=90, ha="center", va="center", fontsize=7,
+                color=col, fontweight="bold", clip_on=False)
+    r0 = recs[min(recs)]
+    a0.text(-0.42, -2.3, f"(b) The {len(cells)} cells, each segmented by the one round model that never saw it "
+            f"({len(r0['train'])} + {len(r0['val'])} cells trained it)", transform=a0.transData, ha="left",
+            va="center", fontsize=8.8, color=INK, clip_on=False)
+    fig.savefig(output, dpi=220, bbox_inches="tight", facecolor="white")
+    plt.close(fig)
+    print(f"-> {output}")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--model", choices=list(MODELS), default="nnunet100_5fold")
@@ -229,92 +379,11 @@ def main() -> None:
     res = REPO / "results" / "features" / a.model
     feat = pd.read_csv(res / "features_frames.csv")
     chk = pd.read_csv(res / "checks_test.csv")
-    rnd = round_of(a.model)
     cells = sorted(feat.cell.unique(), key=lambda c: (not c.startswith("high"), int(c.split("cell")[1])))
-    if sorted(rnd) != sorted(cells):
-        raise SystemExit("5-fold test cells do not match the extracted cells")
-    y = {c: i + (1 if c.startswith("low") else 0) for i, c in enumerate(cells)}   # gap between groups
-    trap_y = feat.groupby("cell").trap_y.first()           # the video's median position (the cell moves within it:
-    y_lo = feat.groupby("cell").local_trap_y.min()         # its local position over the laser steps spans these)
-    y_hi = feat.groupby("cell").local_trap_y.max()
-
-    fig = plt.figure(figsize=(10.6, 4.6), facecolor="white")
-    gs = fig.add_gridspec(1, 2, width_ratios=[4.6, 1.0], wspace=0.12)
-    ax = fig.add_subplot(gs[0])
-    for c in cells:
-        f = feat[feat.cell == c]
-        ax.scatter(f.laser_step, [y[c]] * len(f), marker="s", s=17, color=FEAT, lw=0, zorder=2)
-        k = chk[chk.cell == c]
-        ax.scatter(k.laser_step, [y[c]] * len(k), marker="o", s=26, facecolor="none", edgecolor=MASK,
-                   lw=1.1, zorder=3)
-        col = HIGH if c.startswith("high") else LOW
-        ax.text(-1.6, y[c], short(c), ha="right", va="center", fontsize=8.2, color=col, fontweight="bold")
-        ax.text(54.0, y[c], f"R{rnd[c]}", ha="center", va="center", fontsize=8, color=INK2)
-        ax.text(59.5, y[c], f"{len(f)}", ha="center", va="center", fontsize=8, color=INK2)
-        ax.text(65.5, y[c], f"{len(k)}", ha="center", va="center", fontsize=8, color=MASK)
-    top = -1.15
-    for x, t in ((54.0, "round"), (59.5, "feature\nframes"), (65.5, "hand\nmasks")):
-        ax.text(x, top, t, ha="center", va="bottom", fontsize=7.4, color=INK2, linespacing=0.95)
-    n_hi = sum(c.startswith("high") for c in cells)
-    for lab, lo, hi, col in (("HER2 high", 0, n_hi - 1, HIGH), ("HER2 low", n_hi + 1, len(cells), LOW)):
-        ax.annotate("", xy=(-7.6, lo - 0.3), xytext=(-7.6, hi + 0.3),
-                    arrowprops=dict(arrowstyle="-", color=col, lw=2.2), annotation_clip=False)
-        ax.text(-8.6, (lo + hi) / 2, lab, rotation=90, ha="center", va="center", fontsize=8.4, color=col,
-                fontweight="bold")
-    ax.set_xlim(-1, 67.5)
-    ax.set_ylim(len(cells) + 0.6, -1.6)
-    ax.set_yticks([])
-    steps = int(feat.laser_step.max())
-    ax.set_xticks(range(0, steps + 1, 10))
-    ax.set_xlabel("laser-power step  (one step $\\approx$ 200 frames $\\approx$ 9 s;  power rises left to right)",
-                  fontsize=8.2, color=INK2)
-    ax.spines[["top", "right", "left"]].set_visible(False)
-    ax.spines["bottom"].set_bounds(0, steps)
-    ax.spines["bottom"].set_color(GRID)
-    ax.tick_params(colors=INK2, labelsize=8, length=0)
-    ax.set_title(f"(a) {len(feat)} feature frames from {len(cells)} cells, and the hand masks that check them",
-                 fontsize=9.2, color=INK, loc="left", pad=6)
-    ax.legend(handles=[Line2D([], [], marker="s", ls="", color=FEAT, ms=6, label="feature frame (measured)"),
-                       Line2D([], [], marker="o", ls="", mfc="none", mec=MASK, ms=6, mew=1.1,
-                              label="hand-masked frame (checks the model, never measured)"),
-                       # a ring over a square: both kinds of frame fall in the same laser step
-                       Line2D([], [], marker="o", ls="", mfc=FEAT, mec=MASK, ms=6, mew=1.1,
-                              label="both, same laser step")],
-              loc="upper center", bbox_to_anchor=(0.47, -0.13), ncol=3, fontsize=7.6, frameon=False,
-              columnspacing=1.4, handletextpad=0.3)
-
-    bx = fig.add_subplot(gs[1], sharey=ax)
-    lo_y, hi_y = min(trap_y.min(), y_lo.min()), max(trap_y.max(), y_hi.max())
-    bx.axvspan(lo_y - 8, 480, color="#e9e8e2", zorder=0)
-    bx.axvspan(515, hi_y + 8, color="#e9e8e2", zorder=0)
-    for c in cells:
-        col = HIGH if c.startswith("high") else LOW
-        bx.plot([lo_y - 8, y_lo[c]], [y[c]] * 2, color=GRID, lw=0.8, zorder=1)
-        bx.plot([y_lo[c], y_hi[c]], [y[c]] * 2, color=col, lw=3.2, alpha=0.35, solid_capstyle="round", zorder=2)
-        bx.scatter(trap_y[c], y[c], s=30, color=col, zorder=3)
-    bx.set_xlim(lo_y - 8, hi_y + 8)
-    odd = [c for c in cells if c.startswith("low") and trap_y[c] > 500]
-    for c in odd:   # a low cell recorded at the high cells' trap position
-        bx.annotate(f"{short(c)} traps\nwith the high cells", xy=(trap_y[c] - 3, y[c]), xytext=(487, y[c] - 1.7),
-                    fontsize=7, color=INK2, ha="center", va="center",
-                    arrowprops=dict(arrowstyle="-", color=INK2, lw=0.7))
-    bx.set_title("(b) cell height (px)", fontsize=9.2, color=INK, loc="left", pad=6)
-    bx.set_xlabel("px from the top of the frame", fontsize=7.6, color=INK2)
-    bx.legend(handles=[Line2D([], [], marker="o", ls="", color=HIGH, ms=5.5, label="HER2 high cell"),
-                       Line2D([], [], marker="o", ls="", color=LOW, ms=5.5, label="HER2 low cell"),
-                       Line2D([], [], color=INK2, lw=3.2, alpha=0.35, label="median (dot) and\nrange over the video"),
-                       Patch(facecolor="#e9e8e2", edgecolor="none", label="two groups\n(likely sessions)")],
-              loc="upper center", bbox_to_anchor=(0.5, -0.13), ncol=1, fontsize=7.2, frameon=False,
-              handletextpad=0.4, borderaxespad=0)
-    bx.tick_params(colors=INK2, labelsize=7.6, length=0, left=False, labelleft=False)
-    bx.spines[["top", "right", "left"]].set_visible(False)
-    bx.spines["bottom"].set_color(GRID)
-    for axis in (ax, bx):
-        axis.set_facecolor("white")
+    if sorted(round_of(a.model)) != sorted(cells):
+        raise SystemExit("the run's rounds do not match the extracted cells")
     a.output.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(a.output, dpi=200, bbox_inches="tight", facecolor="white")
-    plt.close(fig)
-    print(f"-> {a.output}")
+    plot_overview(a.model, feat, chk, a.output)
     if a.table_output:
         write_models_table(a.model, cells, res, a.table_output)
     if a.rounds_output:

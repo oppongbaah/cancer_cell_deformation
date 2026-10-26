@@ -16,8 +16,12 @@ Two sets of frames go through the same code:
   test     the 20 annotated test frames per cell (hand-drawn masks exist) -- used to CALIBRATE
            the segmentation checks: do the frames that pass really have good masks and accurate
            features?
-  feature  the 50 feature frames per cell (one per laser step, data/frames/03_mask_factory) --
-           the classifier's input. A frame's features are kept only if its segmentation passes.
+  frames   the feature frames -- the classifier's input. Since 2026-10-22 up to 6 per laser step: the step
+           frame (data/frames/03_mask_factory, at offset 0 or 100 of the step) and the frames at offsets 20,
+           60, 100, 140, 180 (data/frames/05_dense_frames; a frame already in the factory or hand-masked is not
+           cut again). Both folders are ONE set: checked together (the neighbouring frames that set a frame's
+           typical size and local trap come from both) and written to one table, column `offset`. A frame's
+           features are kept only if its segmentation passes.
 
 Steps (each reads the previous one's files, so any can be rerun alone):
 
@@ -25,9 +29,11 @@ Steps (each reads the previous one's files, so any can be rerun alone):
              top-class probability, at native 1228x922.
   calibrate  the checks on the TEST set against the hand-drawn masks: Dice and feature error of
              passing vs failing frames, per check and per HER2 class.
-  extract    the FEATURE set: checks, pass/fail with reasons, the 15 shape features of passing
-             frames, image quality (focus, illumination, contrast, noise) of every frame, and a
-             high-vs-low comparison of the image measurements (recording-session check).
+  extract    the FEATURE frames: checks, pass/fail with reasons, the 15 shape and 7 deformation features
+             of passing frames, image quality (focus, illumination, contrast, noise) of every frame, the
+             per-cell deformation summaries, and a high-vs-low comparison of the image measurements
+             (recording-session check).
+  (cut       cuts the frames between the step frames from the videos -- once, before segment)
 
 The trapped cell is the predicted region nearest the video's trap (median cell position over its own
 frames), not the largest region -- in high-10 the untrapped neighbour is larger. Its distance is then
@@ -50,11 +56,12 @@ Outputs
   results/features/<model>/
       checks_<set>.csv        one row per frame: checks, pass, reasons (+ Dice, GT features on test)
       calibration.json        how well the checks sort good from bad masks (test set)
-      features_frames.csv     feature set, one row per frame; features NaN where the frame failed
-      features_cells.csv      per cell: frames passed, median of each feature
+      features_frames.csv     the feature frames, one row per frame (offset = frames into its laser step);
+                              features NaN where the frame failed
+      features_cells.csv      per cell: frames passed, median of each feature, deformation summaries
       image_quality_session.csv   each image measurement, high vs low HER2 (cell means)
       rejected_frames.png     every rejected feature frame: the mask on the raw frame, with the reason
-      multi_region_<set>.csv/.png   every frame with more than one trapped-cell region: all regions,
+      multi_region_{test,feature}.csv/.png   every frame with more than one trapped-cell region: all regions,
                               their distance from the trap and which one was kept
 """
 from __future__ import annotations
@@ -73,6 +80,9 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT))
+from celldform.acquisition.extractor import FrameExtractor
+from celldform.features.deformation import (FRAME_FEATURES, cell_summary,
+                                            frame_features, within_step)
 from celldform.features.extractor import MorphologyExtractor
 from celldform.features.quality import (Gates, apply_gates, image_quality, regions, segmentation_checks,
                                         select_trapped_region, trap_position)
@@ -80,7 +90,10 @@ from celldform.features.segmenters import DATASET_5FOLD as DATASET
 from celldform.features.segmenters import MODELS, five_fold_records, plan
 
 FACTORY = ROOT / "data" / "frames" / "03_mask_factory"
-FRAMES_PER_STEP = 200           # one laser step = 200 video frames; feature frames sit mid-step
+DENSE = ROOT / "data" / "frames" / "05_dense_frames"   # the feature frames between the step frames (2026-10-22):
+DENSE_OFFSETS = (20, 60, 100, 140, 180)               # within-step behaviour, and a less noisy value per step
+SETS = {"feature": ("feature", "dense")}   # the feature frames are segmented from two folders, checked as one set
+FRAMES_PER_STEP = 200           # one laser step = 200 video frames
 GOOD_DSC = 0.85                 # a frame with Dice below this counts as a bad mask in calibration
 AREA_WINDOW = 3 * FRAMES_PER_STEP + 100   # "typical area" = median over frames within +-3 laser steps
                                 # (2026-10-21: a whole-video median rejected the real shrinking of the
@@ -88,7 +101,7 @@ AREA_WINDOW = 3 * FRAMES_PER_STEP + 100   # "typical area" = median over frames 
 TRAP_WINDOW = AREA_WINDOW      # the trap a frame is checked against = median cell position within +-3 laser
                                 # steps (2026-10-21: one position per video dropped high-4's correctly
                                 # segmented early frames, where its cell sits ~50 px off the video median)
-MIN_FRAMES_PER_CELL = 40        # of 50: a cell with fewer passing frames is flagged
+MIN_PASS_FRACTION = 0.8         # a cell with fewer of its feature frames passing is flagged (was 40 of 50)
 # Cell-level validation (2026-10-21): a frame check cannot see a bias that is the same on every frame
 # (the 100-epoch model draws high-1 ~1.5x too large, confidently and consistently). So each cell must
 # also be segmented accurately on ITS OWN annotated test frames, by the same held-out model:
@@ -104,6 +117,47 @@ def cell_of(stem: str) -> str:
 
 def index_of(stem: str) -> int:
     return int(re.search(r"_(\d+)$", stem).group(1))
+
+
+def raw_path(which: str, stem: str) -> Path:
+    if which == "test":
+        return ROOT / "data" / "nnunet" / "raw" / DATASET / "imagesTr" / f"{stem}_0000.png"
+    return (DENSE if which == "dense" else FACTORY) / f"{stem}.jpg"
+
+
+def located(model: str, which: str) -> dict[str, tuple[Path, Path, Path]]:
+    """stem -> (labels, top-class probability, raw frame) for every segmented frame of a set. The feature set
+    reads both of its folders; a frame in both (cut twice before 2026-10-22) is taken from the factory."""
+    out: dict[str, tuple[Path, Path, Path]] = {}
+    for sub in SETS.get(which, (which,)):
+        lab, mp = out_dirs(model, sub)
+        for p in sorted(lab.glob("*.png")):
+            out.setdefault(p.stem, (p, mp / p.name, raw_path(sub, p.stem)))
+    return out
+
+
+def dense_frames() -> None:
+    """Cut DENSE_OFFSETS frames per laser step from each cell's video, exactly as the feature frames were cut
+    (FrameExtractor.seek_extract: grayscale, INTER_AREA resize to 1228x922, JPEG), skipping hand-masked frames."""
+    import glob
+    DENSE.mkdir(parents=True, exist_ok=True)
+    hand = {(cell_of(s), index_of(s)) for r in five_fold_records().values() for s in r["test_masks_native"]}
+    for man in sorted(glob.glob(str(FACTORY / "00_cell *_manifest.csv"))):
+        m = pd.read_csv(man)
+        video = ROOT / m.source.iloc[0]
+        if not video.exists():          # the raw videos were regrouped into high/ low/ after the factory was cut
+            video = next((ROOT / "data" / "raw").rglob(video.name))
+        cell = cell_of(Path(m.output_path.iloc[0]).stem)
+        steps = sorted({int(i) // FRAMES_PER_STEP for i in m.frame_index})
+        total = int(cv2.VideoCapture(str(video)).get(cv2.CAP_PROP_FRAME_COUNT))
+        targets = [s * FRAMES_PER_STEP + o for s in steps for o in DENSE_OFFSETS]
+        have = {int(i) for i in m.frame_index}          # already a feature frame (the step frame)
+        targets = [t for t in targets if t < total and (cell, t) not in hand and t not in have
+                   and not (DENSE / f"{cell}_{t:06d}.jpg").exists()]
+        if targets:
+            FrameExtractor(video, output_dir=DENSE, target_size=(1228, 922), image_format="jpg",
+                           change_threshold=None).seek_extract(targets, file_stem=cell)
+        print(f"  {cell}: {len(list(DENSE.glob(f'{cell}_*.jpg')))} dense frames", flush=True)
 
 
 def out_dirs(model: str, which: str) -> tuple[Path, Path]:
@@ -122,7 +176,10 @@ def fold_inputs(protocol: str, f: int, cells: list[str]) -> dict[str, Path]:
     raw = ROOT / "data" / "nnunet" / "raw" / DATASET
     srcs = {"feature": [p for c in cells for p in sorted(FACTORY.glob(f"{c}_*.jpg"))],
             "test": [p for c in cells for p in sorted(raw.glob(f"imagesTs_round*/*{c}_*_0000.png"))
-                     if cell_of(p.name) == c]}
+                     if cell_of(p.name) == c],
+            "dense": [p for c in cells for p in sorted(DENSE.glob(f"{c}_*.jpg"))]}
+    if not srcs["dense"]:
+        del srcs["dense"]             # the dense frames are optional (dense_frames step)
     for which, files in srcs.items():
         if not files:
             raise SystemExit(f"{protocol} fold {f}: no {which} frames for {cells}")
@@ -183,17 +240,17 @@ def segment(model: str) -> None:
 # ── checks (both sets) ───────────────────────────────────────────────────────
 
 def check_frames(model: str, which: str, gates: Gates, ex: MorphologyExtractor) -> pd.DataFrame:
-    lab_dir, mp_dir = out_dirs(model, which)
+    files = located(model, which)
     rs = five_fold_records()
     her2 = next(iter(rs.values()))["her2"]
     gt_path = {s: ROOT / m for r in rs.values() for s, m in r.get("test_masks_native", {}).items()}
-    stems = sorted(p.stem for p in lab_dir.glob("*.png"))
+    stems = sorted(files)
     if not stems:
         raise SystemExit(f"no {which} predictions for {model} -- run the segment step first")
     rows = []
     for cell in sorted({cell_of(s) for s in stems}):
         cs = [s for s in stems if cell_of(s) == cell]
-        labels = {s: cv2.imread(str(lab_dir / f"{s}.png"), cv2.IMREAD_UNCHANGED) for s in cs}
+        labels = {s: cv2.imread(str(files[s][0]), cv2.IMREAD_UNCHANGED) for s in cs}
         # trap position from this video's own predictions: frames with exactly one cell region
         cents = {s: rr[0]["centroid"] for s, rr in ((s, regions(labels[s] == 1)) for s in cs) if len(rr) == 1}
         if len(cents) < 3:
@@ -229,25 +286,25 @@ def check_frames(model: str, which: str, gates: Gates, ex: MorphologyExtractor) 
             return float(np.median(near)) if len(near) >= 2 else whole
         for s in cs:
             reg, n = picked[s]
-            mp = cv2.imread(str(mp_dir / f"{s}.png"), cv2.IMREAD_UNCHANGED).astype(np.float32) / 255
+            mp = cv2.imread(str(files[s][1]), cv2.IMREAD_UNCHANGED).astype(np.float32) / 255
             c = segmentation_checks(reg, labels[s], mp, typical(s), n)
             ok, why = apply_gates(c, gates)
-            raw_path = (ROOT / "data" / "nnunet" / "raw" / DATASET / "imagesTr" / f"{s}_0000.png" if which == "test"
-                        else FACTORY / f"{s}.jpg")
-            raw = cv2.imread(str(raw_path), cv2.IMREAD_GRAYSCALE)
+            raw = cv2.imread(str(files[s][2]), cv2.IMREAD_GRAYSCALE)
             row = {"stem": s, "cell": cell, "her2": her2[cell], "frame_index": index_of(s),
-                   "laser_step": index_of(s) // FRAMES_PER_STEP,
+                   "laser_step": index_of(s) // FRAMES_PER_STEP, "offset": index_of(s) % FRAMES_PER_STEP,
                    "trap_x": trap[0] if trap else np.nan, "trap_y": trap[1] if trap else np.nan,   # chooses
                    "local_trap_x": traps[s][0] if traps[s] else np.nan,                          # checks
                    "local_trap_y": traps[s][1] if traps[s] else np.nan, **c, "passed": ok, "reasons": "; ".join(why),
                    **image_quality(raw, reg["mask"] if reg else None)}
             feats = ex.extract(reg["mask"].astype(np.uint8)) if reg else {k: np.nan for k in ex._FEATURE_NAMES}
             row.update(feats)
+            row.update(frame_features(reg["mask"] if reg else None))
             if which == "test":
                 gt = cv2.imread(str(gt_path[s]), cv2.IMREAD_UNCHANGED) == 1
                 pr = reg["mask"] if reg else np.zeros_like(gt)
                 row["dsc"] = 2 * (gt & pr).sum() / (gt.sum() + pr.sum() + 1e-9)
                 row.update({f"gt_{k}": v for k, v in ex.extract(gt.astype(np.uint8)).items()})
+                row.update({f"gt_{k}": v for k, v in frame_features(gt).items()})
             rows.append(row)
         print(f"  {which:7s} {cell:12s} trap ({trap[0]:.0f}, {trap[1]:.0f})  passed "
               f"{sum(r['passed'] for r in rows if r['cell'] == cell)}/{len(cs)}" if trap else f"  {cell}: no trap found")
@@ -289,6 +346,19 @@ def cross_check(df: pd.DataFrame, gates: Gates) -> dict:
             "rule_without_the_cell": score(held), "limits_without_the_cell": per_cell}
 
 
+def cell_feature_check(df: pd.DataFrame, cv: pd.DataFrame, res: Path) -> None:
+    """The per-cell deformation features computed twice on each cell's hand-masked frames -- from the predicted
+    masks (passing frames) and from the ground-truth masks (all frames) -- to see whether the segmentation
+    preserves them. ~20 frames per cell, so these are coarser than on the feature frames."""
+    rows = []
+    for cell, g in df.groupby("cell"):
+        truth = g[["laser_step"]].assign(passed=True, **{k: g[f"gt_{k}"] for k in FRAME_FEATURES})
+        pr, gt = cell_summary(g), cell_summary(truth)
+        rows.append({"cell": cell, "her2": g.her2.iloc[0], "validated": bool(cv.loc[cell, "validated"]),
+                     **{f"pred_{k}": v for k, v in pr.items()}, **{f"gt_{k}": v for k, v in gt.items()}})
+    pd.DataFrame(rows).to_csv(res / "cell_feature_check.csv", index=False)
+
+
 def calibrate(model: str, gates: Gates) -> None:
     ex = MorphologyExtractor()
     df = check_frames(model, "test", gates, ex)
@@ -305,6 +375,7 @@ def calibrate(model: str, gates: Gates) -> None:
                                    size_bias=("size_vs_gt", "median"), dsc_min=("dsc", "min"))
     cv["validated"] = (cv.dsc >= CELL_MIN_DSC) & cv.size_bias.between(*CELL_SIZE_BIAS)
     cv.to_csv(res / "cell_validation.csv")
+    cell_feature_check(df, cv, res)
     summary = {
         "gates": gates.as_dict(), "good_dsc": GOOD_DSC, "frames": int(len(df)),
         "passed": int(p.sum()), "bad_masks": int(bad.sum()),
@@ -379,17 +450,17 @@ def label_lines(tile: np.ndarray, y0: int, head: str, head_col: tuple, reasons: 
         cv2.putText(tile, line, (4, y0 + 18 + 16 * k), cv2.FONT_HERSHEY_SIMPLEX, 0.38, col, 1)
 
 
-def review_sheet(model: str, df: pd.DataFrame, out: Path, half: int = 70, cols: int = 6) -> None:
+def review_sheet(model: str, df: pd.DataFrame, out: Path, half: int = 70, cols: int = 6, which: str = "feature") -> None:
     """Every rejected feature frame on its raw frame, the PREDICTED mask outlined in the report's colours --
     selected region green, other trapped-cell-class regions white, other-object class grey -- the trap
     (yellow cross) and its distance limit (circle), with the failed checks underneath. The view grows to
     show a region that lies far from the trap."""
-    lab_dir, _ = out_dirs(model, "feature")
+    files = located(model, which)
     r_lim = Gates().max_trap_dist
     tiles = []
     for _, r in df[~df.passed].sort_values(["cell", "frame_index"]).iterrows():
-        img = cv2.cvtColor(cv2.imread(str(FACTORY / f"{r.stem}.jpg"), cv2.IMREAD_GRAYSCALE), cv2.COLOR_GRAY2BGR)
-        lab = cv2.imread(str(lab_dir / f"{r.stem}.png"), cv2.IMREAD_UNCHANGED)
+        img = cv2.cvtColor(cv2.imread(str(files[r.stem][2]), cv2.IMREAD_GRAYSCALE), cv2.COLOR_GRAY2BGR)
+        lab = cv2.imread(str(files[r.stem][0]), cv2.IMREAD_UNCHANGED)
         rs = regions(lab == 1)
         kept, _ = select_trapped_region(lab == 1, (r.trap_x, r.trap_y)) if rs else (None, 0)
         for m, col in [((lab == 2).astype(np.uint8), (110, 110, 110))] + \
@@ -418,17 +489,15 @@ def multi_region_report(model: str, which: str, df: pd.DataFrame, out_dir: Path,
     """Every frame where the model marks MORE THAN ONE trapped-cell region: one CSV row per region (area,
     centre, distance from the trap, which one the extraction kept; on the test set also its Dice with
     the ground truth) and a review sheet, each region outlined and numbered (kept one green, others red)."""
-    lab_dir, _ = out_dirs(model, which)
+    files = located(model, which)
     gt_path = {s: ROOT / m for r in five_fold_records().values() for s, m in r.get("test_masks_native", {}).items()}
     rows, tiles = [], []
     for _, r in df[df.n_regions > 1].sort_values(["cell", "frame_index"]).iterrows():
-        lab = cv2.imread(str(lab_dir / f"{r.stem}.png"), cv2.IMREAD_UNCHANGED)
+        lab = cv2.imread(str(files[r.stem][0]), cv2.IMREAD_UNCHANGED)
         rs = regions(lab == 1)
         kept, _ = select_trapped_region(lab == 1, (r.trap_x, r.trap_y))
         gt = cv2.imread(str(gt_path[r.stem]), cv2.IMREAD_UNCHANGED) == 1 if which == "test" else None
-        raw_path = (ROOT / "data" / "nnunet" / "raw" / DATASET / "imagesTr" / f"{r.stem}_0000.png" if which == "test"
-                    else FACTORY / f"{r.stem}.jpg")
-        img = cv2.cvtColor(cv2.imread(str(raw_path), cv2.IMREAD_GRAYSCALE), cv2.COLOR_GRAY2BGR)
+        img = cv2.cvtColor(cv2.imread(str(files[r.stem][2]), cv2.IMREAD_GRAYSCALE), cv2.COLOR_GRAY2BGR)
         for k, reg in enumerate(sorted(rs, key=lambda x: x["area"], reverse=True), 1):
             is_kept = reg["label"] == kept["label"]
             row = {"stem": r.stem, "cell": r.cell, "laser_step": r.laser_step, "region": k, "area": reg["area"],
@@ -490,7 +559,7 @@ def extract(model: str, gates: Gates) -> None:
     res.mkdir(parents=True, exist_ok=True)
     review_sheet(model, df, res / "rejected_frames.png")
     multi_region_report(model, "feature", df, res, gates)
-    df.loc[~df.passed, ex._FEATURE_NAMES] = np.nan          # a failed frame contributes no features
+    df.loc[~df.passed, ex._FEATURE_NAMES + FRAME_FEATURES] = np.nan   # a failed frame contributes no features
     df.to_csv(res / "features_frames.csv", index=False)
 
     cells = df.groupby("cell").agg(her2=("her2", "first"), frames=("stem", "size"), passed=("passed", "sum"),
@@ -501,7 +570,12 @@ def extract(model: str, gates: Gates) -> None:
     cv = pd.read_csv(cv_path, index_col="cell")
     cells["cell_validated"] = cv["validated"].reindex(cells.index).fillna(False).astype(bool)
     cells["size_bias_annotated"] = cv["size_bias"].reindex(cells.index)
-    cells["usable"] = (cells["passed"] >= MIN_FRAMES_PER_CELL) & cells["cell_validated"]
+    cells["usable"] = (cells["passed"] >= MIN_PASS_FRACTION * cells["frames"]) & cells["cell_validated"]
+    # deformation over the laser steps: one value per step, the median of the step's passing frames; and the
+    # behaviour within a step, from the frames' offsets into it
+    for cell, frames in df.groupby("cell"):
+        for k, v in {**cell_summary(frames), **within_step(frames)}.items():
+            cells.loc[cell, k] = v
     cells.to_csv(res / "features_cells.csv")
 
     iq = ["focus_frame", "focus_cell", "illum_mean", "illum_gradient", "contrast_rms", "contrast_cell", "noise_sigma"]
@@ -528,11 +602,13 @@ def extract(model: str, gates: Gates) -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("step", choices=["segment", "calibrate", "extract", "all"])
+    ap.add_argument("step", choices=["cut", "segment", "calibrate", "extract", "all"])
     ap.add_argument("--model", choices=list(MODELS), default="nnunet1000_loocv")
     a = ap.parse_args()
     sys.stdout.reconfigure(line_buffering=True)
     gates = Gates()
+    if a.step in ("cut", "all"):
+        dense_frames()
     if a.step in ("segment", "all"):
         segment(a.model)
     if a.step in ("calibrate", "all"):

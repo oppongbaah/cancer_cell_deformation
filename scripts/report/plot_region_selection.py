@@ -16,7 +16,8 @@ How the extraction picks the trapped cell, and why it drops a frame -- drawn on 
       (Solidity = area / convex hull: a dent, or a neighbour fused on, lowers it.)
 
 Everything is read from the extraction's outputs: results/features/<model>/features_frames.csv (the
-checks and reasons) and data/features/<model>/feature/labels/ (the masks). The masks are shown as they
+checks and reasons; every feature frame, up to 6 per laser step) and data/features/<model>/{feature,dense}/labels/
+(the masks: the step frames and the other frames of a step were segmented from two folders). The masks are shown as they
 are, label 1 only, on black -- no frame underneath.
 
     python scripts/report/plot_region_selection.py --model nnunet100_5fold --output ../masters_thesis/images/region_selection.png
@@ -39,7 +40,8 @@ from matplotlib.lines import Line2D
 from matplotlib.patches import Circle, Patch
 
 REPO = Path(__file__).resolve().parent.parent.parent
-FACTORY = REPO / "data" / "frames" / "03_mask_factory"
+FACTORY = REPO / "data" / "frames" / "03_mask_factory"     # the step frames
+DENSE = REPO / "data" / "frames" / "05_dense_frames"       # the other feature frames of each step
 sys.path.insert(0, str(REPO))
 from celldform.features.quality import Gates, regions, select_trapped_region  # noqa: E402
 from celldform.features.segmenters import five_fold_records  # noqa: E402
@@ -120,7 +122,8 @@ def view(lab: np.ndarray, row: pd.Series, half: int = 70) -> dict:
         d = float(np.hypot(r["centroid"][0] - tx, r["centroid"][1] - ty))
         info.append({"kept": is_kept, "area": r["area"], "dist": d})
     info.sort(key=lambda i: not i["kept"])
-    raw = cv2.imread(str(FACTORY / f"{row.stem}.jpg"), cv2.IMREAD_GRAYSCALE)
+    raw_p = FACTORY / f"{row.stem}.jpg"
+    raw = cv2.imread(str(raw_p if raw_p.exists() else DENSE / f"{row.stem}.jpg"), cv2.IMREAD_GRAYSCALE)
     g = crop(g_full)
     gt = np.zeros((side, side, 3))
     gt[g == 1] = KEPT
@@ -163,12 +166,12 @@ def gt_same_step(r: pd.Series) -> bool:
     return any(index_of(s) // 200 == r.laser_step for s in GT[r.cell])
 
 
-def pick_multi(df: pd.DataFrame, labels: Path, n: int) -> list[tuple[pd.Series, dict]]:
+def pick_multi(df: pd.DataFrame, labels: dict[str, Path], n: int) -> list[tuple[pd.Series, dict]]:
     """n/2 frames WITH a hand mask in the same step, then n/2 WITHOUT, different cells within each half,
     preferring frames where the largest region is not the one selected."""
     cand = []
     for _, r in df[(df.n_regions > 1) & df.passed].iterrows():
-        v = view(cv2.imread(str(labels / f"{r.stem}.png"), cv2.IMREAD_UNCHANGED), r)
+        v = view(cv2.imread(str(labels[r.stem]), cv2.IMREAD_UNCHANGED), r)
         largest_not_kept = max(v["info"], key=lambda i: i["area"])["kept"] is False
         cand.append((not largest_not_kept, -max(i["area"] for i in v["info"] if not i["kept"]),
                      gt_same_step(r), r, v))
@@ -187,7 +190,7 @@ def pick_multi(df: pd.DataFrame, labels: Path, n: int) -> list[tuple[pd.Series, 
     return out
 
 
-def pick_dropped(df: pd.DataFrame, labels: Path, unusable: set[str], n: int) -> list[tuple[str, pd.Series, dict]]:
+def pick_dropped(df: pd.DataFrame, labels: dict[str, Path], unusable: set[str], n: int) -> list[tuple[str, pd.Series, dict]]:
     """One frame per kind of failure, n/2 of them WITH a hand mask in the same step and n/2 WITHOUT. The
     distance check is shown by its clear case (no cell in the trap, >= 2x the limit), which has no hand
     mask in its step; the other kinds fill the two halves in KINDS order."""
@@ -215,7 +218,7 @@ def pick_dropped(df: pd.DataFrame, labels: Path, unusable: set[str], n: int) -> 
     out = []
     for al in (True, False):
         for kind, r in sorted(plan[al], key=lambda kr: order.index(kr[0])):
-            out.append((kind, r, view(cv2.imread(str(labels / f"{r.stem}.png"), cv2.IMREAD_UNCHANGED), r)))
+            out.append((kind, r, view(cv2.imread(str(labels[r.stem]), cv2.IMREAD_UNCHANGED), r)))
     return out
 
 
@@ -281,21 +284,28 @@ def write_cross_check(calib: dict, out: Path) -> None:
 
 
 def write_rejections(df: pd.DataFrame, out: Path) -> None:
-    """Every rejected feature frame, grouped by the first check it failed: how many, and which cell/steps
-    (all the checks a frame failed are listed in features_frames.csv)."""
+    """Every rejected feature frame, grouped by the first check it failed, by cell: how many, and in which laser
+    steps (all the checks a frame failed are in features_frames.csv)."""
+    kinds = {**{k: v for k, v in KINDS.items()}, "edge": (r"cut by the frame edge", "cut by the frame edge"),
+             "none": (r"no cell near the trap", "no cell found")}
     bad = df[~df.passed].copy()
-    bad["kind"] = [next(k for k, (pat, _) in KINDS.items() if re.search(pat, r.split(";")[0])) for r in bad.reasons]
+    bad["kind"] = [next((k for k, (pat, _) in kinds.items() if re.search(pat, r.split(";")[0])), "none")
+                   for r in bad.reasons]
+
+    def steps(st: pd.Series) -> str:
+        u = sorted(set(st))
+        return ", ".join(map(str, u)) if len(u) <= 4 else f"{u[0]}--{u[-1]}"
     lines = [r"% GENERATED by scripts/report/plot_region_selection.py -- do not edit by hand.",
-             r"\begin{tabular}{l r p{0.52\linewidth}}", r"\toprule",
-             r"\textbf{First check failed} & \textbf{Frames} & \textbf{Cell (laser steps)} \\", r"\midrule"]
-    for kind, (_, label) in KINDS.items():
+             r"\begin{tabular}{l r p{0.58\linewidth}}", r"\toprule",
+             r"\textbf{First check failed} & \textbf{Frames} & \textbf{Cell: frames (laser steps)} \\", r"\midrule"]
+    for kind, (_, label) in kinds.items():
         g = bad[bad.kind == kind]
         if g.empty:
             continue
-        where = "; ".join(f"\\code{{{short(c)}}} ({', '.join(str(x) for x in sorted(gg.laser_step))})"
-                          for c, gg in g.groupby("cell", sort=False))
-        lines.append(f"{label[0].upper() + label[1:]} & {len(g)} & {where} \\\\")
-    lines += [r"\midrule", f"Total & {len(bad)} of {len(df)} & \\\\", r"\bottomrule", r"\end{tabular}", ""]
+        where = "; ".join(f"\\code{{{short(c)}}}: {len(gg)} ({steps(gg.laser_step)})"
+                          for c, gg in sorted(g.groupby("cell"), key=lambda cg: -len(cg[1])))
+        lines.append(f"{label[0].upper() + label[1:]} & {len(g)} & {where}" + r" \\")
+    lines += [r"\midrule", f"Total & {len(bad)} of {len(df):,} & ".replace(",", r"\,") + r"\\", r"\bottomrule", r"\end{tabular}", ""]
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text("\n".join(lines))
     print(f"-> {out}")
@@ -315,7 +325,10 @@ def main() -> None:
     df = pd.read_csv(res / "features_frames.csv")
     df["reasons"] = df.reasons.fillna("")
     cells = pd.read_csv(res / "features_cells.csv", index_col="cell")
-    labels = REPO / "data/features" / a.model / "feature/labels"
+    labels = {}                 # stem -> predicted mask; a frame in both folders is taken from the step frames
+    for sub in ("feature", "dense"):
+        for q in (REPO / "data/features" / a.model / sub / "labels").glob("*.png"):
+            labels.setdefault(q.stem, q)
     if a.table_output:
         write_rejections(df, a.table_output)
     if a.checks_output:
