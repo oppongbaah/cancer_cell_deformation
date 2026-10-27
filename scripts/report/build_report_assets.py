@@ -80,7 +80,7 @@ STRIP_COLORS = ["--gt-color", "0,200,0", "--pred-color", "170,95,40",
                 "--overlap-color", "220,220,0"]
 
 
-def jobs(img: Path, tab: Path) -> dict[str, list[str]]:
+def jobs(img: Path, tab: Path, feature_model: str = "nnunet100_5fold") -> dict[str, list[str]]:
     """Assets for progress_report_10_1_26.tex.
 
     The 2026-09-24 report is closed too; pool_flow_9_24.png stays as presented (it
@@ -108,6 +108,25 @@ def jobs(img: Path, tab: Path) -> dict[str, list[str]]:
                     "--out", str(img), "--tables", str(tab)],
         "model-comparison": ["scripts/report/plot_model_comparison.py", "--out", str(img), "--tables", str(tab)],
         "nnunet-epochs": ["scripts/report/plot_nnunet_epochs.py", "--out", str(img), "--tables", str(tab)],
+        "loocv": ["scripts/report/plot_loocv.py", "--out", str(img), "--tables", str(tab)],
+        "final-models": ["scripts/report/plot_final_models.py", "--out", str(img), "--tables", str(tab)],
+        "protocols": ["scripts/report/plot_protocols.py", "--output", str(img / "protocols.png")],
+        "fe-dataset": ["scripts/report/plot_fe_dataset.py", "--model", feature_model,
+                       "--output", str(img / "fe_dataset.png"), "--rounds-output", str(img / "fe_rounds.png"),
+                       "--table-output", str(tab / "fe_models.tex")],
+        "region-selection": ["scripts/report/plot_region_selection.py", "--model", feature_model,
+                             "--output", str(img / "region_selection.png"),
+                             "--dropped-output", str(img / "region_dropped.png"),
+                             "--table-output", str(tab / "region_rejections.tex"),
+                             "--checks-output", str(tab / "frame_checks.tex"),
+                             "--cross-output", str(tab / "frame_checks_cross.tex")],
+        "high1-exclusion": ["scripts/report/plot_high1_exclusion.py", "--model", feature_model,
+                            "--output", str(img / "high1_exclusion.png"),
+                            "--sizes-output", str(img / "high1_sizes.png"), "--table-output", str(tab / "high1_steps.tex"),
+                            "--ref-output", str(img / "high9_segmentation.png"),
+                            "--ref-table-output", str(tab / "high9_steps.tex")],
+        "features": ["scripts/report/plot_features.py", "--model", feature_model, "--out", str(img),
+                     "--tables", str(tab)],
         "distill-labels": ["scripts/report/view_soft_target.py", "--round", "4", "--stem", "high_cell7_002525",
                            "domain_high_cell7_002585", "--output", str(img / "distill_soft_targets.png")],
         "ensemble-gate": ["scripts/evaluation/eval_ensemble_cv.py", "--gate-only", "--tables", str(tab)],
@@ -144,11 +163,15 @@ def main() -> None:
                         "and delete the temp files")
     p.add_argument("--tex", default="progress_report_10_8_26.tex",
                    help="Report .tex to compile with --compile")
+    p.add_argument("--feature-model", default="nnunet100_5fold",
+                   choices=["nnunet100_5fold", "nnunet1000_5fold", "nnunet1000_loocv"],
+                   help="Segmentation run the feature-extraction figures and tables are built from "
+                        "(jobs fe-dataset and features; see celldform/features/segmenters.py)")
     args = p.parse_args()
 
     img = (args.report_root / "images").resolve()
     tab = (args.report_root / "main_work" / "tables").resolve()
-    all_jobs = jobs(img, tab)
+    all_jobs = jobs(img, tab, args.feature_model)
 
     if args.list:
         for name in all_jobs:
