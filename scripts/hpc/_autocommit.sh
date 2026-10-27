@@ -68,6 +68,25 @@ _ac_commit_push() {
     return 0
 }
 
+# _ac_sync_paths <start marker>: the git-ignored files under checkpoints/, data/ and results/ written
+# since the marker (the job's untracked outputs), as at most 10 directories -- deeper ones are merged
+# into their parent until 10 or fewer remain. One "sync: <path>" line each, then the total size.
+# Jobs running at the same time can show up in each other's lists; that only means extra copying.
+_ac_sync_paths() {
+    local mark=$1 dirs d
+    [ -f "$mark" ] || return 0
+    dirs=$(find checkpoints data results -type f -newer "$mark" 2>/dev/null \
+           | git check-ignore --stdin 2>/dev/null | xargs -r -d '\n' dirname | sort -u)
+    [ -z "$dirs" ] && return 0
+    while [ "$(wc -l <<<"$dirs")" -gt 10 ]; do
+        dirs=$(sed 's#/[^/]*$##' <<<"$dirs" | sort -u)   # parent dir; never above checkpoints/ etc.
+        # drop any directory already inside another listed one
+        dirs=$(awk '{for (k in kept) if (index($0, k"/")==1) next; kept[$0]; print}' <<<"$dirs")
+    done
+    while IFS= read -r d; do echo "sync: $d"; done <<<"$dirs"
+    echo "sync-size: $(xargs -r -d '\n' du -sch <<<"$dirs" | tail -1 | cut -f1)"
+}
+
 hpc_autocommit() {
     _ac_begin || return 0
     local branch=$AC_BRANCH
@@ -81,8 +100,9 @@ hpc_autocommit() {
     [ ${#paths[@]} -eq 0 ] && { _ac_note "no outputs to commit"; flock -u 9; return 0; }
     local summary
     summary=$(grep -hE "pooled +DSC|per-cell mean|=> (PASSED|FAILED)" "$out" 2>/dev/null | tail -3 | sed 's/^ *//')
+    local sync; sync=$(_ac_sync_paths "${HPC_START_MARK:-}")
     _ac_commit_push "$branch" "run: ${SLURM_JOB_NAME:-job} finished (job ${SLURM_JOB_ID:-local})" \
-        "args: ${HPC_ARGS:-(none)}"$'\n'"node: ${SLURMD_NODENAME:-$(hostname)}"${summary:+$'\n\n'"$summary"} \
+        "args: ${HPC_ARGS:-(none)}"$'\n'"node: ${SLURMD_NODENAME:-$(hostname)}"${summary:+$'\n\n'"$summary"}${sync:+$'\n\n'"$sync"} \
         "${paths[@]}"
 }
 

@@ -27,6 +27,11 @@ HPC_ERR="logs/hpc/${SLURM_JOB_NAME:-celldform}_${SLURM_JOB_ID:-$$}.err"
 exec 2> >(trap '' TERM; exec tee -a "$HPC_ERR" >&2)
 
 HPC_OUT="logs/hpc/${SLURM_JOB_NAME:-celldform}_${SLURM_JOB_ID:-$$}.out"   # = #SBATCH --output=logs/hpc/%x_%j.out
+# Start-time marker: files git ignores (checkpoints/, data/) that are newer than this are the job's
+# untracked outputs; the auto-commit lists them as "sync:" lines so the notifier email can give an
+# rsync command for exactly those paths (2026-10-27, user request).
+HPC_START_MARK="logs/hpc/.${SLURM_JOB_NAME:-celldform}_${SLURM_JOB_ID:-$$}.start"
+touch "$HPC_START_MARK"
 _hpc_finish() {
     local rc=$?
     echo "[celldform] job ${SLURM_JOB_ID:-local} finished (exit $rc) $(date)"
@@ -45,6 +50,7 @@ _hpc_finish() {
     if [ "$rc" -eq 0 ] && [ -n "${SLURM_JOB_ID:-}" ]; then
         ( set +eu; source scripts/hpc/_autocommit.sh && hpc_autocommit ) || true
     fi
+    rm -f "$HPC_START_MARK"
 }
 trap _hpc_finish EXIT
 # Time limit, scancel and preemption send SIGTERM. Exit non-zero so the .err is kept.
