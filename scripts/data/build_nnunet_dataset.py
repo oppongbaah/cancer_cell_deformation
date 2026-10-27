@@ -53,9 +53,12 @@ def main() -> None:
 
     conf = load_config(str(a.config))
     frames = collect_frames(conf.split.sources)
-    recs = sorted((json.loads(p.read_text()) for p in a.splits.glob(f"{a.run}_fold_*_split.json")),
-                  key=lambda r: r["fold"])
-    recs = [r for r in recs if r["fold"] != "final"]
+    # CV rounds only ("deploy"/"final" records are not rounds), in NUMERIC order: nnU-Net fold k-1
+    # must be round k, and a string sort puts "10" before "2" once there are more than 9 rounds.
+    recs = [json.loads(p.read_text()) for p in a.splits.glob(f"{a.run}_fold_*_split.json")]
+    recs = sorted((r for r in recs if str(r["fold"]).isdigit()), key=lambda r: int(r["fold"]))
+    if [int(r["fold"]) for r in recs] != list(range(1, len(recs) + 1)):
+        raise SystemExit(f"split records are not rounds 1..{len(recs)}: {[r['fold'] for r in recs]}")
     if not recs:
         raise SystemExit(f"no split records in {a.splits}")
 

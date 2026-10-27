@@ -155,13 +155,16 @@ Override resources at submit time without editing a file, e.g. `sbatch --time=24
 `scripts/hpc/_common.sh`, which activates the `celldform` conda env (`--export=ALL,CONDA_ENV=<name>`
 for another) and prints the job's GPU and torch build.
 
-**Logs.** Each job writes `logs/hpc/<job-name>_<jobid>.out` (stdout and stderr together). A
-matching **`.err` file exists only when the job failed**: non-zero exit, time limit or
-`scancel`. It holds the job's stderr plus a closing line giving the exit code or the
-SIGTERM. Successful jobs leave no `.err`, so `ls logs/hpc/*.err` lists the failures.
+**Logs.** Each job leaves **one** log in `logs/hpc/`: `<job-name>_<jobid>.out` when it exits 0, or
+`<job-name>_<jobid>.err` when it fails, times out or is cancelled. On failure the whole log (stdout and
+stderr interleaved, in order) becomes the `.err`, so the error is in it whichever stream printed it,
+and a closing `job FAILED (exit N)` line gives the exit code (143 = cancelled or time limit).
+`ls logs/hpc/*.err` lists the failures.
 
 **Auto-commit.** When a job exits 0, `scripts/hpc/_autocommit.sh` commits its outputs and pushes
-them to the current branch on GitHub. A failed, cancelled or timed-out job commits nothing.
+them to the current branch on GitHub. When a job fails, is cancelled or times out, it commits and
+pushes **only that job's `.err`** (commit `run: <job> FAILED (exit N, job <id>)`, with the error
+lines in the message), so failures show up on GitHub; a failed run's partial outputs are never committed.
 
 - *What is committed:* that job's `logs/hpc/<job>_<jobid>.out`, plus `results/` and `logs/` as far
   as `.gitignore` admits them (eval logs `*.jsonl`, training logs `*.log`). Figures, CSVs and

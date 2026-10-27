@@ -12,6 +12,16 @@ nnU-Net benchmark: the randswap cross-validation, round for round, with nnU-Net 
     python scripts/training/train_nnunet_cv.py --trainer nnUNetTrainer \
         --exp randswap/experiment_1b_nnunet_1000ep --rounds 1
 
+    # another CV's rounds (here leave-one-cell-out) in a dataset of its own:
+    S="--src-exp randswap/experiment_4_loocv/unet --src-run loocv_baseline --dataset-id 502 --dataset-name CellTrapLOOCV"
+    python scripts/training/train_nnunet_cv.py $S --exp randswap/experiment_4_loocv/nnunet --setup
+    python scripts/training/train_nnunet_cv.py $S --exp randswap/experiment_4_loocv/nnunet \
+        --trainer nnUNetTrainer --rounds 7 --no-summary
+
+    # the deployment model: ONE nnU-Net trained on every cell (nnU-Net fold "all"), no test cell
+    python scripts/training/train_nnunet_cv.py $S --exp randswap/experiment_4_loocv/nnunet \
+        --trainer nnUNetTrainer --deploy
+
 Pure Python: nnU-Net is IMPORTED (nnunetv2 is a project dependency), never called through
 `nnUNetv2_*` executables at a fixed path, so this runs from any environment that has the
 project installed -- the local .venv, a conda env on NSU, a SLURM job -- with whatever
@@ -53,10 +63,10 @@ ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "scripts" / "evaluation"))   # eval_nnunet
 
-DATASET_ID, DATASET = 501, "Dataset501_CellTrapRandswap"
+DATASET_ID, DATASET = 501, "Dataset501_CellTrapRandswap"   # defaults; --dataset-id / --dataset-name
 CONFIGURATION, PLANS = "2d", "nnUNetPlans"
 EXP = "randswap/experiment_1_nnunet"
-SRC_EXP, SRC_RUN = "randswap/experiment_0_cv_baseline", "cv_baseline"
+SRC_EXP, SRC_RUN = "randswap/experiment_0_cv_baseline", "cv_baseline"   # the CV whose rounds nnU-Net repeats; --src-exp / --src-run
 CV_CONFIG = f"configs/{SRC_EXP}/{SRC_RUN}.yaml"
 
 
@@ -70,7 +80,8 @@ def set_paths(exp: str) -> None:
 def setup(num_processes: int) -> None:
     """Dataset from the fold records, then nnU-Net's fingerprint + plan + preprocess (2d only)."""
     subprocess.run([sys.executable, "scripts/data/build_nnunet_dataset.py", "--config", CV_CONFIG,
-                    "--splits", f"results/{SRC_EXP}", "--run", SRC_RUN], check=True, cwd=ROOT)
+                    "--splits", f"results/{SRC_EXP}", "--run", SRC_RUN, "--dataset-id", str(DATASET_ID),
+                    "--name", DATASET.split("_", 1)[1]], check=True, cwd=ROOT)
     splits = Path(os.environ["nnUNet_preprocessed"]) / DATASET / "splits_final.json"
     ours = splits.read_text()
     from nnunetv2.experiment_planning.plan_and_preprocess_api import (
@@ -113,7 +124,7 @@ def run_round(k: int, trainer: str, continue_training: bool, exp: str = EXP) -> 
 
     model_dir = Path(os.environ["nnUNet_results"]) / DATASET / f"{trainer}__{PLANS}__{CONFIGURATION}"
     pred = ROOT / "data" / "nnunet" / "predictions"      # the 100-epoch benchmark's layout, kept as is
-    pred = pred / f"round{k}" if exp == EXP else pred / Path(exp).name / f"round{k}"
+    pred = pred / f"round{k}" if exp == EXP else pred / exp.removeprefix("randswap/").replace("/", "_") / f"round{k}"
     shutil.rmtree(pred, ignore_errors=True)
     print(f"[{exp}] round {k}: predicting its test frames", flush=True)
     p = nnUNetPredictor(device=torch.device("cuda"), allow_tqdm=False)       # nnU-Net defaults (mirroring TTA on)
@@ -125,27 +136,75 @@ def run_round(k: int, trainer: str, continue_training: bool, exp: str = EXP) -> 
                  trainer=trainer)
 
 
+def train_deploy(trainer: str, continue_training: bool, exp: str) -> None:
+    """One nnU-Net on EVERY annotated frame -- all 15 cells + legacy -- as nnU-Net's fold "all".
+
+    The model that segments new cells (e.g. the classifier's feature frames from future
+    recordings). No cell is held out, so there is no score: its expected accuracy is the CV's.
+    nnU-Net keeps its last epoch, so nothing here needs a validation cell. (After training,
+    nnU-Net runs its routine validation on the training frames themselves; that number is
+    not a test score.)"""
+    from nnunetv2.run.run_training import run_training
+    import torch
+
+    res = ROOT / "results" / exp
+    res.mkdir(parents=True, exist_ok=True)
+    raw = Path(os.environ["nnUNet_raw"]) / DATASET
+    n_frames = len(list((raw / "imagesTr").glob("*_0000.png")))
+    cells = sorted({c for r in json.loads((raw / "test_frames.json").read_text()).values() for c in r["cells"]["test"]})
+    print(f"[{exp}] deployment model: nnU-Net fold 'all' with {trainer} on {n_frames} frames "
+          f"({len(cells)} cells + legacy)", flush=True)
+    run_training(str(DATASET_ID), CONFIGURATION, "all", trainer, PLANS, continue_training=continue_training,
+                 device=torch.device("cuda"))
+    ckpt = Path(os.environ["nnUNet_results"]) / DATASET / f"{trainer}__{PLANS}__{CONFIGURATION}" / "fold_all" / "checkpoint_final.pth"
+    record = {"model": "nnU-Net deployment model (fold 'all')", "trainer": trainer, "dataset": DATASET,
+              "frames": n_frames, "cells": cells, "checkpoint": str(ckpt.relative_to(ROOT)),
+              "expected_accuracy": f"the CV of this configuration (results/{exp}/nnunet_cv_summary.json)"}
+    (res / "nnunet_deploy.jsonl").write_text(json.dumps(record) + "\n")   # .jsonl: tracked by git
+    print(f"[{exp}] deployment model done -> {ckpt.relative_to(ROOT)}", flush=True)
+
+
 def main() -> None:
+    global DATASET_ID, DATASET, SRC_EXP, SRC_RUN, CV_CONFIG
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--setup", action="store_true", help="build the dataset and plan/preprocess, then stop")
-    ap.add_argument("--rounds", type=int, nargs="+", default=[1, 2, 3, 4, 5])
+    ap.add_argument("--rounds", type=int, nargs="+", default=None,
+                    help="rounds to run (default: every round of the source CV)")
+    ap.add_argument("--src-exp", default=SRC_EXP, help=f"CV whose rounds nnU-Net repeats (default {SRC_EXP})")
+    ap.add_argument("--src-run", default=SRC_RUN, help=f"its run name (default {SRC_RUN})")
+    ap.add_argument("--dataset-id", type=int, default=DATASET_ID, help=f"nnU-Net dataset id (default {DATASET_ID})")
+    ap.add_argument("--dataset-name", default=DATASET.split("_", 1)[1],
+                    help=f"nnU-Net dataset name (default {DATASET.split('_', 1)[1]})")
     ap.add_argument("--trainer", default="nnUNetTrainer_100epochs")
     ap.add_argument("--continue-training", action="store_true")
     ap.add_argument("--exp", default=EXP,
                     help=f"experiment folder for checkpoints/ and results/ (default {EXP}); "
                          "use a new one for any other trainer")
+    ap.add_argument("--deploy", action="store_true",
+                    help="train ONE model on every cell (nnU-Net fold 'all'), no test cell; ignores --rounds")
     ap.add_argument("--no-summary", action="store_true",
                     help="skip summarize_cv.py at the end (rounds running as parallel jobs)")
     ap.add_argument("-np", "--num-processes", type=int, default=6)
     a = ap.parse_args()
     sys.stdout.reconfigure(line_buffering=True)
     os.chdir(ROOT)
+    DATASET_ID, DATASET = a.dataset_id, f"Dataset{a.dataset_id:03d}_{a.dataset_name}"
+    SRC_EXP, SRC_RUN = a.src_exp, a.src_run
+    CV_CONFIG = f"configs/{SRC_EXP}/{SRC_RUN}.yaml"
+    if a.exp == EXP and (DATASET_ID != 501 or SRC_EXP != "randswap/experiment_0_cv_baseline"):
+        raise SystemExit(f"a different dataset or source CV would write into the benchmark ({EXP}); pass a new --exp")
     set_paths(a.exp)
     if a.setup:
         setup(a.num_processes)
         return
     if a.exp == EXP and a.trainer != "nnUNetTrainer_100epochs":
         raise SystemExit(f"--trainer {a.trainer} would write into the 100-epoch benchmark ({EXP}); pass a new --exp")
+    if a.deploy:
+        train_deploy(a.trainer, a.continue_training, a.exp)
+        return
+    if a.rounds is None:
+        a.rounds = sorted(int(r) for r in json.loads(
+            (Path(os.environ["nnUNet_raw"]) / DATASET / "test_frames.json").read_text()))
     for k in a.rounds:
         run_round(k, a.trainer, a.continue_training, a.exp)
     if not a.no_summary:

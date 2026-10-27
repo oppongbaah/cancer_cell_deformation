@@ -54,7 +54,10 @@ def main() -> None:
             scores[(fold, r["filter"])] = r["metrics"]["1"]            # latest entry wins
 
     rounds, cells = [], []
-    for split in sorted(R.glob(f"{args.run}_fold_*_split.json")):
+    # CV rounds only, in numeric order ("deploy" is the all-cell model, not a round; and a string
+    # sort would put round 10 before round 2)
+    splits = [p for p in R.glob(f"{args.run}_fold_*_split.json") if p.stem.split("_fold_")[1][:-6].isdigit()]
+    for split in sorted(splits, key=lambda p: int(p.stem.split("_fold_")[1][:-6])):
         rec = json.loads(split.read_text())
         k = rec["fold"]
         if k == "deploy":           # the all-cell deployment model: no test cells, nothing to summarise
