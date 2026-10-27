@@ -92,6 +92,21 @@ SCRIPT_COMMANDS: dict[str, dict[str, str]] = {
         "plot-resize-vs-crop":        "report/plot_resize_vs_crop.py",
         "plot-split-change":          "report/plot_split_change.py",
         "plot-sweep-dsc":             "report/plot_sweep_dsc.py",
+        "plot-fe-dataset":            "report/plot_fe_dataset.py",
+        "plot-features":              "report/plot_features.py",
+        "plot-final-models":          "report/plot_final_models.py",
+        "plot-high1-exclusion":       "report/plot_high1_exclusion.py",
+        "plot-loocv":                 "report/plot_loocv.py",
+        "plot-protocols":             "report/plot_protocols.py",
+        "plot-region-selection":      "report/plot_region_selection.py",
+        "diagnose-mask-growth":       "report/diagnose_mask_growth.py",
+    },
+    "features": {
+        "extract-features":     "features/extract_features.py",
+    },
+    "classification": {
+        "benchmark-cells":      "classification/benchmark_cells.py",
+        "frames-cnn":           "classification/frames_cnn.py",
     },
 }
 # Implemented in this module / the package, not as scripts.

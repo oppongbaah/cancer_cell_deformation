@@ -109,6 +109,22 @@ command, a command without a script, or a script without an argument parser fail
 | [`celldform-plot-resize-vs-crop`](#celldform-plot-resize-vs-crop) | Experiment 3 figure: the same frames as each input variant sees them. |
 | [`celldform-plot-split-change`](#celldform-plot-split-change) | Before/after of the train/validation/test split as two stacked bars. |
 | [`celldform-plot-sweep-dsc`](#celldform-plot-sweep-dsc) | Horizontal bar chart ranking every checkpoint in results/preswap/preswap_eval_log.jsonl by its evaluated DSC on the development set. |
+| [`celldform-plot-fe-dataset`](#celldform-plot-fe-dataset) | Dataset Organization figure for the feature-extraction reports (22 October report onward). |
+| [`celldform-plot-features`](#celldform-plot-features) | Feature-extraction figures and tables (22 October report). |
+| [`celldform-plot-final-models`](#celldform-plot-final-models) | "Final Models at a Glance" -- the closing page of the 8 October report (written 2026-10-21). |
+| [`celldform-plot-high1-exclusion`](#celldform-plot-high1-exclusion) | Why high-1 is excluded from the features (22 October report, feature extraction). |
+| [`celldform-plot-loocv`](#celldform-plot-loocv) | Leave-one-cell-out against the 5-fold cross-validation, for the U-Net and nnU-Net (15 October report). |
+| [`celldform-plot-protocols`](#celldform-plot-protocols) | Dataset Organization figure, general form (15 October report): one rule, three protocols. |
+| [`celldform-plot-region-selection`](#celldform-plot-region-selection) | How the extraction picks the trapped cell, and why it drops a frame -- drawn on the predicted masks (22 October report, feature extraction). |
+| [`celldform-diagnose-mask-growth`](#celldform-diagnose-mask-growth) | Where do a model's extra pixels go? Compare several runs' saved predictions of ONE test cell. |
+
+**Features and classification**
+
+| Command | What it does |
+|---|---|
+| [`celldform-extract-features`](#celldform-extract-features) | Classifier features from the feature frames -- segment, validate every segmentation, then extract. |
+| [`celldform-benchmark-cells`](#celldform-benchmark-cells) | Per-cell HER2 benchmark: seven classical classifiers on the per-cell features, leave-one-cell-out. |
+| [`celldform-frames-cnn`](#celldform-frames-cnn) | Per-frame HER2 classifier (deep learning), judged per held-out cell. |
 
 **HPC**
 
@@ -1995,6 +2011,320 @@ celldform-plot-sweep-dsc --output results/sweep_dsc.png \
     ```
 
 ---
+
+### `celldform-plot-fe-dataset`
+
+Dataset Organization figure for the feature-extraction reports (22 October report onward).
+
+Script: `scripts/report/plot_fe_dataset.py`
+
+??? note "All options (`--help`)"
+    ```text
+    usage: celldform-plot-fe-dataset [-h]
+                              [--model {nnunet100_5fold,nnunet1000_5fold,nnunet1000_loocv}]
+                              --output OUTPUT [--rounds-output ROUNDS_OUTPUT]
+                              [--table-output TABLE_OUTPUT]
+
+    Dataset Organization figure for the feature-extraction reports (22 October
+    report onward).
+
+    options:
+      -h, --help            show this help message and exit
+      --model {nnunet100_5fold,nnunet1000_5fold,nnunet1000_loocv}
+      --output OUTPUT
+      --rounds-output ROUNDS_OUTPUT
+      --table-output TABLE_OUTPUT
+    ```
+
+### `celldform-plot-features`
+
+Feature-extraction figures and tables (22 October report).
+
+Script: `scripts/report/plot_features.py`
+
+??? note "All options (`--help`)"
+    ```text
+    usage: celldform-plot-features [-h] [--model MODEL] --out OUT --tables TABLES
+
+    Feature-extraction figures and tables (22 October report).
+
+    options:
+      -h, --help       show this help message and exit
+      --model MODEL
+      --out OUT
+      --tables TABLES
+    ```
+
+### `celldform-plot-final-models`
+
+"Final Models at a Glance" -- the closing page of the 8 October report (written 2026-10-21).
+
+Script: `scripts/report/plot_final_models.py`
+
+??? note "All options (`--help`)"
+    ```text
+    usage: celldform-plot-final-models [-h] --out OUT --tables TABLES
+
+    "Final Models at a Glance" -- the closing page of the 8 October report
+    (written 2026-10-21).
+
+    options:
+      -h, --help       show this help message and exit
+      --out OUT
+      --tables TABLES
+    ```
+
+### `celldform-plot-high1-exclusion`
+
+Why high-1 is excluded from the features (22 October report, feature extraction).
+
+Script: `scripts/report/plot_high1_exclusion.py`
+
+??? note "All options (`--help`)"
+    ```text
+    usage: celldform-plot-high1-exclusion [-h] [--model MODEL] --output OUTPUT
+                                   --sizes-output SIZES_OUTPUT
+                                   [--table-output TABLE_OUTPUT]
+                                   [--ref-output REF_OUTPUT]
+                                   [--ref-table-output REF_TABLE_OUTPUT]
+
+    Why high-1 is excluded from the features (22 October report, feature
+    extraction).
+
+    options:
+      -h, --help            show this help message and exit
+      --model MODEL         run whose saved test-frame masks panel (a) draws
+      --output OUTPUT
+      --sizes-output SIZES_OUTPUT
+                            panel (b): every cell's size ratio, every run
+      --table-output TABLE_OUTPUT
+                            LaTeX table of high-1's pixel counts
+      --ref-output REF_OUTPUT
+                            the same tile figure for the reference cell (high-9)
+      --ref-table-output REF_TABLE_OUTPUT
+                            LaTeX table of the reference cell's pixel counts
+    ```
+
+### `celldform-plot-loocv`
+
+Leave-one-cell-out against the 5-fold cross-validation, for the U-Net and nnU-Net (15 October report).
+
+Script: `scripts/report/plot_loocv.py`
+
+??? note "All options (`--help`)"
+    ```text
+    usage: celldform-plot-loocv [-h] --out OUT --tables TABLES
+
+    Leave-one-cell-out against the 5-fold cross-validation, for the U-Net and nnU-
+    Net (15 October report).
+
+    options:
+      -h, --help       show this help message and exit
+      --out OUT        folder for loocv.png
+      --tables TABLES  folder for loocv.tex
+    ```
+
+### `celldform-plot-protocols`
+
+Dataset Organization figure, general form (15 October report): one rule, three protocols.
+
+Script: `scripts/report/plot_protocols.py`
+
+??? note "All options (`--help`)"
+    ```text
+    usage: celldform-plot-protocols [-h] --output OUTPUT
+
+    Dataset Organization figure, general form (15 October report): one rule, three
+    protocols.
+
+    options:
+      -h, --help       show this help message and exit
+      --output OUTPUT
+    ```
+
+### `celldform-plot-region-selection`
+
+How the extraction picks the trapped cell, and why it drops a frame -- drawn on the predicted masks (22 October report, feature extraction).
+
+Script: `scripts/report/plot_region_selection.py`
+
+??? note "All options (`--help`)"
+    ```text
+    usage: celldform-plot-region-selection [-h] [--model MODEL] --output OUTPUT
+                                    --dropped-output DROPPED_OUTPUT
+                                    [--table-output TABLE_OUTPUT]
+                                    [--checks-output CHECKS_OUTPUT]
+                                    [--cross-output CROSS_OUTPUT] [--n N]
+
+    How the extraction picks the trapped cell, and why it drops a frame -- drawn
+    on the predicted masks (22 October report, feature extraction).
+
+    options:
+      -h, --help            show this help message and exit
+      --model MODEL
+      --output OUTPUT       figure (a): frames with more than one region
+      --dropped-output DROPPED_OUTPUT
+                            figure (b): dropped frames
+      --table-output TABLE_OUTPUT
+                            table: every rejected frame, by the check it failed
+      --checks-output CHECKS_OUTPUT
+                            table: how each frame check is computed, its limit,
+                            good masks
+      --cross-output CROSS_OUTPUT
+                            table: the checks on frames that did not set their
+                            limits
+      --n N                 tiles per row
+    ```
+
+### `celldform-diagnose-mask-growth`
+
+Where do a model's extra pixels go? Compare several runs' saved predictions of ONE test cell.
+
+Script: `scripts/report/diagnose_mask_growth.py`
+
+??? note "All options (`--help`)"
+    ```text
+    usage: celldform-diagnose-mask-growth [-h] --cell CELL --run LABEL=DIR [--ring RING]
+                                   [--n-strip N_STRIP] [--half HALF] --out OUT
+
+    Where do a model's extra pixels go? Compare several runs' saved predictions of
+    ONE test cell.
+
+    options:
+      -h, --help         show this help message and exit
+      --cell CELL        e.g. high_cell10
+      --run LABEL=DIR    a run's prediction folder; repeat for each run to compare
+      --ring RING        ring width around the true boundary, px
+      --n-strip N_STRIP  frames in the overlay strip
+      --half HALF        crop half-size around the cell, px
+      --out OUT
+    ```
+
+## Features and classification
+
+### `celldform-extract-features`
+
+Classifier features from the feature frames -- segment, validate every segmentation, then extract.
+
+Script: `scripts/features/extract_features.py`
+
+??? note "All options (`--help`)"
+    ```text
+    usage: celldform-extract-features [-h]
+                               [--model {nnunet100_5fold,nnunet1000_5fold,nnunet1000_loocv}]
+                               {cut,segment,calibrate,extract,all}
+
+    Classifier features from the feature frames -- segment, validate every
+    segmentation, then extract.
+
+    positional arguments:
+      {cut,segment,calibrate,extract,all}
+
+    options:
+      -h, --help            show this help message and exit
+      --model {nnunet100_5fold,nnunet1000_5fold,nnunet1000_loocv}
+    ```
+
+### `celldform-benchmark-cells`
+
+Per-cell HER2 benchmark: seven classical classifiers on the per-cell features, leave-one-cell-out.
+
+Script: `scripts/classification/benchmark_cells.py`
+
+??? note "All options (`--help`)"
+    ```text
+    usage: celldform-benchmark-cells [-h] [--model MODEL] [--perms PERMS] [--out OUT]
+                              [--replot] [--img IMG] [--tables TABLES]
+
+    Per-cell HER2 benchmark: seven classical classifiers on the per-cell features, leave-one-cell-out.
+
+        python scripts/classification/benchmark_cells.py --model nnunet100_5fold [--perms 1000]
+
+    One row per usable cell (features_cells.csv, usable == True), label high = 1. Every model sees the same
+    14 folds; scaling and missing-value filling are fitted inside each fold. Hyperparameters are FIXED in
+    advance (no tuning: with 13 training cells an inner search would mostly fit noise).
+
+    Feature sets
+        trusted   the per-cell features whose predicted value tracks the hand-mask value (rho >= 0.8):
+                  baseline lengths along / across the beam, compliance along / across, volume change   (main)
+        all       every per-cell shape and deformation feature                                     (sensitivity)
+    Baselines
+        majority  always the training majority
+        size      baseline length along the beam only
+        image     per-cell medians of the whole-frame image measures (illumination, unevenness, contrast,
+                  noise). These track the recording session, not the cell: a classifier that does well on
+                  them is reading the session. Its score is the bar the cell features must clear.
+
+    Scores: correct cells, balanced accuracy, AUC of the held-out P(high), and a permutation p-value
+    (labels shuffled across cells, the whole leave-one-cell-out rerun, balanced accuracy).
+
+    Outputs in results/classification/<model>/:  benchmark_cells.csv, scores_cells.csv (every held-out cell's
+    P(high) per model), benchmark_cells.png, benchmark_cells.tex.
+
+    options:
+      -h, --help       show this help message and exit
+      --model MODEL    feature run in results/features/
+      --perms PERMS    label shuffles for the permutation p (0 = skip)
+      --out OUT        output folder (default results/classification/<model>)
+      --replot         redraw the figure and table from the saved CSVs only
+      --img IMG        also write the figure here (report images folder)
+      --tables TABLES  also write the LaTeX table here
+    ```
+
+### `celldform-frames-cnn`
+
+Per-frame HER2 classifier (deep learning), judged per held-out cell.
+
+Script: `scripts/classification/frames_cnn.py`
+
+??? note "All options (`--help`)"
+    ```text
+    usage: celldform-frames-cnn [-h] [--model MODEL] [--epochs EPOCHS] [--device DEVICE]
+                         [--img IMG] [--tables TABLES] [--seed SEED]
+                         [--variants {masked,mask} [{masked,mask} ...]]
+                         {crops,frozen,finetune,report,all}
+
+    Per-frame HER2 classifier (deep learning), judged per held-out cell.
+
+        python scripts/classification/frames_cnn.py crops      --model nnunet100_5fold   # cut the cell crops once
+        python scripts/classification/frames_cnn.py frozen     --model nnunet100_5fold   # ResNet-18 features + LR
+        python scripts/classification/frames_cnn.py finetune   --model nnunet100_5fold   # fine-tune the last block
+        python scripts/classification/frames_cnn.py report     --model nnunet100_5fold   # table + figure
+
+    Data: every passing feature frame of the usable cells (~3 800 frames, ~6 per laser step).
+
+    Input -- built so the network cannot read the recording session from the frame:
+        masked   a CROP x CROP px window centred on the trapped cell (the region the extraction kept), every pixel
+                 outside the (slightly grown) mask set to zero, intensity standardised over the cell's own pixels.
+                 The scale is NOT normalised: the cell's size stays in the input, as in the per-cell features.
+        mask     the binary mask alone, same window (shape and size only; the control).
+
+    Models (ImageNet ResNet-18, grey crop copied to 3 channels):
+        frozen    the pretrained network as a fixed feature extractor (512 numbers per frame) + logistic regression.
+        finetune  the last residual block and a new head trained per fold (flips, 90-degree turns, mild intensity
+                  change), the laser step joined to the image features before the head. Cells are weighted equally
+                  (each cell's frames share one unit of weight), a fixed number of epochs (no peeking at the held-out
+                  cell).
+
+    Test: leave-one-cell-out, the same 14 folds as benchmark_cells.py. A held-out cell's frame probabilities are
+    averaged into one P(high) for the cell -- what a live system watching the cell would do.
+
+    Outputs in results/classification/<model>/:  cnn_frames_<variant>.csv (every frame's held-out P(high)),
+    cnn_cells.csv, cnn_cells.tex, cnn_frames_seen.png (accuracy against the number of laser steps watched).
+
+    positional arguments:
+      {crops,frozen,finetune,report,all}
+
+    options:
+      -h, --help            show this help message and exit
+      --model MODEL
+      --epochs EPOCHS       fine-tuning epochs per fold (fixed in advance)
+      --device DEVICE
+      --img IMG             report step: also write the figure here
+      --tables TABLES       report step: also write the LaTeX table here
+      --seed SEED           fine-tuning seed (repeat runs: the seed spread)
+      --variants {masked,mask} [{masked,mask} ...]
+    ```
 
 ## HPC
 

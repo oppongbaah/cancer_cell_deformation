@@ -339,8 +339,9 @@ def plot_overview(model: str, feat: pd.DataFrame, chk: pd.DataFrame, output: Pat
     x_lo, x_hi = min(ty.min(), lo_.min()) - 8, max(ty.max(), hi_.max()) + 8
     gap = np.sort(ty.values)
     cut = gap[np.argmax(np.diff(gap))] + np.max(np.diff(gap)) / 2
-    a3.axvspan(x_lo, cut - 18, color="#efeee9", zorder=0)
-    a3.axvspan(cut + 18, x_hi, color="#efeee9", zorder=0)
+    rows = [min(y.values()) - 0.6, max(y.values()) + 0.6]   # shade the cell rows only: the header stays on white
+    a3.fill_betweenx(rows, x_lo, cut - 18, color="#efeee9", zorder=0, lw=0)
+    a3.fill_betweenx(rows, cut + 18, x_hi, color="#efeee9", zorder=0, lw=0)
     for c in cells:
         col = HIGH if c.startswith("high") else LOW
         a3.plot([lo_[c], hi_[c]], [y[c]] * 2, color=col, lw=3.0, alpha=0.3, solid_capstyle="round")

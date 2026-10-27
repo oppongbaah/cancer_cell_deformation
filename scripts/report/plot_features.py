@@ -37,6 +37,7 @@ sys.path.insert(0, str(REPO))
 
 HIGH, LOW = "#2a78d6", "#eb6834"                 # plot_cv.py's HER2 colours
 INK, INK2, GRID, SURF = "#0b0b0b", "#52514e", "#e6e5e1", "#fcfcfb"
+CELL_SIZE_BIAS = (0.85, 1.15)                   # = extract_features.CELL_SIZE_BIAS, the cell-validation size band
 SHAPE = ["area", "perimeter", "major_axis", "minor_axis", "aspect_ratio", "eccentricity", "circularity", "solidity"]
 LABEL = {"area": "Area", "perimeter": "Perimeter", "major_axis": "Major axis", "minor_axis": "Minor axis",
          "aspect_ratio": "Aspect ratio", "eccentricity": "Eccentricity$^\\ast$", "circularity": "Circularity",
@@ -186,29 +187,77 @@ def main() -> None:
     # ── figure 1: validation ────────────────────────────────────────────────
     # predicted vs ground-truth area on every hand-masked frame (one panel; the dropped-frame examples are in
     # plot_region_selection.py's figures, drawn on the masks)
-    fig, ax = plt.subplots(figsize=(6.2, 4.6), facecolor="white")
+    # (a) predicted vs hand-drawn area, one colour per cell (blues = high, oranges = low), each cell labelled at
+    # its median frame; (b) the same frames as predicted / hand-drawn area per cell against the validation band
+    # -- the cells off the diagonal are read off directly.
+    cells_t = [c for c in order if c in set(test.cell)]
+    hi = [c for c in cells_t if c.startswith("high")]
+    lo = [c for c in cells_t if c.startswith("low")]
+    ccol = {c: plt.cm.Blues(v) for c, v in zip(hi, np.linspace(0.45, 0.95, len(hi)))}
+    ccol |= {c: plt.cm.Oranges(v) for c, v in zip(lo, np.linspace(0.4, 0.9, len(lo)))}
+    fig, (ax, bx) = plt.subplots(1, 2, figsize=(10.4, 4.6), facecolor="white", gridspec_kw={"width_ratios": [1.15, 1]})
     style(ax)
+    style(bx)
     lim = [test[["area", "gt_area"]].min().min() * 0.9, test[["area", "gt_area"]].max().max() * 1.05]
+    xs = np.array(lim)
+    ax.fill_between(xs, xs * CELL_SIZE_BIAS[0], xs * CELL_SIZE_BIAS[1], color=GRID, alpha=0.6, lw=0, zorder=0)
     ax.plot(lim, lim, color=INK2, lw=1, ls=(0, (4, 3)), zorder=1)
-    for h, col in (("high", HIGH), ("low", LOW)):
-        t = test[test.her2 == h]
-        ax.scatter(t.gt_area[t.passed], t.area[t.passed], s=14, color=col, alpha=0.75, lw=0, zorder=3)
-        ax.scatter(t.gt_area[~t.passed], t.area[~t.passed], s=26, marker="x", color=col, lw=1.3, zorder=4)
-    h1 = test[test.cell == "high_cell1"]
-    ax.annotate("high-1: drawn ~1.4$\\times$ too large\non every frame $\\rightarrow$ cell rejected",
-                xy=(h1.gt_area.median(), h1.area.median()), xytext=(lim[0] + 40, lim[1] * 0.9),
-                fontsize=7.6, color=INK, arrowprops=dict(arrowstyle="-", color=INK2, lw=0.8))
+    for c in cells_t:
+        t = test[test.cell == c]
+        ax.scatter(t.gt_area[t.passed], t.area[t.passed], s=13, color=ccol[c], alpha=0.85, lw=0, zorder=3)
+        ax.scatter(t.gt_area[~t.passed], t.area[~t.passed], s=24, marker="x", color=ccol[c], lw=1.2, zorder=4)
+        mx, my = t.gt_area.median(), t.area.median()
+        ax.scatter([mx], [my], s=46, color=ccol[c], edgecolor=INK, lw=0.7, zorder=5)
+    # only the cells outside the size band are named here; panel (b) names every cell
+    for c in cells_t:
+        t = test[test.cell == c]
+        mx, my = t.gt_area.median(), t.area.median()
+        ok = t[t.passed] if t.passed.any() else t
+        bias = (ok.area / ok.gt_area).median()        # the same statistic as panel (b) and the cell table
+        if not CELL_SIZE_BIAS[0] <= bias <= CELL_SIZE_BIAS[1]:
+            ax.annotate(f"{short(c)}: {bias:.2f}\u00d7 \u2192 cell rejected", (mx, my), xytext=(-60, 70),
+                        textcoords="offset points", fontsize=7.4, color=INK, weight="bold",
+                        bbox=dict(boxstyle="round,pad=0.25", fc="white", ec=GRID, lw=0.6),
+                        arrowprops=dict(arrowstyle="-", color=INK2, lw=0.7))
     ax.set_xlim(lim)
     ax.set_ylim(lim)
     ax.set_xlabel("Ground-truth area (px)", fontsize=9, color=INK2)
     ax.set_ylabel("Predicted area (px)", fontsize=9, color=INK2)
-    ax.set_title("Hand-masked frames, segmented by the model that never saw the cell", loc="left", fontsize=9.5,
-                 color=INK)
-    ax.legend(handles=[Line2D([], [], marker="o", ls="", color=HIGH, label="high HER2"),
-                       Line2D([], [], marker="o", ls="", color=LOW, label="low HER2"),
-                       Line2D([], [], marker="o", ls="", color=INK2, label="frame passed"),
-                       Line2D([], [], marker="x", ls="", color=INK2, label="frame rejected")],
-              loc="lower right", fontsize=7.4, frameon=False)
+    ax.set_title("(a) Hand-masked frames, segmented by the model that never saw the cell", loc="left",
+                 fontsize=9.2, color=INK)
+    ax.legend(handles=[Line2D([], [], marker="o", ls="", color=plt.cm.Blues(0.75), label="high HER2 cells"),
+                       Line2D([], [], marker="o", ls="", color=plt.cm.Oranges(0.65), label="low HER2 cells"),
+                       Line2D([], [], marker="o", ls="", color=INK2, ms=4, label="frame passed"),
+                       Line2D([], [], marker="x", ls="", color=INK2, label="frame rejected"),
+                       Line2D([], [], marker="o", ls="", mfc="white", mec=INK, label="cell median"),
+                       plt.Rectangle((0, 0), 1, 1, color=GRID, label=f"size {CELL_SIZE_BIAS[0]:.2f}"
+                                     f"\u2013{CELL_SIZE_BIAS[1]:.2f}\u00d7 (cell check)")],
+              loc="lower right", fontsize=7, frameon=False)
+
+    # (b) ratio strip
+    rng = np.random.default_rng(0)
+    bx.axvspan(*CELL_SIZE_BIAS, color=GRID, alpha=0.6, lw=0, zorder=0)
+    bx.axvline(1, color=INK2, lw=1, ls=(0, (4, 3)), zorder=1)
+    for i, c in enumerate(cells_t):
+        t = test[test.cell == c]
+        r = t.area / t.gt_area
+        y = i + rng.uniform(-0.18, 0.18, len(t))
+        bx.scatter(r[t.passed], y[t.passed.to_numpy()], s=11, color=ccol[c], alpha=0.85, lw=0, zorder=3)
+        bx.scatter(r[~t.passed], y[~t.passed.to_numpy()], s=22, marker="x", color=ccol[c], lw=1.1, zorder=4)
+        bias = (t.area[t.passed] / t.gt_area[t.passed]).median() if t.passed.any() else r.median()
+        out = not (CELL_SIZE_BIAS[0] <= bias <= CELL_SIZE_BIAS[1])
+        bx.plot([bias, bias], [i - 0.3, i + 0.3], color=INK, lw=1.6, zorder=5)
+        bx.text(1.02, i, f"{bias:.2f}\u00d7", transform=bx.get_yaxis_transform(), va="center", fontsize=7,
+                color="#b02a2a" if out else INK2, weight="bold" if out else "normal")
+    bx.axhline(len(hi) - 0.5, color=INK2, lw=0.6)
+    bx.set_yticks(range(len(cells_t)), [short(c) for c in cells_t], fontsize=7.4)
+    for lab, c in zip(bx.get_yticklabels(), cells_t):
+        lab.set_color(ccol[c])
+        lab.set_fontweight("bold")
+    bx.set_ylim(len(cells_t) - 0.5, -0.5)
+    bx.set_xlabel("Predicted / ground-truth area", fontsize=9, color=INK2)
+    bx.set_title("(b) Size per cell: bar = median of passing frames", loc="left", fontsize=9.2, color=INK)
+    fig.tight_layout(w_pad=2.5)
     fig.savefig(a.out / "features_validation.png", dpi=200, bbox_inches="tight", facecolor="white")
     plt.close(fig)
 
