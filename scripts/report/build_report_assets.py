@@ -110,6 +110,8 @@ def jobs(img: Path, tab: Path, feature_model: str = "nnunet100_5fold") -> dict[s
         "nnunet-epochs": ["scripts/report/plot_nnunet_epochs.py", "--out", str(img), "--tables", str(tab)],
         "loocv": ["scripts/report/plot_loocv.py", "--out", str(img), "--tables", str(tab)],
         "final-models": ["scripts/report/plot_final_models.py", "--out", str(img), "--tables", str(tab)],
+        "high10": ["scripts/report/plot_high10.py", "--output", str(img / "high10_round14.png"),
+                   "--table-output", str(tab / "high10_selected.tex")],
         "protocols": ["scripts/report/plot_protocols.py", "--output", str(img / "protocols.png")],
         "fe-dataset": ["scripts/report/plot_fe_dataset.py", "--model", feature_model,
                        "--output", str(img / "fe_dataset.png"), "--rounds-output", str(img / "fe_rounds.png"),

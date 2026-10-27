@@ -113,6 +113,7 @@ command, a command without a script, or a script without an argument parser fail
 | [`celldform-plot-features`](#celldform-plot-features) | Feature-extraction figures and tables (22 October report). |
 | [`celldform-plot-final-models`](#celldform-plot-final-models) | "Final Models at a Glance" -- the closing page of the 8 October report (written 2026-10-21). |
 | [`celldform-plot-high1-exclusion`](#celldform-plot-high1-exclusion) | Why high-1 is excluded from the features (22 October report, feature extraction). |
+| [`celldform-plot-high10`](#celldform-plot-high10) | Why high-10 is over-predicted in leave-one-cell-out round 14 (8 October report, added 27 October). |
 | [`celldform-plot-loocv`](#celldform-plot-loocv) | Leave-one-cell-out against the 5-fold cross-validation, for the U-Net and nnU-Net (15 October report). |
 | [`celldform-plot-protocols`](#celldform-plot-protocols) | Dataset Organization figure, general form (15 October report): one rule, three protocols. |
 | [`celldform-plot-region-selection`](#celldform-plot-region-selection) | How the extraction picks the trapped cell, and why it drops a frame -- drawn on the predicted masks (22 October report, feature extraction). |
@@ -2103,6 +2104,25 @@ Script: `scripts/report/plot_high1_exclusion.py`
                             the same tile figure for the reference cell (high-9)
       --ref-table-output REF_TABLE_OUTPUT
                             LaTeX table of the reference cell's pixel counts
+    ```
+
+### `celldform-plot-high10`
+
+Why high-10 is over-predicted in leave-one-cell-out round 14 (8 October report, added 27 October).
+
+Script: `scripts/report/plot_high10.py`
+
+??? note "All options (`--help`)"
+    ```text
+    usage: celldform-plot-high10 [-h] [--output OUTPUT] [--table-output TABLE_OUTPUT]
+
+    Why high-10 is over-predicted in leave-one-cell-out round 14 (29 October
+    report).
+
+    options:
+      -h, --help            show this help message and exit
+      --output OUTPUT
+      --table-output TABLE_OUTPUT
     ```
 
 ### `celldform-plot-loocv`
