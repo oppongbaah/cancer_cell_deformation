@@ -96,6 +96,7 @@ SCRIPT_COMMANDS: dict[str, dict[str, str]] = {
         "plot-features":              "report/plot_features.py",
         "plot-final-models":          "report/plot_final_models.py",
         "plot-high1-exclusion":       "report/plot_high1_exclusion.py",
+        "plot-high10":                "report/plot_high10.py",
         "plot-loocv":                 "report/plot_loocv.py",
         "plot-protocols":             "report/plot_protocols.py",
         "plot-region-selection":      "report/plot_region_selection.py",
