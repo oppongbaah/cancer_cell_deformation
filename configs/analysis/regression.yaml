@@ -1,0 +1,13 @@
+# Deformation analysis -- scripts/biomechanics/deformation_regression.py and rate_of_deformation.py (--config).
+# These values produced the reported results.
+
+measures: [len_par, len_perp, volume]   # strains in the mixed-effects regression (frame columns)
+rod_measures: [len_par, len_perp]       # rate of deformation; the report expects len_par (main) and len_perp
+base_steps: 10                          # baseline = median over laser steps 0 .. base_steps-1
+
+random_slope: true          # each cell its own slope (false: its own intercept only -- anti-conservative)
+size_adjusted: true         # also fit with the cell's baseline length and its slope term
+
+hac_lags: 3                 # Newey-West lags for the per-cell RoD interval (consecutive steps are correlated)
+realtime_steps: [5, 10, 15, 20, 30, 40, 50]   # k: the RoD from the first k steps (real-time analysis)
+fps: 22.0                   # camera frame rate: % per step -> % per second

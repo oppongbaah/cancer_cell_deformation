@@ -1,0 +1,46 @@
+[run log] logs/biomechanics/nnunet1000_loocv/deformation_regression_20261029-015623.log
+[run log] command: python scripts/biomechanics/deformation_regression.py --model nnunet1000_loocv
+[run log] started 2026-10-29 01:56:23 on ISAAC2024, git 420579f (uncommitted changes), cwd /home/mega/work/thesis/cancer_cell_deformation
+14 cells, 698 cell-steps
+ measure  low_slope  low_slope_lo  low_slope_hi  low_slope_p  her2_slope  her2_slope_lo  her2_slope_hi  her2_slope_p  her2_slope_size_adj  her2_slope_size_adj_lo  her2_slope_size_adj_hi  her2_slope_size_adj_p  cell_slope_sd  converged  n_cells  n_steps
+ len_par  -0.005401       -0.1647        0.1539        0.947    -0.05103        -0.2618         0.1597        0.6351             -0.03259                 -0.3024                  0.2372                 0.8129         0.1964       True       14      698
+len_perp    0.05666       -0.1096        0.2229       0.5041     -0.1065        -0.3264         0.1135        0.3427              -0.1904                 -0.4526                 0.07174                 0.1546         0.2054       True       14      698
+  volume     0.1215       -0.3382        0.5812       0.6045     -0.2224        -0.8305         0.3858        0.4736              -0.3644                  -1.131                  0.4024                 0.3516         0.5694       True       14      698
+
+Length along the beam:
+                        Coef. Std.Err.       z  P>|z|  [0.025 0.975]
+Intercept               1.763    1.223   1.441  0.149  -0.634  4.160
+laser_step             -0.005    0.081  -0.066  0.947  -0.165  0.154
+high                   -0.677    1.619  -0.418  0.676  -3.850  2.495
+laser_step:high        -0.051    0.108  -0.475  0.635  -0.262  0.160
+cell Var                8.105    1.121                              
+cell x laser_step Cov  -0.468    0.068                              
+laser_step Var          0.039    0.005                              
+
+Length across the beam:
+                        Coef. Std.Err.       z  P>|z|  [0.025 0.975]
+Intercept              -1.351    1.024  -1.319  0.187  -3.357  0.656
+laser_step              0.057    0.085   0.668  0.504  -0.110  0.223
+high                    2.779    1.355   2.051  0.040   0.124  5.435
+laser_step:high        -0.106    0.112  -0.949  0.343  -0.326  0.113
+cell Var                5.483    0.816                              
+cell x laser_step Cov  -0.393    0.061                              
+laser_step Var          0.042    0.006                              
+
+Volume:
+                        Coef. Std.Err.       z  P>|z|  [0.025  0.975]
+Intercept              -1.379    3.161  -0.436  0.662  -7.574   4.815
+laser_step              0.122    0.235   0.518  0.604  -0.338   0.581
+high                    4.032    4.183   0.964  0.335  -4.166  12.230
+laser_step:high        -0.222    0.310  -0.717  0.474  -0.831   0.386
+cell Var               55.067    3.162                               
+cell x laser_step Cov  -3.613    0.217                               
+laser_step Var          0.324    0.017                               
+
+FIT AND LEAVE-ONE-CELL-OUT PREDICTION:
+ measure  r2_marginal  r2_conditional  rmse_with_her2  rmse_without_her2  rmse_zero  cells_her2_better  n_cells  wilcoxon_p
+ len_par      0.04525          0.6222           5.189               5.06      4.893                  9       14      0.9032
+len_perp       0.0185          0.6788           5.136              4.918      4.694                  6       14      0.2166
+  volume      0.01479          0.7052           12.98              12.41      11.77                  6       14      0.2676
+wrote /home/mega/work/thesis/cancer_cell_deformation/results/biomechanics/nnunet1000_loocv
+[run log] ended 2026-10-29 01:56:33

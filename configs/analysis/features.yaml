@@ -1,0 +1,20 @@
+# Feature extraction -- scripts/features/extract_features.py (--config to use another file).
+# These values produced the reported results (2026-10-28). Changing them changes which frames and cells are
+# used: rerun `calibrate` and `extract`, then the classification and deformation analyses.
+
+frames_per_step: 200                  # video frames per laser step (acquisition protocol; not a tuning knob)
+dense_offsets: [20, 60, 100, 140, 180]  # frames into each step cut besides the step frame (`cut` step)
+good_dice: 0.85                       # calibration: a hand-masked frame below this Dice is a "bad mask"
+
+frame_checks:                         # a frame passes only if its selected region passes all of these
+  max_trap_dist: 45.0                 # px from the local trap
+  min_solidity: 0.95                  # area / convex-hull area; a dent or a fused neighbour lowers it
+  area_ratio_range: [0.85, 1.20]      # area / median area of the sound frames within +-window_steps
+  min_boundary_conf: 0.95             # mean top-class probability in the 3 px band along the outline
+  allow_border: false                 # true: a region touching the frame edge may pass
+  window_steps: 3                     # local trap and typical area: median over +-this many laser steps
+
+cell_validation:                      # a cell is used only if, on its own hand-masked frames:
+  min_dice: 0.90                      #   mean Dice of the passing frames >= this
+  size_bias_range: [0.85, 1.15]       #   median predicted / hand-drawn area within this
+  min_pass_fraction: 0.8              # ... and at least this share of its feature frames pass the checks

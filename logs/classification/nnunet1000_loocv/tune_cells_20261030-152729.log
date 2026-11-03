@@ -1,0 +1,7 @@
+[run log] logs/classification/nnunet1000_loocv/tune_cells_20261030-152729.log
+[run log] command: python scripts/classification/tune_cells.py --model nnunet1000_loocv --only 'MLP (ANN)'
+[run log] started 2026-10-30 15:27:29 on ISAAC2024, git 420579f (uncommitted changes), cwd /home/mega/work/thesis/cancer_cell_deformation
+14 cells, selected features: len_par_base, volume_change, len_perp_base, circularity, compliance_par, orient_spread, compliance_perp
+MLP (ANN)            tuned  8/14 (untuned 9)  bal.acc 0.56  AUC 0.65  p 0.199  choice {'hidden_layer_sizes': [16], 'alpha': 1.0} in 57% of folds (4 distinct)  wrong: high-2 high-3 high-4 low-3 low-5 low-6
+wrote /home/mega/work/thesis/cancer_cell_deformation/results/classification/nnunet1000_loocv/tuning_{cells,choices,scores}.csv
+[run log] ended 2026-10-30 18:20:16

@@ -1,0 +1,5 @@
+[run log] logs/classification/nnunet1000_loocv/benchmark_cells_final_20261029-103337.log
+[run log] command: python scripts/classification/benchmark_cells.py --model nnunet1000_loocv --final
+[run log] started 2026-10-29 10:33:37 on ISAAC2024, git 420579f (uncommitted changes), cwd /home/mega/work/thesis/cancer_cell_deformation
+final models (17, fitted on all 14 cells) -> /home/mega/work/thesis/cancer_cell_deformation/checkpoints/classification/nnunet1000_loocv/classical
+[run log] ended 2026-10-29 10:33:40

@@ -1,0 +1,13 @@
+[run log] logs/classification/nnunet1000_loocv/tune_cells_20261029-020901.log
+[run log] command: python scripts/classification/tune_cells.py --model nnunet1000_loocv
+[run log] started 2026-10-29 02:09:01 on ISAAC2024, git 420579f (uncommitted changes), cwd /home/mega/work/thesis/cancer_cell_deformation
+14 cells, selected features: len_par_base, volume_change, len_perp_base, circularity, compliance_par, orient_spread, compliance_perp
+Logistic regression  tuned  9/14 (untuned 9)  bal.acc 0.65  AUC 0.60  p 0.244  choice {'C': 0.1} in 71% of folds (3 distinct)  wrong: high-2 high-3 high-4 low-3 low-6
+Linear SVM           tuned 10/14 (untuned 8)  bal.acc 0.73  AUC 0.67  p 0.657  choice {'C': 0.1} in 43% of folds (4 distinct)  wrong: high-2 high-3 high-4 low-3
+Shrinkage LDA        tuned  8/14 (untuned 9)  bal.acc 0.56  AUC 0.67  p 0.338  choice {'shrinkage': 0.9} in 57% of folds (3 distinct)  wrong: high-2 high-3 high-4 low-3 low-4 low-6
+RBF SVM              tuned  9/14 (untuned 9)  bal.acc 0.65  AUC 0.52  p 0.706  choice {'C': 1.0, 'gamma': 0.01} in 43% of folds (4 distinct)  wrong: high-2 high-3 high-4 low-3 low-6
+k-NN (k=3)           tuned 10/14 (untuned 11)  bal.acc 0.71  AUC 0.81  p 0.055  choice {'n_neighbors': 3} in 79% of folds (3 distinct)  wrong: high-2 high-3 low-3 low-6
+Random forest        tuned  9/14 (untuned 9)  bal.acc 0.65  AUC 0.81  p nan  choice {'min_samples_leaf': 1, 'max_features': 'sqrt'} in 71% of folds (3 distinct)  wrong: high-2 high-3 high-8 low-3 low-6
+Gradient boosting    tuned  8/14 (untuned 11)  bal.acc 0.56  AUC 0.65  p nan  choice {'n_estimators': 50, 'max_depth': 1} in 50% of folds (6 distinct)  wrong: high-2 high-3 high-8 low-3 low-5 low-6
+wrote /home/mega/work/thesis/cancer_cell_deformation/results/classification/nnunet1000_loocv/tuning_{cells,choices,scores}.csv
+[run log] ended 2026-10-29 02:24:12

@@ -1,0 +1,18 @@
+[run log] logs/classification/nnunet1000_loocv/frames_cnn_finetune_20261028-194142.log
+[run log] command: python scripts/classification/frames_cnn.py finetune --model nnunet1000_loocv --variants masked --seed 1
+[run log] started 2026-10-28 19:41:42 on ISAAC2024, git 420579f (uncommitted changes), cwd /home/mega/work/thesis/cancer_cell_deformation
+finetune/masked high_cell2   P(high) 0.08  (last loss 0.018)
+finetune/masked high_cell3   P(high) 0.77  (last loss 0.046)
+finetune/masked high_cell4   P(high) 0.17  (last loss 0.023)
+finetune/masked high_cell6   P(high) 0.17  (last loss 0.015)
+finetune/masked high_cell7   P(high) 0.99  (last loss 0.005)
+finetune/masked high_cell8   P(high) 0.87  (last loss 0.081)
+finetune/masked high_cell9   P(high) 1.00  (last loss 0.006)
+finetune/masked high_cell10  P(high) 1.00  (last loss 0.035)
+finetune/masked low_cell1    P(high) 0.09  (last loss 0.040)
+finetune/masked low_cell2    P(high) 0.09  (last loss 0.019)
+finetune/masked low_cell3    P(high) 0.05  (last loss 0.022)
+finetune/masked low_cell4    P(high) 0.00  (last loss 0.009)
+finetune/masked low_cell5    P(high) 0.75  (last loss 0.076)
+finetune/masked low_cell6    P(high) 0.44  (last loss 0.030)
+[run log] ended 2026-10-28 19:44:01

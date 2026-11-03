@@ -91,6 +91,9 @@ def jobs(img: Path, tab: Path, feature_model: str = "nnunet100_5fold") -> dict[s
     produces a result.
     """
     CELLS = ["high_cell9=high-9", "high_cell10=high-10", "low_cell6=low-6", "low_cell5=low-5"]
+    # The feature-extraction and classification assets of any other segmentation run go to a folder of their
+    # own (images/<model>/, tables/<model>/), so the 5-fold reports keep theirs (2026-10-28, LOOCV FE report).
+    fimg, ftab = (img, tab) if feature_model == "nnunet100_5fold" else (img / feature_model, tab / feature_model)
     return {
         # ── Dataset Organization ────────────────────────────────────────────
         "pools": ["scripts/report/plot_pool_flow.py", "--output", str(img / "pool_flow_10_1.png")],
@@ -114,25 +117,35 @@ def jobs(img: Path, tab: Path, feature_model: str = "nnunet100_5fold") -> dict[s
                    "--table-output", str(tab / "high10_selected.tex")],
         "protocols": ["scripts/report/plot_protocols.py", "--output", str(img / "protocols.png")],
         "fe-dataset": ["scripts/report/plot_fe_dataset.py", "--model", feature_model,
-                       "--output", str(img / "fe_dataset.png"), "--rounds-output", str(img / "fe_rounds.png"),
-                       "--table-output", str(tab / "fe_models.tex")],
+                       "--output", str(fimg / "fe_dataset.png"), "--rounds-output", str(fimg / "fe_rounds.png"),
+                       "--table-output", str(ftab / "fe_models.tex")],
         "region-selection": ["scripts/report/plot_region_selection.py", "--model", feature_model,
-                             "--output", str(img / "region_selection.png"),
-                             "--dropped-output", str(img / "region_dropped.png"),
-                             "--table-output", str(tab / "region_rejections.tex"),
-                             "--checks-output", str(tab / "frame_checks.tex"),
-                             "--cross-output", str(tab / "frame_checks_cross.tex")],
+                             "--output", str(fimg / "region_selection.png"),
+                             "--dropped-output", str(fimg / "region_dropped.png"),
+                             "--table-output", str(ftab / "region_rejections.tex"),
+                             "--checks-output", str(ftab / "frame_checks.tex"),
+                             "--cross-output", str(ftab / "frame_checks_cross.tex")],
         "high1-exclusion": ["scripts/report/plot_high1_exclusion.py", "--model", feature_model,
-                            "--output", str(img / "high1_exclusion.png"),
-                            "--sizes-output", str(img / "high1_sizes.png"), "--table-output", str(tab / "high1_steps.tex"),
-                            "--ref-output", str(img / "high9_segmentation.png"),
-                            "--ref-table-output", str(tab / "high9_steps.tex")],
-        "features": ["scripts/report/plot_features.py", "--model", feature_model, "--out", str(img),
-                     "--tables", str(tab)],
+                            "--output", str(fimg / "high1_exclusion.png"),
+                            "--sizes-output", str(fimg / "high1_sizes.png"), "--table-output", str(ftab / "high1_steps.tex"),
+                            "--ref-output", str(fimg / "high9_segmentation.png"),
+                            "--ref-table-output", str(ftab / "high9_steps.tex")],
+        "features": ["scripts/report/plot_features.py", "--model", feature_model, "--out", str(fimg),
+                     "--tables", str(ftab)],
         "classify-cells": ["scripts/classification/benchmark_cells.py", "--model", feature_model, "--replot",
-                           "--img", str(img), "--tables", str(tab)],
+                           "--img", str(fimg), "--tables", str(ftab)],
         "classify-cnn": ["scripts/classification/frames_cnn.py", "report", "--model", feature_model,
-                         "--img", str(img), "--tables", str(tab)],
+                         "--img", str(fimg), "--tables", str(ftab)],
+        "classify-power": ["scripts/classification/power_resolution.py", "--model", feature_model,
+                           "--tables", str(ftab)],
+        "deformation-regression": ["scripts/biomechanics/deformation_regression.py", "--model", feature_model,
+                                   "--img", str(fimg), "--tables", str(ftab)],
+        "rate-of-deformation": ["scripts/biomechanics/rate_of_deformation.py", "--model", feature_model,
+                                "--img", str(fimg), "--tables", str(ftab)],
+        "classify-report": ["scripts/report/plot_classification.py", "--model", feature_model,
+                            "--img", str(fimg), "--tables", str(ftab)],
+        "analysis-dataset": ["scripts/report/plot_analysis_dataset.py", "--model", feature_model, "--img", str(fimg)],
+        "classify-permutation": ["scripts/report/plot_permutation.py", "--model", feature_model, "--img", str(fimg)],
         "distill-labels": ["scripts/report/view_soft_target.py", "--round", "4", "--stem", "high_cell7_002525",
                            "domain_high_cell7_002585", "--output", str(img / "distill_soft_targets.png")],
         "ensemble-gate": ["scripts/evaluation/eval_ensemble_cv.py", "--gate-only", "--tables", str(tab)],
@@ -193,6 +206,9 @@ def main() -> None:
 
     img.mkdir(parents=True, exist_ok=True)
     tab.mkdir(parents=True, exist_ok=True)
+    if args.feature_model != "nnunet100_5fold":
+        (img / args.feature_model).mkdir(exist_ok=True)
+        (tab / args.feature_model).mkdir(exist_ok=True)
 
     failed = []
     for i, name in enumerate(names, 1):

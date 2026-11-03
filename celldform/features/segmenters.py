@@ -13,7 +13,7 @@ Two protocols supply such models; pick one by its tag (``--model`` in scripts/fe
 (segments). Read from disk, never typed in:
     5-fold  results/randswap/experiment_0_cv_baseline/cv_baseline_fold_<k>_split.json
     LOOCV   the held-out cell of each round from the run's eval log (results/<exp>/eval_log_native.jsonl),
-            its validation cell from the setup job's log (logs/hpc/loocv_nnunet_setup_*.out)
+            its validation cell from the setup job's log (logs/hpc/loocv_nnunet/loocv_nnunet_setup_*.out)
 nnU-Net numbers its folds from 0, the rounds from 1: fold = round - 1 in both protocols.
 """
 from __future__ import annotations
@@ -82,7 +82,7 @@ def plan(tag: str) -> list[dict]:
                 if f"fold_{k - 1}/" not in r["checkpoint"]:
                     raise ValueError(f"LOOCV eval log: round {k} was not scored with fold_{k - 1}")
                 test[k] = r["filter"]
-        logs = sorted((ROOT / "logs" / "hpc").glob(LOOCV_SETUP_LOG))
+        logs = sorted((ROOT / "logs" / "hpc").rglob(LOOCV_SETUP_LOG))
         if not logs:
             raise FileNotFoundError(f"logs/hpc/{LOOCV_SETUP_LOG} -- the LOOCV setup log names each round's validation cell")
         val = {}

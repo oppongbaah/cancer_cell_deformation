@@ -88,25 +88,47 @@ from celldform.features.quality import (Gates, apply_gates, image_quality, regio
                                         select_trapped_region, trap_position)
 from celldform.features.segmenters import DATASET_5FOLD as DATASET
 from celldform.features.segmenters import MODELS, five_fold_records, plan
+from celldform.analysis_config import dump as dump_config, load as load_config
+from celldform.utils.runlog import start_run_log
 
 FACTORY = ROOT / "data" / "frames" / "03_mask_factory"
 DENSE = ROOT / "data" / "frames" / "05_dense_frames"   # the feature frames between the step frames (2026-10-22):
-DENSE_OFFSETS = (20, 60, 100, 140, 180)               # within-step behaviour, and a less noisy value per step
 SETS = {"feature": ("feature", "dense")}   # the feature frames are segmented from two folders, checked as one set
-FRAMES_PER_STEP = 200           # one laser step = 200 video frames
-GOOD_DSC = 0.85                 # a frame with Dice below this counts as a bad mask in calibration
-AREA_WINDOW = 3 * FRAMES_PER_STEP + 100   # "typical area" = median over frames within +-3 laser steps
-                                # (2026-10-21: a whole-video median rejected the real shrinking of the
-                                # cell at high laser power -- the deformation itself)
-TRAP_WINDOW = AREA_WINDOW      # the trap a frame is checked against = median cell position within +-3 laser
-                                # steps (2026-10-21: one position per video dropped high-4's correctly
-                                # segmented early frames, where its cell sits ~50 px off the video median)
-MIN_PASS_FRACTION = 0.8         # a cell with fewer of its feature frames passing is flagged (was 40 of 50)
-# Cell-level validation (2026-10-21): a frame check cannot see a bias that is the same on every frame
-# (the 100-epoch model draws high-1 ~1.5x too large, confidently and consistently). So each cell must
-# also be segmented accurately on ITS OWN annotated test frames, by the same held-out model:
-CELL_MIN_DSC = 0.90             # mean Dice of the cell's passing annotated frames
-CELL_SIZE_BIAS = (0.85, 1.15)   # median predicted / hand-drawn area
+# The settings below come from configs/analysis/features.yaml (celldform.analysis_config; --config for another
+# file). What each one is for:
+#   DENSE_OFFSETS      frames into a step cut besides the step frame: within-step behaviour, a steadier step value
+#   FRAMES_PER_STEP    one laser step = 200 video frames
+#   GOOD_DSC           a hand-masked frame with Dice below this counts as a bad mask in calibration
+#   AREA_WINDOW        "typical area" = median over frames within +-window_steps laser steps (2026-10-21: a
+#                      whole-video median rejected the real shrinking of the cell at high laser power)
+#   TRAP_WINDOW        the trap a frame is checked against = median cell position within the same window
+#                      (2026-10-21: one position per video dropped high-4's correctly segmented early frames)
+#   MIN_PASS_FRACTION  a cell with fewer of its feature frames passing is flagged
+#   CELL_MIN_DSC, CELL_SIZE_BIAS  cell-level validation (2026-10-21): a frame check cannot see a bias that is
+#                      the same on every frame, so each cell must also be segmented accurately on its own
+#                      hand-masked frames, by the same held-out model
+
+
+def configure(cfg) -> None:
+    """Set the module's settings from a FeaturesConfig."""
+    global CFG, GATES, DENSE_OFFSETS, FRAMES_PER_STEP, GOOD_DSC, AREA_WINDOW, TRAP_WINDOW, MIN_PASS_FRACTION
+    global CELL_MIN_DSC, CELL_SIZE_BIAS
+    CFG = cfg
+    fc, cv = cfg.frame_checks, cfg.cell_validation
+    GATES = Gates(max_trap_dist=fc.max_trap_dist, min_solidity=fc.min_solidity,
+                  area_ratio_range=tuple(fc.area_ratio_range), min_boundary_conf=fc.min_boundary_conf,
+                  allow_border=fc.allow_border)
+    DENSE_OFFSETS = tuple(cfg.dense_offsets)
+    FRAMES_PER_STEP = cfg.frames_per_step
+    GOOD_DSC = cfg.good_dice
+    AREA_WINDOW = fc.window_steps * FRAMES_PER_STEP + FRAMES_PER_STEP // 2
+    TRAP_WINDOW = AREA_WINDOW
+    MIN_PASS_FRACTION = cv.min_pass_fraction
+    CELL_MIN_DSC = cv.min_dice
+    CELL_SIZE_BIAS = tuple(cv.size_bias_range)
+
+
+configure(load_config("features"))
 SHAPE = ["area", "perimeter", "major_axis", "minor_axis", "aspect_ratio", "eccentricity",
          "circularity", "solidity"]
 
@@ -223,11 +245,16 @@ def segment(model: str) -> None:
             shutil.rmtree(tmp, ignore_errors=True)
             print(f"fold {f} {which} ({', '.join(cells)}): segmenting {len(stems)} frames with "
                   f"{ckpt.relative_to(ROOT)}", flush=True)
-            p = nnUNetPredictor(device=torch.device("cuda"), allow_tqdm=False)   # TTA on, as in the CV scoring
+            # TTA on, as in the CV scoring. The sliding-window logits are accumulated on the CPU, not the GPU
+            # (2026-10-28): on the 8 GB laptop GPU the on-device attempt ran out of memory and, under WSL, the
+            # fallback died with "CUDA error: unknown error" twice. The network still runs on the GPU.
+            p = nnUNetPredictor(device=torch.device("cuda"), perform_everything_on_device=False, allow_tqdm=False)
             p.initialize_from_trained_model_folder(str(model_dir), use_folds=(f,),
                                                    checkpoint_name="checkpoint_final.pth")
             p.predict_from_files(str(src), str(tmp), save_probabilities=True,
                                  num_processes_preprocessing=2, num_processes_segmentation_export=2)
+            del p
+            torch.cuda.empty_cache()    # release this round's network before the next one loads
             lab.mkdir(parents=True, exist_ok=True)
             mp.mkdir(parents=True, exist_ok=True)
             for s in stems:
@@ -456,7 +483,7 @@ def review_sheet(model: str, df: pd.DataFrame, out: Path, half: int = 70, cols: 
     (yellow cross) and its distance limit (circle), with the failed checks underneath. The view grows to
     show a region that lies far from the trap."""
     files = located(model, which)
-    r_lim = Gates().max_trap_dist
+    r_lim = GATES.max_trap_dist
     tiles = []
     for _, r in df[~df.passed].sort_values(["cell", "frame_index"]).iterrows():
         img = cv2.cvtColor(cv2.imread(str(files[r.stem][2]), cv2.IMREAD_GRAYSCALE), cv2.COLOR_GRAY2BGR)
@@ -604,9 +631,14 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("step", choices=["cut", "segment", "calibrate", "extract", "all"])
     ap.add_argument("--model", choices=list(MODELS), default="nnunet1000_loocv")
+    ap.add_argument("--config", type=Path, default=None,
+                    help="settings file (default configs/analysis/features.yaml)")
     a = ap.parse_args()
-    sys.stdout.reconfigure(line_buffering=True)
-    gates = Gates()
+    start_run_log(f"features/{a.model}", f"extract_features_{a.step}")
+    configure(load_config("features", a.config))
+    gates = GATES
+    if a.step in ("calibrate", "extract", "all"):
+        dump_config(CFG, ROOT / "results" / "features" / a.model / f"config_{a.step}.yaml")
     if a.step in ("cut", "all"):
         dense_frames()
     if a.step in ("segment", "all"):

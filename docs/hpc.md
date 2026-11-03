@@ -161,6 +161,11 @@ stderr interleaved, in order) becomes the `.err`, so the error is in it whicheve
 and a closing `job FAILED (exit N)` line gives the exit code (143 = cancelled or time limit).
 `ls logs/hpc/*.err` lists the failures.
 
+Finished jobs are filed by experiment afterwards (`git mv`), one folder each: `nnunet1000_5fold/`,
+`loocv_unet/`, `loocv_nnunet/` (setup, 15 rounds, summary, deploy), `anvil_unet/`. New jobs still land in
+`logs/hpc/` itself (SLURM will not create a missing folder); the code that reads a job log searches the
+subfolders too. Failed attempts that were rerun are deleted (they stay in the git history).
+
 **Auto-commit.** When a job exits 0, `scripts/hpc/_autocommit.sh` commits its outputs and pushes
 them to the current branch on GitHub. When a job fails, is cancelled or times out, it commits and
 pushes **only that job's `.err`** (commit `run: <job> FAILED (exit N, job <id>)`, with the error

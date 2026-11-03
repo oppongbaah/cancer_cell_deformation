@@ -114,6 +114,9 @@ command, a command without a script, or a script without an argument parser fail
 | [`celldform-plot-final-models`](#celldform-plot-final-models) | "Final Models at a Glance" -- the closing page of the 8 October report (written 2026-10-21). |
 | [`celldform-plot-high1-exclusion`](#celldform-plot-high1-exclusion) | Why high-1 is excluded from the features (22 October report, feature extraction). |
 | [`celldform-plot-high10`](#celldform-plot-high10) | Why high-10 is over-predicted in leave-one-cell-out round 14 (8 October report, added 27 October). |
+| [`celldform-plot-classification`](#celldform-plot-classification) | Classification report figures and tables: confusion matrices, ROC curves and all metrics, deep and classical models. |
+| [`celldform-plot-analysis-dataset`](#celldform-plot-analysis-dataset) | Dataset page of the analysis reports: what each cell contributes, and the leave-one-cell-out split. |
+| [`celldform-plot-permutation`](#celldform-plot-permutation) | What chance looks like: the permutation null distributions behind the classification benchmark's p-values. |
 | [`celldform-plot-loocv`](#celldform-plot-loocv) | Leave-one-cell-out against the 5-fold cross-validation, for the U-Net and nnU-Net (15 October report). |
 | [`celldform-plot-protocols`](#celldform-plot-protocols) | Dataset Organization figure, general form (15 October report): one rule, three protocols. |
 | [`celldform-plot-region-selection`](#celldform-plot-region-selection) | How the extraction picks the trapped cell, and why it drops a frame -- drawn on the predicted masks (22 October report, feature extraction). |
@@ -126,6 +129,11 @@ command, a command without a script, or a script without an argument parser fail
 | [`celldform-extract-features`](#celldform-extract-features) | Classifier features from the feature frames -- segment, validate every segmentation, then extract. |
 | [`celldform-benchmark-cells`](#celldform-benchmark-cells) | Per-cell HER2 benchmark: seven classical classifiers on the per-cell features, leave-one-cell-out. |
 | [`celldform-frames-cnn`](#celldform-frames-cnn) | Per-frame HER2 classifier (deep learning), judged per held-out cell. |
+| [`celldform-power-resolution`](#celldform-power-resolution) | How many cells would a conclusive experiment need, and how small a deformation can the system resolve? |
+| [`celldform-tune-cells`](#celldform-tune-cells) | Hyperparameter tuning of the classical classifiers by nested leave-one-cell-out cross-validation. |
+| [`celldform-sequence-net`](#celldform-sequence-net) | Sequence networks on the deformation curves: can HER2 be told from HOW a cell deforms over the laser ramp? |
+| [`celldform-deformation-regression`](#celldform-deformation-regression) | Deformation regression: does the strain grow with the laser power, and differently for high and low HER2 cells? |
+| [`celldform-rate-of-deformation`](#celldform-rate-of-deformation) | Rate of deformation (RoD) per cell: measured over the full ramp, in real time, and predicted early. |
 
 **HPC**
 
@@ -2125,6 +2133,96 @@ Script: `scripts/report/plot_high10.py`
       --table-output TABLE_OUTPUT
     ```
 
+### `celldform-plot-classification`
+
+Classification report figures and tables: confusion matrices, ROC curves and all metrics, deep and classical models.
+
+Script: `scripts/report/plot_classification.py`
+
+??? note "All options (`--help`)"
+    ```text
+    usage: celldform-plot-classification [-h] [--model MODEL] --img IMG --tables TABLES
+
+    Classification report figures and tables: confusion matrices, ROC curves and all metrics, deep and classical models.
+
+    For the per-frame deep model (frames_cnn.py) and the per-cell classical classifiers (benchmark_cells.py).
+
+        python scripts/report/plot_classification.py --model nnunet1000_loocv --img <dir> --tables <dir>
+
+    Reads the saved held-out predictions only (results/classification/<model>/), so it never retrains anything. Every
+    number is per CELL (14 cells, leave-one-cell-out); high HER2 is the positive class:
+        sensitivity  high cells called high          specificity  low cells called low
+        precision    calls of high that are right    F1           harmonic mean of precision and sensitivity
+        balanced acc (sensitivity + specificity) / 2 AUC          ranking of the held-out P(high)
+    A cell's deep-model P(high) is the mean of its frames' P(high); the call is P(high) >= 0.5. 95 % intervals on the
+    cells correct are Clopper-Pearson.
+
+    Outputs: cls_cnn_metrics.tex, cls_ml_metrics.tex, cls_compare.tex, cls_cnn_roc_cm.png, cls_cnn_cells.png,
+    cls_ml_roc.png, cls_ml_cm.png, cls_compare.png.
+
+    options:
+      -h, --help       show this help message and exit
+      --model MODEL
+      --img IMG
+      --tables TABLES
+    ```
+
+### `celldform-plot-analysis-dataset`
+
+Dataset page of the analysis reports: what each cell contributes, and the leave-one-cell-out split.
+
+Script: `scripts/report/plot_analysis_dataset.py`
+
+??? note "All options (`--help`)"
+    ```text
+    usage: celldform-plot-analysis-dataset [-h] [--model MODEL] --img IMG
+
+    Dataset page of the analysis reports: what each cell contributes, and the leave-one-cell-out split.
+
+    Used by the classification and deformation reports.
+
+        python scripts/report/plot_analysis_dataset.py --model nnunet1000_loocv --img <dir>
+
+        analysis_dataset.png  one row per cell: its feature frames (passed / failed the frame checks), laser steps,
+                              recording position (trap height) and whether it is used
+        analysis_split.png    the leave-one-cell-out split: 14 folds x 14 cells, the test cell of each fold, and the
+                              frames on each side
+
+    Reads results/features/<model>/features_frames.csv and features_cells.csv only.
+
+    options:
+      -h, --help     show this help message and exit
+      --model MODEL
+      --img IMG
+    ```
+
+### `celldform-plot-permutation`
+
+What chance looks like: the permutation null distributions behind the classification benchmark's p-values.
+
+Script: `scripts/report/plot_permutation.py`
+
+??? note "All options (`--help`)"
+    ```text
+    usage: celldform-plot-permutation [-h] [--model MODEL] --img IMG
+
+    What chance looks like: the permutation null distributions behind the classification benchmark's p-values.
+
+        python scripts/report/plot_permutation.py --model nnunet1000_loocv --img <dir>
+
+    The benchmark (benchmark_cells.py) keeps only each model's p-value. This redraws the shuffles for two models -- the
+    primary classifier (logistic regression, selected features) and the image-only baseline -- with the benchmark's own
+    seed and procedure (labels shuffled across cells, the whole leave-one-cell-out rerun, balanced accuracy), and checks
+    that the p-values come out the same as in benchmark_cells.csv before drawing them.
+
+    Output: cls_permutation.png (and .csv: every shuffle's balanced accuracy).
+
+    options:
+      -h, --help     show this help message and exit
+      --model MODEL
+      --img IMG
+    ```
+
 ### `celldform-plot-loocv`
 
 Leave-one-cell-out against the 5-fold cross-validation, for the U-Net and nnU-Net (15 October report).
@@ -2231,8 +2329,9 @@ Script: `scripts/features/extract_features.py`
 ??? note "All options (`--help`)"
     ```text
     usage: celldform-extract-features [-h]
-                               [--model {nnunet100_5fold,nnunet1000_5fold,nnunet1000_loocv}]
-                               {cut,segment,calibrate,extract,all}
+                                      [--model {nnunet100_5fold,nnunet1000_5fold,nnunet1000_loocv}]
+                                      [--config CONFIG]
+                                      {cut,segment,calibrate,extract,all}
 
     Classifier features from the feature frames -- segment, validate every
     segmentation, then extract.
@@ -2243,6 +2342,7 @@ Script: `scripts/features/extract_features.py`
     options:
       -h, --help            show this help message and exit
       --model {nnunet100_5fold,nnunet1000_5fold,nnunet1000_loocv}
+      --config CONFIG       settings file (default configs/analysis/features.yaml)
     ```
 
 ### `celldform-benchmark-cells`
@@ -2253,8 +2353,9 @@ Script: `scripts/classification/benchmark_cells.py`
 
 ??? note "All options (`--help`)"
     ```text
-    usage: celldform-benchmark-cells [-h] [--model MODEL] [--perms PERMS] [--out OUT]
-                              [--replot] [--img IMG] [--tables TABLES]
+    usage: celldform-benchmark-cells [-h] [--model MODEL] [--config CONFIG]
+                                     [--perms PERMS] [--out OUT] [--replot] [--img IMG]
+                                     [--tables TABLES] [--only ONLY [ONLY ...]] [--final]
 
     Per-cell HER2 benchmark: seven classical classifiers on the per-cell features, leave-one-cell-out.
 
@@ -2265,11 +2366,17 @@ Script: `scripts/classification/benchmark_cells.py`
     advance (no tuning: with 13 training cells an inner search would mostly fit noise).
 
     Feature sets
-        trusted   the per-cell features whose predicted value tracks the hand-mask value (rho >= 0.8):
-                  baseline lengths along / across the beam, compliance along / across, volume change   (main)
-        all       every per-cell shape and deformation feature                                     (sensitivity)
+        selected  chosen from the 29 by a label-free selection, once, before any classifier (main):
+                    1. agreement  the per-cell value from the predicted masks against the same from the hand masks,
+                                  on the hand-masked frames: Spearman rho across the cells >= 0.8 (where testable)
+                    2. split-half the per-cell value from the even laser steps against the same from the odd ones,
+                                  on the feature frames: Spearman rho >= 0.8
+                    3. redundancy of features that pass and move together across cells (|rho| > 0.9), only the
+                                  highest-ranked is kept
+                  ranked by the weaker of the two rho; at most 7 (two cells per feature). The HER2 labels are never
+                  used, so the selection cannot leak the held-out cell.  -> feature_selection.csv / .tex
+        all       every per-cell shape and deformation feature, no selection                       (sensitivity)
     Baselines
-        majority  always the training majority
         size      baseline length along the beam only
         image     per-cell medians of the whole-frame image measures (illumination, unevenness, contrast,
                   noise). These track the recording session, not the cell: a classifier that does well on
@@ -2278,17 +2385,30 @@ Script: `scripts/classification/benchmark_cells.py`
     Scores: correct cells, balanced accuracy, AUC of the held-out P(high), and a permutation p-value
     (labels shuffled across cells, the whole leave-one-cell-out rerun, balanced accuracy).
 
-    Outputs in results/classification/<model>/:  benchmark_cells.csv, scores_cells.csv (every held-out cell's
-    P(high) per model), benchmark_cells.png, benchmark_cells.tex.
+    Outputs in results/classification/<model>/:  feature_selection.csv / .tex, benchmark_cells.csv, scores_cells.csv
+    (every held-out cell's P(high) per model), benchmark_cells.png, benchmark_cells.tex.
+
+    Final models: after the run, every classifier on each feature set (and the size baseline) is fitted once on ALL
+    usable cells and saved with its leave-one-cell-out score -- the models a new cell is classified with
+    (celldform.final_models). --final does only this, from the saved selection and scores.
+        -> checkpoints/classification/<model>/classical/<set>__<classifier>.joblib, manifest.csv
 
     options:
-      -h, --help       show this help message and exit
-      --model MODEL    feature run in results/features/
-      --perms PERMS    label shuffles for the permutation p (0 = skip)
-      --out OUT        output folder (default results/classification/<model>)
-      --replot         redraw the figure and table from the saved CSVs only
-      --img IMG        also write the figure here (report images folder)
-      --tables TABLES  also write the LaTeX table here
+      -h, --help            show this help message and exit
+      --model MODEL         feature run in results/features/
+      --config CONFIG       settings file (default
+                            configs/analysis/classifiers.yaml)
+      --perms PERMS         label shuffles for the permutation p (0 = skip;
+                            default: the config's)
+      --out OUT             output folder (default results/classification/<model>)
+      --replot              redraw the figure and table from the saved CSVs only
+      --img IMG             also write the figure here (report images folder)
+      --tables TABLES       also write the LaTeX table here
+      --only ONLY [ONLY ...]
+                            run only these classifiers (config names) and merge
+                            them into the saved results
+      --final               only fit the final models on all cells and save them
+                            (uses the saved selection and scores)
     ```
 
 ### `celldform-frames-cnn`
@@ -2299,10 +2419,12 @@ Script: `scripts/classification/frames_cnn.py`
 
 ??? note "All options (`--help`)"
     ```text
-    usage: celldform-frames-cnn [-h] [--model MODEL] [--epochs EPOCHS] [--device DEVICE]
-                         [--img IMG] [--tables TABLES] [--seed SEED]
-                         [--variants {masked,mask} [{masked,mask} ...]]
-                         {crops,frozen,finetune,report,all}
+    usage: celldform-frames-cnn [-h] [--model MODEL] [--config CONFIG] [--epochs EPOCHS]
+                                [--device DEVICE] [--img IMG] [--tables TABLES]
+                                [--seed SEED]
+                                [--variants {masked,mask} [{masked,mask} ...]]
+                                [--seeds SEEDS [SEEDS ...]]
+                                {crops,frozen,finetune,tune,final,report,all}
 
     Per-frame HER2 classifier (deep learning), judged per held-out cell.
 
@@ -2310,6 +2432,8 @@ Script: `scripts/classification/frames_cnn.py`
         python scripts/classification/frames_cnn.py frozen     --model nnunet100_5fold   # ResNet-18 features + LR
         python scripts/classification/frames_cnn.py finetune   --model nnunet100_5fold   # fine-tune the last block
         python scripts/classification/frames_cnn.py report     --model nnunet100_5fold   # table + figure
+        python scripts/classification/frames_cnn.py final      --model nnunet100_5fold --seeds 0 1 2
+                                         # train on ALL cells, save to checkpoints/classification/<model>/cnn/
 
     Data: every passing feature frame of the usable cells (~3 800 frames, ~6 per laser step).
 
@@ -2333,17 +2457,235 @@ Script: `scripts/classification/frames_cnn.py`
     cnn_cells.csv, cnn_cells.tex, cnn_frames_seen.png (accuracy against the number of laser steps watched).
 
     positional arguments:
-      {crops,frozen,finetune,report,all}
+      {crops,frozen,finetune,tune,final,report,all}
+                            tune: nested-CV hyperparameter tuning of the fine-
+                            tuned cell-crop CNN; final: train on all cells and
+                            save to checkpoints/classification/<model>/cnn/
+                            (neither is part of all)
 
     options:
       -h, --help            show this help message and exit
       --model MODEL
-      --epochs EPOCHS       fine-tuning epochs per fold (fixed in advance)
+      --config CONFIG       settings file (default configs/analysis/cnn.yaml)
+      --epochs EPOCHS       fine-tuning epochs per fold (default: the config's)
       --device DEVICE
       --img IMG             report step: also write the figure here
       --tables TABLES       report step: also write the LaTeX table here
-      --seed SEED           fine-tuning seed (repeat runs: the seed spread)
+      --seed SEED           fine-tuning seed (default: the config's)
       --variants {masked,mask} [{masked,mask} ...]
+      --seeds SEEDS [SEEDS ...]
+                            final step: one saved model per seed (default: the
+                            config's seed)
+    ```
+
+### `celldform-power-resolution`
+
+How many cells would a conclusive experiment need, and how small a deformation can the system resolve?
+
+Script: `scripts/classification/power_resolution.py`
+
+??? note "All options (`--help`)"
+    ```text
+    usage: celldform-power-resolution [-h] [--model MODEL] [--tables TABLES]
+
+    How many cells would a conclusive experiment need, and how small a deformation can the system resolve?
+
+        python scripts/classification/power_resolution.py --model nnunet1000_loocv [--tables <report tables dir>]
+
+    Cells needed (from the usable cells of features_cells.csv and the selected features of benchmark_cells.py)
+        per feature   Cohen's d between the classes (pooled SD), and the cells per class a two-sided Mann--Whitney
+                      test needs to find a difference that size at alpha 0.05 with 80 % power:
+                          n = 2 (z_0.975 + z_0.8)^2 / d^2 / 0.955     (0.955: its efficiency against the t-test)
+                      d from 14 cells is itself uncertain (its 95 % interval is roughly +/-1.1), so n is an order
+                      of magnitude, not a design figure.
+        classifier    the cells (balanced classes) a one-sided binomial test needs to show that a classifier of a
+                      given true accuracy beats 50 % at alpha 0.05 with 80 % power.
+
+    Resolution (from the passing feature frames: length along the beam, L_par)
+        frame noise   median over cells and steps of SD/mean of L_par within a laser step (~6 frames)
+        step noise    (a) frame noise / sqrt(frames per step) x 1.25 (the median's efficiency)
+                      (b) from the step-to-step differences of each cell's step medians: SD(diff)/sqrt(2) -- an
+                          upper bound, it also contains the cell's real step-to-step change
+        detectable    a change between two steps: 2.77 x step noise (95 %); the strain over the ramp (last ten steps
+                      against the baseline ten): 1.96 x sqrt(2/10) x step noise x 1.25; a compliance: 1.96 x the
+                      standard error of the slope over 50 steps (x 1.1, the Theil--Sen efficiency)
+        compared with the observed per-cell compliances and the difference between the class means.
+        Random noise only: a segmentation error that grows with the laser power (high-1) is not in it.
+
+    Outputs in results/classification/<model>/: power.csv, resolution.csv, classify_power.tex, classify_resolution.tex.
+
+    options:
+      -h, --help       show this help message and exit
+      --model MODEL    feature run in results/features/
+      --tables TABLES  also write the LaTeX tables here
+    ```
+
+### `celldform-tune-cells`
+
+Hyperparameter tuning of the classical classifiers by nested leave-one-cell-out cross-validation.
+
+Script: `scripts/classification/tune_cells.py`
+
+??? note "All options (`--help`)"
+    ```text
+    usage: celldform-tune-cells [-h] [--model MODEL] [--config CONFIG] [--perms PERMS]
+
+    Hyperparameter tuning of the classical classifiers by nested leave-one-cell-out cross-validation.
+
+        python scripts/classification/tune_cells.py --model nnunet1000_loocv [--config <yaml>] [--perms N]
+
+    Outer loop: each of the 14 cells is the test cell once. Inner loop, on the other 13 cells only: every point of the
+    classifier's grid (configs/analysis/classifiers.yaml, `tuning.grids`) is scored by leave-one-cell-out over the 13,
+    by the Brier score of their held-out P(high) (smoother than counting 13 calls; ties go to the earlier grid point).
+    The best point is refitted on the 13 and the test cell is scored once. The test cell never influences the choice,
+    so the outer scores are an honest estimate of a TUNED classifier -- comparable with the untuned benchmark
+    (benchmark_cells.py) on the same folds and the same selected features.
+
+    Permutation p: the cell labels shuffled and the WHOLE nested procedure rerun (`tuning.permutations`; the slow
+    tree ensembles are skipped). Outputs in results/classification/<model>/: tuning_cells.csv (per classifier),
+    tuning_choices.csv (the grid point chosen in every outer fold), tuning_scores.csv (held-out P(high)),
+    config_tuning.yaml.
+
+    options:
+      -h, --help       show this help message and exit
+      --model MODEL    feature run in results/features/
+      --config CONFIG  settings (default configs/analysis/classifiers.yaml)
+      --perms PERMS    label shuffles (default: the config's tuning.permutations)
+    ```
+
+### `celldform-sequence-net`
+
+Sequence networks on the deformation curves: can HER2 be told from HOW a cell deforms over the laser ramp?
+
+Script: `scripts/classification/sequence_net.py`
+
+??? note "All options (`--help`)"
+    ```text
+    usage: celldform-sequence-net [-h] [--model MODEL] [--config CONFIG] [--perms PERMS]
+
+    Sequence networks on the deformation curves: can HER2 be told from HOW a cell deforms over the laser ramp?
+
+        python scripts/classification/sequence_net.py --model nnunet1000_loocv [--config <yaml>] [--perms N]
+
+    Input, one per cell: the strain (%) of each measure (configs/analysis/sequence.yaml: length along and across the
+    beam, volume) at every laser step -- the median of the step's passing frames against the cell's own baseline
+    (celldform.biomechanics.rod.step_strain) -- a (measures x steps) curve. Missing steps are interpolated; a cell
+    with fewer steps is padded with its last value.
+
+    Models (deep learning, tiny on purpose: 13 training curves per fold):
+        cnn1d  two 1-D convolution layers over the steps, global average pooling, a linear output
+        gru    one recurrent (GRU) layer, its last state, a linear output
+
+    Training: leave-one-cell-out, the same 14 folds as every other model; each channel scaled by its SD over the
+    training cells; class-balanced loss; a random window of `crop` steps, noise and amplitude scaling per epoch; a
+    fixed number of epochs (no validation set). The held-out cell is scored on its whole curve; P(high) is averaged
+    over the seeds. Permutation p: labels shuffled and the whole leave-one-cell-out rerun (first seed only).
+
+    Outputs in results/classification/<model>/: seq_cells.csv (every cell's P(high), per model and seed),
+    seq_metrics.csv, config_sequence.yaml.
+
+    options:
+      -h, --help       show this help message and exit
+      --model MODEL    feature run in results/features/
+      --config CONFIG  settings (default configs/analysis/sequence.yaml)
+      --perms PERMS    label shuffles (default: the config's)
+    ```
+
+### `celldform-deformation-regression`
+
+Deformation regression: does the strain grow with the laser power, and differently for high and low HER2 cells?
+
+Script: `scripts/biomechanics/deformation_regression.py`
+
+??? note "All options (`--help`)"
+    ```text
+    usage: celldform-deformation-regression [-h] [--model MODEL] [--img IMG]
+                                            [--tables TABLES] [--config CONFIG]
+
+    Deformation regression: does the strain grow with the laser power, and differently for high and low HER2 cells?
+
+        python scripts/biomechanics/deformation_regression.py --model nnunet1000_loocv [--img <dir>] [--tables <dir>]
+
+    One value per cell and laser step: the median of the step's passing feature frames (usable cells only), as a strain
+    in % against the cell's own baseline (median over steps 0-9), for three measures -- length along the beam, length
+    across it, and the spheroid volume. Each is fitted with a linear mixed-effects model:
+
+        strain = b0 + b1 step + b2 high + b3 step x high  +  (u0 + u1 step | cell)  +  e
+
+        b1   the typical low cell's strain per step (its compliance)
+        b3   how much more (or less) a high cell strains per step -- the HER2 effect on deformation
+        u1   each cell's own slope: the random slope makes the CELL the unit, not the ~700 step values
+
+    Fitted by REML (statsmodels MixedLM). A second fit adds the cell's baseline length (standardised) and its
+    interaction with the step, to ask whether size accounts for any HER2 effect.
+
+    How well it fits -- R^2 for mixed models (Nakagawa & Schielzeth 2013; random slopes as in Johnson 2014):
+        marginal     variance of the fixed-effect prediction (step, HER2) / total variance
+        conditional  (fixed + random-effect variance) / total variance -- the share explained once every cell has
+                     its own line
+
+    Does HER2 help predict a new cell? -- leave-one-cell-out: each cell in turn is left out, both models are fitted
+    on the other 13, and the left-out cell's whole strain curve is predicted from the fixed effects alone (a new cell
+    has no fitted line of its own):
+        with HER2     strain ~ step * high
+        without HER2  strain ~ step
+        zero          strain = 0 at every step (no deformation)
+    scored by the RMSE (percentage points of strain) over the cell's steps; the paired comparison is a Wilcoxon
+    signed-rank test over the 14 cells. HER2 and the recording session are the
+    same split in this dataset, so b3 cannot be told apart from a session effect.
+
+    Outputs in results/biomechanics/<model>/: deformation_regression.csv / .tex / .png (coefficients, fitted lines),
+    deformation_fit.csv / .tex (R^2 and leave-one-cell-out errors), deformation_loco.csv / .png (every cell's errors).
+
+    options:
+      -h, --help       show this help message and exit
+      --model MODEL    feature run in results/features/
+      --img IMG        also write the figure here
+      --tables TABLES  also write the LaTeX table here
+      --config CONFIG  settings file (default configs/analysis/regression.yaml)
+    ```
+
+### `celldform-rate-of-deformation`
+
+Rate of deformation (RoD) per cell: measured over the full ramp, in real time, and predicted early.
+
+Script: `scripts/biomechanics/rate_of_deformation.py`
+
+??? note "All options (`--help`)"
+    ```text
+    usage: celldform-rate-of-deformation [-h] [--model MODEL] [--img IMG]
+                                         [--tables TABLES] [--config CONFIG]
+
+    Rate of deformation (RoD) per cell: measured over the full ramp, in real time, and predicted early.
+
+        python scripts/biomechanics/rate_of_deformation.py --model nnunet1000_loocv [--img <dir>] [--tables <dir>]
+
+    RoD = slope of the strain (%) of the cell's length against the laser step (celldform.biomechanics.rod), for the
+    length along the beam (main) and across it, with a Newey-West 95 % interval. Usable cells, passing frames only.
+
+        per cell     the full-ramp RoD of every cell, with its interval
+        real time    the RoD from the first k steps only, k = 5, 10, ..., 50: how wide is the interval after k steps,
+                     and how far is the estimate from the full-ramp RoD?
+        early        leave-one-cell-out: the left-out cell's RoD after k steps, estimated four ways, against its full-ramp
+                     RoD (the target):
+                       own           its own k steps only
+                       shrunk        own, combined with the prior from the other 13 cells (pooled)
+                       shrunk+class  the same with a class-specific prior (the cell's HER2 class -- what a classifier
+                                     would supply; the true class, so an upper bound on what classifying adds)
+                       prior only    the other cells' mean RoD, no own data
+
+    Outputs in results/biomechanics/<model>/: rod_cells.csv, rod_realtime.csv, rod_early.csv, rod_cells.tex,
+    rod_realtime.tex, rod_cells.png, rod_realtime.png.
+
+    Final model: the settings and the priors from ALL usable cells (pooled, and per HER2 class), for estimating a new
+    cell's RoD (celldform.biomechanics.rod.estimate) -> checkpoints/biomechanics/<model>/rod_model.json
+
+    options:
+      -h, --help       show this help message and exit
+      --model MODEL    feature run in results/features/
+      --img IMG        also write the figures here
+      --tables TABLES  also write the LaTeX tables here
+      --config CONFIG  settings file (default configs/analysis/regression.yaml)
     ```
 
 ## HPC

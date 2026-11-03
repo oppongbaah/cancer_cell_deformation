@@ -211,7 +211,7 @@ def main() -> None:
                 arrowprops=dict(arrowstyle="-", color=INK2, lw=0.7))
     k = cells.index("high_cell10")
     v = ratios.loc["high_cell10"].max()
-    bx.annotate("high-10, leave-one-out round 14\n(under investigation)", xy=(k + 0.12, v), xytext=(k + 0.7, v),
+    bx.annotate("high-10, leave-one-out round 14: its untrapped neighbour\nalso marked; 1.01× once the trapped region is selected", xy=(k + 0.12, v), xytext=(k + 0.7, v),
                 fontsize=6.8, color=INK2, va="center", arrowprops=dict(arrowstyle="-", color=INK2, lw=0.6))
     bx.set_xticks(range(len(cells)))
     bx.set_xticklabels([short(c) for c in cells], fontsize=7.2, rotation=0)

@@ -1,0 +1,57 @@
+[run log] logs/classification/nnunet1000_loocv/benchmark_cells_20261028-204239.log
+[run log] command: python scripts/classification/benchmark_cells.py --model nnunet1000_loocv --perms 1000
+[run log] started 2026-10-28 20:42:39 on ISAAC2024, git 420579f (uncommitted changes), cwd /home/mega/work/thesis/cancer_cell_deformation
+14 cells: 8 high, 6 low
+
+FEATURE SELECTION (label-free):
+         feature  agreement_rho  split_half_rho  testable_on_hand_masks  score  passes redundant_with  rank  selected
+    len_par_base           0.99            0.99                    True   0.99    True                 1.00      True
+            area           0.98            1.00                    True   0.98    True   len_par_base   NaN     False
+       perimeter           0.97            1.00                    True   0.97    True   len_par_base   NaN     False
+   volume_change           0.97            0.99                    True   0.97    True                 2.00      True
+      minor_axis           0.97            1.00                    True   0.97    True   len_par_base   NaN     False
+      major_axis           0.93            1.00                    True   0.93    True   len_par_base   NaN     False
+   len_perp_base           0.93            1.00                    True   0.93    True                 3.00      True
+     circularity           0.92            0.93                    True   0.92    True                 4.00      True
+     fluctuation            NaN            0.91                   False   0.91    True    circularity   NaN     False
+  compliance_par           0.89            0.99                    True   0.89    True                 5.00      True
+   orient_spread           0.85            0.99                    True   0.85    True                 6.00      True
+ compliance_perp           0.84            1.00                    True   0.84    True                 7.00      True
+    nonlinearity           0.71            0.98                    True   0.71   False                  NaN     False
+    ellip_change           0.68            0.99                    True   0.68   False                  NaN     False
+            hu_2           0.63            0.97                    True   0.63   False                  NaN     False
+    eccentricity           0.55            1.00                    True   0.55   False                  NaN     False
+            hu_0           0.53            0.99                    True   0.53   False                  NaN     False
+    aspect_ratio           0.53            1.00                    True   0.53   False                  NaN     False
+            hu_3           0.51            1.00                    True   0.51   False                  NaN     False
+roughness_median           0.47            0.98                    True   0.47   False                  NaN     False
+            hu_1           0.41            1.00                    True   0.41   False                  NaN     False
+        solidity           0.36            0.94                    True   0.36   False                  NaN     False
+         poisson           0.31            0.97                    True   0.31   False                  NaN     False
+            hu_6           0.25            0.51                    True   0.25   False                  NaN     False
+            hu_5           0.19            0.90                    True   0.19   False                  NaN     False
+            hu_4          -0.09            0.93                    True  -0.09   False                  NaN     False
+           creep            NaN           -0.48                   False  -0.48   False                  NaN     False
+      onset_step            NaN             NaN                    True    NaN   False                  NaN     False
+       creep_tau            NaN             NaN                   False    NaN   False                  NaN     False
+selected: len_par_base, volume_change, len_perp_base, circularity, compliance_par, orient_spread, compliance_perp
+
+selected  Logistic regression   9/14  bal.acc 0.65  AUC 0.79  p 0.191  wrong: high-2 high-3 high-4 low-3 low-6
+selected  Linear SVM            8/14  bal.acc 0.56  AUC 0.73  p 0.365  wrong: high-2 high-3 high-4 low-3 low-4 low-6
+selected  Shrinkage LDA         9/14  bal.acc 0.65  AUC 0.67  p 0.161  wrong: high-2 high-3 high-4 low-3 low-6
+selected  RBF SVM               9/14  bal.acc 0.65  AUC 0.81  p 0.171  wrong: high-2 high-3 high-4 low-3 low-6
+selected  k-NN (k=3)           11/14  bal.acc 0.77  AUC 0.84  p 0.025  wrong: high-3 low-3 low-6
+selected  Random forest         9/14  bal.acc 0.65  AUC 0.77  p 0.185  wrong: high-2 high-4 high-8 low-3 low-6
+selected  Gradient boosting    11/14  bal.acc 0.77  AUC 0.73  p 0.060  wrong: high-8 low-3 low-5
+all       Logistic regression  10/14  bal.acc 0.73  AUC 0.77  p 0.067  wrong: high-2 high-3 high-4 low-6
+all       Linear SVM           10/14  bal.acc 0.73  AUC 0.81  p 0.079  wrong: high-3 high-4 high-8 low-4
+all       Shrinkage LDA         9/14  bal.acc 0.65  AUC 0.69  p 0.153  wrong: high-2 high-3 high-4 low-5 low-6
+all       RBF SVM              10/14  bal.acc 0.69  AUC 0.69  p 0.093  wrong: high-2 low-1 low-5 low-6
+all       k-NN (k=3)            9/14  bal.acc 0.65  AUC 0.72  p 0.106  wrong: high-2 high-6 high-8 low-5 low-6
+all       Random forest         8/14  bal.acc 0.58  AUC 0.77  p 0.286  wrong: high-2 high-3 high-4 high-8 low-5 low-6
+all       Gradient boosting     6/14  bal.acc 0.42  AUC 0.33  p 0.559  wrong: high-2 high-3 high-4 high-8 low-2 low-3 low-5 low-6
+size      Logistic regression  10/14  bal.acc 0.71  AUC 0.77  p 0.198  wrong: high-2 high-4 low-5 low-6
+image     Logistic regression  13/14  bal.acc 0.92  AUC 0.83  p 0.008  wrong: low-1
+majority  Majority class        8/14  bal.acc 0.50  AUC nan  p nan  wrong: low-1 low-2 low-3 low-4 low-5 low-6
+wrote /home/mega/work/thesis/cancer_cell_deformation/results/classification/nnunet1000_loocv
+[run log] ended 2026-10-28 21:31:28

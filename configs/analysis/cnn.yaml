@@ -1,0 +1,29 @@
+# CNN (ResNet-18) per-frame classifier -- scripts/classification/frames_cnn.py (--config to use another file).
+# These values produced the reported results. CLI flags --epochs, --seed, --variants override them.
+
+crop_px: 96                 # window around the trapped cell, at frame resolution  } baked into the saved crops:
+grow_px: 2                  # mask grown by this before the background is cut away } rerun the `crops` step
+input_px: 128               # the crop is resized to this for the network
+
+epochs: 8                   # fine-tuning epochs per fold (fixed: there is no validation set)
+batch_size: 64
+lr: 0.0003                  # AdamW
+weight_decay: 0.01
+dropout: 0.3                # before the new head
+trainable_blocks: [layer4]  # ResNet-18 blocks fine-tuned (e.g. [layer3, layer4]); the rest stay frozen
+frozen_lr_C: 0.01           # frozen CNN: inverse regularisation of the logistic regression on its 512 features
+seed: 0                     # seed 0 writes cnn_frames_finetune_*.csv; any other adds _seed<k>
+variants: [masked, mask]    # masked = cell crop, mask = binary mask only (the control)
+
+augment:                    # training only
+  flips: true               # horizontal and vertical, each with p = 0.5
+  rot90: true               # random multiple of 90 degrees
+  intensity_scale: [0.9, 1.1]   # masked crop: inside the cell, x uniform(a, b)
+  intensity_noise: 0.1      #   ... + normal(0, this)
+
+# Hyperparameter tuning -- frames_cnn.py tune. Nested: for each test cell, every grid point is scored on the other
+# 13 cells split into `inner_folds` folds of cells (Brier score of the cells' mean P(high)); the best is retrained
+# on the 13 and scored once on the test cell. 14 x inner_folds x grid trainings (~1 h on the RTX 4060).
+tuning:
+  inner_folds: 4
+  grid: {epochs: [4, 8, 16], lr: [0.0001, 0.0003]}

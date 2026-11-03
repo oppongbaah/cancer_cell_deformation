@@ -97,6 +97,9 @@ SCRIPT_COMMANDS: dict[str, dict[str, str]] = {
         "plot-final-models":          "report/plot_final_models.py",
         "plot-high1-exclusion":       "report/plot_high1_exclusion.py",
         "plot-high10":                "report/plot_high10.py",
+        "plot-classification":        "report/plot_classification.py",
+        "plot-analysis-dataset":      "report/plot_analysis_dataset.py",
+        "plot-permutation":           "report/plot_permutation.py",
         "plot-loocv":                 "report/plot_loocv.py",
         "plot-protocols":             "report/plot_protocols.py",
         "plot-region-selection":      "report/plot_region_selection.py",
@@ -108,6 +111,13 @@ SCRIPT_COMMANDS: dict[str, dict[str, str]] = {
     "classification": {
         "benchmark-cells":      "classification/benchmark_cells.py",
         "frames-cnn":           "classification/frames_cnn.py",
+        "power-resolution":     "classification/power_resolution.py",
+        "tune-cells":           "classification/tune_cells.py",
+        "sequence-net":         "classification/sequence_net.py",
+    },
+    "biomechanics": {
+        "deformation-regression": "biomechanics/deformation_regression.py",
+        "rate-of-deformation":    "biomechanics/rate_of_deformation.py",
     },
 }
 # Implemented in this module / the package, not as scripts.

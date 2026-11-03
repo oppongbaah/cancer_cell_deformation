@@ -77,6 +77,25 @@ Checkpoint weights are **not** in git (`*.pt`, 7 GB). This README is. The durabl
 record of what each one scored is `results/preswap/preswap_eval_log.jsonl` and
 `results/postswap/experiment_0a_seed_baseline/eval_log.jsonl`, which **are** tracked.
 
+## `classification/`, `biomechanics/` — the final analysis models (since 2026-10-29)
+
+Each method fitted **once on all 14 usable cells** of a feature run and saved, so a new cell can be classified
+and its rate of deformation estimated without retraining. The leave-one-cell-out runs keep no model; their score
+is stored with each final model as its expected accuracy. **A final model's score on the 14 cells it was trained
+on is optimistic** (logistic regression 13/14, CNN 14/14) — quote the stored `loocv_*` numbers instead.
+
+| folder | what | made by |
+|---|---|---|
+| `classification/<run>/classical/<set>__<classifier>.joblib` | 8 classifiers × {selected, all} + the size baseline (17); imputer + scaler + model, feature list, `info` | `benchmark_cells.py` (every full run; `--final` = only this) |
+| `classification/<run>/cnn/finetune_masked_seed{0,1,2}.pt` | fine-tuned ResNet-18 on the cell crop, full weights (~45 MB each); a cell = mean P(high) of its frames, averaged over the 3 seeds | `frames_cnn.py final --seeds 0 1 2` |
+| `biomechanics/<run>/rod_model.json` | RoD settings + priors (mean, between-cell SD) pooled and per HER2 class, per measure | `rate_of_deformation.py` (every run) |
+
+Each folder has a `manifest.csv`. Load with `celldform.final_models.load_classifier(path).p_high(cells)`,
+`frames_cnn.load_final(path)` + `frames_cnn.predict(...)` on crops from `frames_cnn.cut_crop(...)`, and
+`celldform.biomechanics.rod.estimate(frames, rod.load_model(path), her2)`. Settings are the configs' (untuned:
+nested tuning did not help). Not saved: the sequence networks (below chance) and the mixed-effects regression
+(its coefficients are the result, in `results/biomechanics/`).
+
 ## `postswap/` — active
 
 | Checkpoint | Seed | Evaluated DSC |

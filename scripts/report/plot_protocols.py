@@ -15,7 +15,7 @@ is a property of the protocol, shared by every model trained under it -- no scor
 the figure does not belong to any one run.
 
 Read from disk: the 5-fold and deployment split records (results/<exp>/<run>_fold_*_split.json) and
-the leave-one-out round table its summary job printed (logs/hpc/loocv_unet_summary_*.out; the
+the leave-one-out round table its summary job printed (logs/hpc/loocv_unet/loocv_unet_summary_*.out; the
 split files of that run stay on the cluster).
 
     python scripts/report/plot_protocols.py --output ../masters_thesis/images/protocols.png
@@ -64,7 +64,7 @@ def kfold_rounds() -> tuple[list[dict], dict, dict]:
 
 
 def loocv_rounds() -> list[dict]:
-    log = sorted((REPO / "logs" / "hpc").glob(LOOCV_LOG))[-1]
+    log = sorted((REPO / "logs" / "hpc").rglob(LOOCV_LOG))[-1]
     rows = re.findall(r"^\s+(\d+)\s+(\S+_cell\d+)\s+(\S+_cell\d+)\s+\d+", log.read_text(), re.M)
     return [{"test": [t], "val": [v]} for _, t, v in sorted(rows, key=lambda r: int(r[0]))]
 
