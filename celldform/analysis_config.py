@@ -36,8 +36,8 @@ class FrameChecks:
 
 @dataclass
 class CellValidation:
-    min_dice: float = 0.90                         # mean Dice of the cell's passing hand-masked frames
-    size_bias_range: tuple = (0.85, 1.15)          # median predicted / hand-drawn area
+    min_dice: float = 0.85                         # mean Dice of the cell's passing hand-masked frames (= good_dice)
+    size_bias_range: tuple = (0.80, 1.25)          # median predicted / hand-drawn area (good masks: 0.82-1.23)
     min_pass_fraction: float = 0.8                 # of its feature frames, for the cell to be usable
 
 

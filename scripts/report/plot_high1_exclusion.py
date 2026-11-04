@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Why high-1 is excluded from the features (22 October report, feature extraction).
+high-1, the cell drawn largest against its hand masks (feature-extraction report).
 
 Two panels, both from disk:
   (a) high-1 and high-9 -- the two smallest cells after high-10, ~700 px each -- at the same laser steps:
@@ -9,7 +9,7 @@ Two panels, both from disk:
       pixel counts and the size ratio. Cropped around the hand mask's centre.
   (b) every cell's mask size relative to its hand mask, for every model that never saw it (the four
       cross-validated nnU-Net runs' eval logs: predicted / hand-drawn trapped-cell pixels over the cell's
-      20 hand-masked frames), against the cell-validation limits (0.85-1.15). A model error that changes
+      20 hand-masked frames), against the cell-validation limits (configs/analysis/features.yaml). A model error that changes
       with the run would scatter; a bias that repeats in every run belongs to the cell. nnU-Net runs only:
       the U-Net draws high-1 at about its hand size (0.89x, 0.94x), but scores worse on most other cells,
       so it is not the feature model (said in the report text, not drawn).
@@ -43,7 +43,8 @@ RUNS = {   # label -> experiment whose eval log scores every cell with the model
     "nnU-Net 1000 ep, 5-fold": ("randswap/experiment_1b_nnunet_1000ep", "s"),
     "nnU-Net 1000 ep, leave-one-out": ("randswap/experiment_4_loocv/nnunet", "D"),
 }
-LIMITS = (0.85, 1.15)            # cell validation, scripts/features/extract_features.py CELL_SIZE_BIAS
+from celldform.analysis_config import load as load_config  # noqa: E402
+LIMITS = tuple(load_config("features").cell_validation.size_bias_range)   # cell validation, configs/analysis/features.yaml
 TRUTH, DIFF, PRED = (0.18, 0.80, 0.30), (1.0, 0.82, 0.12), "#ffffff"   # green ground truth, yellow difference, white prediction
 HIGH, LOW = "#2a78d6", "#eb6834"
 INK, INK2, GRID = "#0b0b0b", "#52514e", "#e6e5e1"

@@ -1,0 +1,14 @@
+[run log] logs/classification/nnunet1000_loocv/sequence_net_20261103-125240.log
+[run log] command: python scripts/classification/sequence_net.py --model nnunet1000_loocv
+[run log] started 2026-11-03 12:52:40 on ISAAC2024, git cff1921 (uncommitted changes), cwd /home/mega/work/thesis/cancer_cell_deformation
+15 cells, curves 3 measures x 50 steps
+cnn1d  seed 0: 8/15
+cnn1d  seed 1: 7/15
+cnn1d  seed 2: 8/15
+cnn1d  mean of seeds: 7/15  bal.acc 0.44  AUC 0.33  low-1 P 0.97  p(seed 0) 0.416  wrong: high-1 high-2 high-3 high-7 low-1 low-2 low-3 low-6
+gru    seed 0: 7/15
+gru    seed 1: 7/15
+gru    seed 2: 6/15
+gru    mean of seeds: 7/15  bal.acc 0.42  AUC 0.26  low-1 P 0.93  p(seed 0) 0.673  wrong: high-2 high-3 high-7 low-1 low-2 low-3 low-4 low-6
+wrote /home/mega/work/thesis/cancer_cell_deformation/results/classification/nnunet1000_loocv/seq_{cells,metrics}.csv
+[run log] ended 2026-11-03 13:23:57

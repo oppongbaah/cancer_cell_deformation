@@ -1,0 +1,14 @@
+[run log] logs/classification/nnunet1000_loocv/tune_cells_20261103-163032.log
+[run log] command: python scripts/classification/tune_cells.py --model nnunet1000_loocv --config /tmp/claude-1000/-home-mega-work-thesis/7a16a1de-adf2-40a1-a1d2-e8274ee07655/scratchpad/classifiers_tune.yaml
+[run log] started 2026-11-03 16:30:32 on ISAAC2024, git cff1921 (uncommitted changes), cwd /home/mega/work/thesis/cancer_cell_deformation
+15 cells, selected features: len_par_base, fluctuation, volume_change, orient_spread
+Logistic regression  tuned 11/15 (untuned 12)  bal.acc 0.75  AUC 0.78  p 0.075  choice {'C': 1.0} in 80% of folds (3 distinct)  wrong: high-1 high-2 high-4 low-3
+Linear SVM           tuned 14/15 (untuned 11)  bal.acc 0.92  AUC 0.83  p 0.159  choice {'C': 0.01} in 60% of folds (4 distinct)  wrong: low-3
+Shrinkage LDA        tuned 10/15 (untuned 10)  bal.acc 0.64  AUC 0.74  p 0.194  choice {'shrinkage': 0.9} in 93% of folds (2 distinct)  wrong: high-2 high-4 low-2 low-3 low-6
+RBF SVM              tuned  4/15 (untuned 10)  bal.acc 0.31  AUC 0.37  p 0.234  choice {'C': 1.0, 'gamma': 0.01} in 60% of folds (3 distinct)  wrong: high-1 high-2 high-3 high-4 high-6 high-7 high-8 high-9 low-3 low-4 low-6
+k-NN (k=3)           tuned  8/15 (untuned 10)  bal.acc 0.44  AUC 0.56  p 0.502  choice {'n_neighbors': 7} in 60% of folds (4 distinct)  wrong: high-8 low-1 low-2 low-3 low-4 low-5 low-6
+Random forest        tuned 12/15 (untuned 12)  bal.acc 0.81  AUC 0.87  p nan  choice {'min_samples_leaf': 1, 'max_features': 'sqrt'} in 87% of folds (2 distinct)  wrong: high-2 high-8 low-3
+Gradient boosting    tuned  9/15 (untuned 10)  bal.acc 0.56  AUC 0.43  p nan  choice {'n_estimators': 50, 'max_depth': 1} in 80% of folds (4 distinct)  wrong: high-2 high-8 low-3 low-4 low-5 low-6
+MLP (ANN)            tuned  8/15 (untuned 10)  bal.acc 0.47  AUC 0.63  p nan  choice {'hidden_layer_sizes': [8], 'alpha': 1.0} in 67% of folds (3 distinct)  wrong: high-2 high-4 low-1 low-2 low-3 low-4 low-6
+wrote /home/mega/work/thesis/cancer_cell_deformation/results/classification/nnunet1000_loocv/tuning_{cells,choices,scores}.csv
+[run log] ended 2026-11-03 17:05:10

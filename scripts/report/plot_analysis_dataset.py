@@ -114,7 +114,7 @@ def split_fig(g: pd.DataFrame, out: Path) -> None:
     for lab, h in zip(ax.get_xticklabels(), u.her2):
         lab.set_color(HIGH if h == "high" else LOW)
     ax.set_yticks(np.arange(n) + 0.46, [f"fold {n - k}" for k in range(n)], fontsize=7)
-    ax.set_title("(a) Leave-one-cell-out: 14 folds, each tests one unseen cell", fontsize=9, loc="left", color=INK)
+    ax.set_title(f"(a) Leave-one-cell-out: {n} folds, each tests one unseen cell", fontsize=9, loc="left", color=INK)
     ax.tick_params(length=0, colors=INK2)
     for s in ax.spines.values():
         s.set_visible(False)

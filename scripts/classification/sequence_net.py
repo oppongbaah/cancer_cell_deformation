@@ -163,7 +163,7 @@ def main() -> None:
                 p = loocv(arch, X, y, cfg, seed)
             ps.append(p)
             prows.append({"arch": arch, "seed": seed, **dict(zip(cells.cell, p))})
-            print(f"{arch:6s} seed {seed}: {int(((p >= 0.5) == y).sum())}/14", flush=True)
+            print(f"{arch:6s} seed {seed}: {int(((p >= 0.5) == y).sum())}/{len(y)}", flush=True)
         for label, p in [(f"seed {s}", q) for s, q in zip(cfg.seeds, ps)] + [("mean of seeds", np.mean(ps, 0))]:
             pred = (p >= 0.5).astype(int)
             bacc = balanced_accuracy_score(y, pred)
@@ -175,7 +175,7 @@ def main() -> None:
             r["p_perm_seed0"] = pv
         prows.append({"arch": arch, "seed": "mean", **dict(zip(cells.cell, np.mean(ps, 0)))})
         r = mrows[-1]
-        print(f"{arch:6s} mean of seeds: {r['correct']}/14  bal.acc {r['balanced_acc']:.2f}  AUC {r['auc']:.2f}  "
+        print(f"{arch:6s} mean of seeds: {r['correct']}/{len(y)}  bal.acc {r['balanced_acc']:.2f}  AUC {r['auc']:.2f}  "
               f"low-1 P {r['low1_p_high']:.2f}  p(seed 0) {pv:.3f}  wrong: {r['wrong']}", flush=True)
     pd.DataFrame(prows).to_csv(out / "seq_cells.csv", index=False)
     pd.DataFrame(mrows).to_csv(out / "seq_metrics.csv", index=False)

@@ -471,7 +471,7 @@ def report(model: str, img: Path | None = None, tables: Path | None = None) -> N
         ax.plot(range(1, len(acc) + 1), acc, color=col, lw=lw, ls=ls, label=lab_)
     ax.axhline(0.5, color="k", ls=":", lw=1)
     ax.set_xlabel("laser steps watched (all frames of steps 1..k averaged per cell)", fontsize=8.5)
-    ax.set_ylabel("balanced accuracy, 14 cells", fontsize=8.5)
+    ax.set_ylabel(f"balanced accuracy, {int(t.n.iloc[0])} cells", fontsize=8.5)
     ax.set_ylim(0, 1.02)
     ax.tick_params(labelsize=8)
     ax.spines[["top", "right"]].set_visible(False)

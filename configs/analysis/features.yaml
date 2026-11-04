@@ -15,6 +15,7 @@ frame_checks:                         # a frame passes only if its selected regi
   window_steps: 3                     # local trap and typical area: median over +-this many laser steps
 
 cell_validation:                      # a cell is used only if, on its own hand-masked frames:
-  min_dice: 0.90                      #   mean Dice of the passing frames >= this
-  size_bias_range: [0.85, 1.15]       #   median predicted / hand-drawn area within this
+  min_dice: 0.85                      #   mean Dice of the passing frames >= this (= good_dice: a good mask)
+  size_bias_range: [0.80, 1.25]       #   median predicted / hand-drawn area within this: 1st-99th pct of the
+                                      #   good masks' size ratio (0.82-1.23), rounded outward, as the frame checks
   min_pass_fraction: 0.8              # ... and at least this share of its feature frames pass the checks

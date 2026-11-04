@@ -1,0 +1,13 @@
+[run log] logs/classification/nnunet1000_loocv/frames_cnn_crops_20261103-121420.log
+[run log] command: python scripts/classification/frames_cnn.py crops --model nnunet1000_loocv
+[run log] started 2026-11-03 12:14:20 on ISAAC2024, git cff1921 (uncommitted changes), cwd /home/mega/work/thesis/cancer_cell_deformation
+  500/4148
+  1000/4148
+  1500/4148
+  2000/4148
+  2500/4148
+  3000/4148
+  3500/4148
+  4000/4148
+4148 crops of 15 cells -> /home/mega/work/thesis/cancer_cell_deformation/data/features/nnunet1000_loocv/cnn_crops.npz
+[run log] ended 2026-11-03 12:15:03

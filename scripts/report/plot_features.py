@@ -37,7 +37,8 @@ sys.path.insert(0, str(REPO))
 
 HIGH, LOW = "#2a78d6", "#eb6834"                 # plot_cv.py's HER2 colours
 INK, INK2, GRID, SURF = "#0b0b0b", "#52514e", "#e6e5e1", "#fcfcfb"
-CELL_SIZE_BIAS = (0.85, 1.15)                   # = extract_features.CELL_SIZE_BIAS, the cell-validation size band
+from celldform.analysis_config import load as load_config  # noqa: E402
+CELL_SIZE_BIAS = tuple(load_config("features").cell_validation.size_bias_range)   # the cell-validation size band
 SHAPE = ["area", "perimeter", "major_axis", "minor_axis", "aspect_ratio", "eccentricity", "circularity", "solidity"]
 LABEL = {"area": "Area", "perimeter": "Perimeter", "major_axis": "Major axis", "minor_axis": "Minor axis",
          "aspect_ratio": "Aspect ratio", "eccentricity": "Eccentricity$^\\ast$", "circularity": "Circularity",

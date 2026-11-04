@@ -136,7 +136,7 @@ def main() -> None:
         choices += [{"classifier": name, "test_cell": c, **ch} for c, ch in zip(cells.cell, chosen)]
         scores.append({"classifier": name, **dict(zip(cells.cell, p))})
         r = rows[-1]
-        print(f"{name:20s} tuned {r['correct']:2d}/14 (untuned {r['untuned_correct']})  bal.acc {bacc:.2f}  "
+        print(f"{name:20s} tuned {r['correct']:2d}/{len(y)} (untuned {r['untuned_correct']})  bal.acc {bacc:.2f}  "
               f"AUC {r['auc']:.2f}  p {pv:.3f}  choice {r['modal_choice']} in {r['modal_share']:.0%} of folds "
               f"({r['distinct_choices']} distinct)  wrong: {r['wrong']}", flush=True)
     order = list(tun["grids"])

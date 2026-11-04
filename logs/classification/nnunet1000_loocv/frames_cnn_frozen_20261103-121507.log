@@ -1,0 +1,34 @@
+[run log] logs/classification/nnunet1000_loocv/frames_cnn_frozen_20261103-121507.log
+[run log] command: python scripts/classification/frames_cnn.py frozen --model nnunet1000_loocv
+[run log] started 2026-11-03 12:15:07 on ISAAC2024, git cff1921 (uncommitted changes), cwd /home/mega/work/thesis/cancer_cell_deformation
+frozen/masked high_cell1   P(high) 0.59
+frozen/masked high_cell2   P(high) 0.33
+frozen/masked high_cell3   P(high) 0.66
+frozen/masked high_cell4   P(high) 0.46
+frozen/masked high_cell6   P(high) 0.62
+frozen/masked high_cell7   P(high) 0.65
+frozen/masked high_cell8   P(high) 0.62
+frozen/masked high_cell9   P(high) 0.68
+frozen/masked high_cell10  P(high) 0.74
+frozen/masked low_cell1    P(high) 0.61
+frozen/masked low_cell2    P(high) 0.53
+frozen/masked low_cell3    P(high) 0.61
+frozen/masked low_cell4    P(high) 0.56
+frozen/masked low_cell5    P(high) 0.60
+frozen/masked low_cell6    P(high) 0.67
+frozen/mask   high_cell1   P(high) 0.75
+frozen/mask   high_cell2   P(high) 0.22
+frozen/mask   high_cell3   P(high) 0.76
+frozen/mask   high_cell4   P(high) 0.39
+frozen/mask   high_cell6   P(high) 0.74
+frozen/mask   high_cell7   P(high) 0.68
+frozen/mask   high_cell8   P(high) 0.63
+frozen/mask   high_cell9   P(high) 0.87
+frozen/mask   high_cell10  P(high) 0.87
+frozen/mask   low_cell1    P(high) 0.48
+frozen/mask   low_cell2    P(high) 0.36
+frozen/mask   low_cell3    P(high) 0.47
+frozen/mask   low_cell4    P(high) 0.46
+frozen/mask   low_cell5    P(high) 0.62
+frozen/mask   low_cell6    P(high) 0.71
+[run log] ended 2026-11-03 12:15:22

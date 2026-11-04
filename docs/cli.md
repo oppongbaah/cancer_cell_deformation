@@ -114,9 +114,8 @@ command, a command without a script, or a script without an argument parser fail
 | [`celldform-plot-final-models`](#celldform-plot-final-models) | "Final Models at a Glance" -- the closing page of the 8 October report (written 2026-10-21). |
 | [`celldform-plot-high1-exclusion`](#celldform-plot-high1-exclusion) | Why high-1 is excluded from the features (22 October report, feature extraction). |
 | [`celldform-plot-high10`](#celldform-plot-high10) | Why high-10 is over-predicted in leave-one-cell-out round 14 (8 October report, added 27 October). |
-| [`celldform-plot-classification`](#celldform-plot-classification) | Classification report figures and tables: confusion matrices, ROC curves and all metrics, deep and classical models. |
+| [`celldform-plot-classification-thesis`](#celldform-plot-classification-thesis) | Classification chapter figures: every model's AUC and F1, per-cell P(high), the best model's chance null and its summary card. |
 | [`celldform-plot-analysis-dataset`](#celldform-plot-analysis-dataset) | Dataset page of the analysis reports: what each cell contributes, and the leave-one-cell-out split. |
-| [`celldform-plot-permutation`](#celldform-plot-permutation) | What chance looks like: the permutation null distributions behind the classification benchmark's p-values. |
 | [`celldform-plot-loocv`](#celldform-plot-loocv) | Leave-one-cell-out against the 5-fold cross-validation, for the U-Net and nnU-Net (15 October report). |
 | [`celldform-plot-protocols`](#celldform-plot-protocols) | Dataset Organization figure, general form (15 October report): one rule, three protocols. |
 | [`celldform-plot-region-selection`](#celldform-plot-region-selection) | How the extraction picks the trapped cell, and why it drops a frame -- drawn on the predicted masks (22 October report, feature extraction). |
@@ -132,6 +131,8 @@ command, a command without a script, or a script without an argument parser fail
 | [`celldform-power-resolution`](#celldform-power-resolution) | How many cells would a conclusive experiment need, and how small a deformation can the system resolve? |
 | [`celldform-tune-cells`](#celldform-tune-cells) | Hyperparameter tuning of the classical classifiers by nested leave-one-cell-out cross-validation. |
 | [`celldform-sequence-net`](#celldform-sequence-net) | Sequence networks on the deformation curves: can HER2 be told from HOW a cell deforms over the laser ramp? |
+| [`celldform-feature-ranking`](#celldform-feature-ranking) | Feature rankings x k x classifiers, best-of-grid and nested choice, with permutation tests: does choosing features with the labels help? |
+| [`celldform-combine-models`](#celldform-combine-models) | Frame- and step-level logistic regression and the soft-voting ensembles (equal-weight mean of P(high)), with permutation tests. |
 | [`celldform-deformation-regression`](#celldform-deformation-regression) | Deformation regression: does the strain grow with the laser power, and differently for high and low HER2 cells? |
 | [`celldform-rate-of-deformation`](#celldform-rate-of-deformation) | Rate of deformation (RoD) per cell: measured over the full ramp, in real time, and predicted early. |
 
@@ -2133,38 +2134,35 @@ Script: `scripts/report/plot_high10.py`
       --table-output TABLE_OUTPUT
     ```
 
-### `celldform-plot-classification`
+### `celldform-plot-classification-thesis`
 
-Classification report figures and tables: confusion matrices, ROC curves and all metrics, deep and classical models.
+Classification chapter figures from results on disk: every model's AUC and F1, per-cell P(high), the best model's permutation null and its summary card.
 
-Script: `scripts/report/plot_classification.py`
+Script: `scripts/report/plot_classification_thesis.py`
 
 ??? note "All options (`--help`)"
     ```text
-    usage: celldform-plot-classification [-h] [--model MODEL] --img IMG --tables TABLES
+    usage: celldform-plot-classification-thesis [-h] [--model MODEL] --img IMG
 
-    Classification report figures and tables: confusion matrices, ROC curves and all metrics, deep and classical models.
+    Thesis-style figures for the HER2 classification chapter (rewrite of 2026-11-03).
 
-    For the per-frame deep model (frames_cnn.py) and the per-cell classical classifiers (benchmark_cells.py).
+        python scripts/report/plot_classification_thesis.py --model nnunet1000_loocv --img DIR
 
-        python scripts/report/plot_classification.py --model nnunet1000_loocv --img <dir> --tables <dir>
+    Reads only results already on disk (results/classification/<model>/): combine_cells.csv / combine_metrics.csv
+    (every model's held-out P(high) per cell), benchmark_cells.csv (permutation p of the 16 machine-learning models),
+    scores_cells.csv (their P(high) per cell), rank_nested.csv, seq_metrics.csv, tuning_scores.csv / tuning_cells.csv,
+    combine_null.csv (the deployment model's permutation null). Nothing is refitted.
 
-    Reads the saved held-out predictions only (results/classification/<model>/), so it never retrains anything. Every
-    number is per CELL (14 cells, leave-one-cell-out); high HER2 is the positive class:
-        sensitivity  high cells called high          specificity  low cells called low
-        precision    calls of high that are right    F1           harmonic mean of precision and sensitivity
-        balanced acc (sensitivity + specificity) / 2 AUC          ranking of the held-out P(high)
-    A cell's deep-model P(high) is the mean of its frames' P(high); the call is P(high) >= 0.5. 95 % intervals on the
-    cells correct are Clopper-Pearson.
-
-    Outputs: cls_cnn_metrics.tex, cls_ml_metrics.tex, cls_compare.tex, cls_cnn_roc_cm.png, cls_cnn_cells.png,
-    cls_ml_roc.png, cls_ml_cm.png, cls_compare.png.
+    Figures
+        cls_landscape.png    every model of the study on one page: AUC with its 95 % cell-bootstrap interval and
+                             F1 of each class, grouped by family; filled marker = permutation p < 0.05
+        cls_percell_map.png  held-out P(high) of the finalists and the two controls for every cell, cells ordered by size
+        cls_deploy_null.png  what chance gives the deployment model: 1 000 label shuffles of the whole procedure
 
     options:
-      -h, --help       show this help message and exit
+      -h, --help     show this help message and exit
       --model MODEL
       --img IMG
-      --tables TABLES
     ```
 
 ### `celldform-plot-analysis-dataset`
@@ -2189,33 +2187,6 @@ Script: `scripts/report/plot_analysis_dataset.py`
                               frames on each side
 
     Reads results/features/<model>/features_frames.csv and features_cells.csv only.
-
-    options:
-      -h, --help     show this help message and exit
-      --model MODEL
-      --img IMG
-    ```
-
-### `celldform-plot-permutation`
-
-What chance looks like: the permutation null distributions behind the classification benchmark's p-values.
-
-Script: `scripts/report/plot_permutation.py`
-
-??? note "All options (`--help`)"
-    ```text
-    usage: celldform-plot-permutation [-h] [--model MODEL] --img IMG
-
-    What chance looks like: the permutation null distributions behind the classification benchmark's p-values.
-
-        python scripts/report/plot_permutation.py --model nnunet1000_loocv --img <dir>
-
-    The benchmark (benchmark_cells.py) keeps only each model's p-value. This redraws the shuffles for two models -- the
-    primary classifier (logistic regression, selected features) and the image-only baseline -- with the benchmark's own
-    seed and procedure (labels shuffled across cells, the whole leave-one-cell-out rerun, balanced accuracy), and checks
-    that the p-values come out the same as in benchmark_cells.csv before drawing them.
-
-    Output: cls_permutation.png (and .csv: every shuffle's balanced accuracy).
 
     options:
       -h, --help     show this help message and exit
@@ -2589,6 +2560,102 @@ Script: `scripts/classification/sequence_net.py`
       --model MODEL    feature run in results/features/
       --config CONFIG  settings (default configs/analysis/sequence.yaml)
       --perms PERMS    label shuffles (default: the config's)
+    ```
+
+### `celldform-feature-ranking`
+
+Feature rankings x k x classifiers, best-of-grid and nested choice, with permutation tests: does choosing features with the labels help?
+
+Script: `scripts/classification/feature_ranking.py`
+
+??? note "All options (`--help`)"
+    ```text
+    usage: celldform-feature-ranking [-h] [--model MODEL] [--perms PERMS]
+                              [--nested-perms NESTED_PERMS]
+
+    Which features, chosen how? Six feature rankings x seven feature counts x the eight classifiers, leave-one-cell-out.
+
+        python scripts/classification/feature_ranking.py --model nnunet1000_loocv [--perms N] [--nested-perms N]
+
+    The label-free selection (benchmark_cells.py) fixes 7 features before any classifier. This asks whether other
+    choices -- rankings that DO use the labels, and other feature counts -- do better. A ranking that uses the labels is
+    refitted inside every fold on the training cells only, so the held-out cell never influences which features it gets.
+
+    Candidates: the 29 per-cell features (15 shape medians + 14 deformation summaries; benchmark_cells.SHAPE + DEFORMATION).
+    Missing values are filled with the training cells' median and the features standardised before ranking.
+
+    Rankings (each orders the 29 features; the top k are used)
+        label-free   the fixed label-free selection's order (feature_selection.csv), then the rest by its score -- the
+                     same in every fold
+        univariate   |AUC - 0.5| of each feature alone on the training cells (Mann-Whitney)
+        mRMR         minimum redundancy, maximum relevance: greedily the feature with the highest univariate relevance
+                     minus its mean |Spearman rho| with the features already chosen
+        L1 path      L1 logistic regression on a falling penalty: the order in which coefficients become non-zero
+        forest       random-forest impurity importance (300 trees)
+        RFE          recursive feature elimination with logistic regression: drop the smallest |coefficient|, refit
+    Feature counts k: 1, 2, 3, 5, 7, 10, 29 (29 = every feature; the same for every ranking).
+    Classifiers: the eight of configs/analysis/classifiers.yaml, settings fixed (benchmark_cells.models()).
+
+    Three readings, from least to most honest
+        grid         every (ranking, k, classifier): its leave-one-cell-out score. Exploratory: the best of 42 settings
+                     per classifier is optimistic by construction.
+        best of grid p   the permutation null of the BEST of the 42 settings (labels shuffled across cells, every ranking
+                     and every fit rerun, the maximum AUC / balanced accuracy over the grid kept): the chance of a grid
+                     maximum this high. Fast classifiers only (the linear models, RBF SVM, k-NN).
+        nested       the ranking and k chosen INSIDE each fold, by leave-one-out over its training cells (lowest Brier
+                     score), then the test cell scored once: an honest estimate of "pick the best features" as a method.
+                     Logistic regression and k-NN, with a permutation p of the whole nested procedure.
+
+    Outputs in results/classification/<model>/: rank_grid.csv (every setting), rank_cells.csv (held-out P(high) of every
+    setting and the nested runs), rank_freq.csv (how often each feature is in the top 5, per ranking), rank_nested.csv,
+    rank_null.npz. The thesis figures are drawn by scripts/report/plot_classification_thesis.py.
+
+    options:
+      -h, --help            show this help message and exit
+      --model MODEL
+      --perms PERMS         shuffles for the best-of-grid null (0 = skip)
+      --nested-perms NESTED_PERMS
+                            shuffles of the nested procedure (0 = skip)
+    ```
+
+### `celldform-combine-models`
+
+Frame- and step-level logistic regression and the soft-voting ensembles (equal-weight mean of P(high)), with permutation tests.
+
+Script: `scripts/classification/combine_models.py`
+
+??? note "All options (`--help`)"
+    ```text
+    usage: celldform-combine-models [-h] [--model MODEL] [--perms PERMS]
+
+    Frame- and step-level logistic regression, and combinations of the deep and classical models, leave-one-cell-out.
+
+        python scripts/classification/combine_models.py --model nnunet1000_loocv [--perms N]
+
+    Run after benchmark_cells.py, frames_cnn.py finetune (3 seeds), sequence_net.py and feature_ranking.py: it reads their
+    held-out P(high) per cell and fits nothing of theirs again.
+
+    Instance-level logistic regression (fitted here)
+        every frame   one row per passing feature frame, the 15 shape measures + 5 per-frame deformation measures
+                      (L_par, L_perp, volume, elongation f2, roughness); a held-out cell's P(high) = mean over its frames
+        every step    the same, one row per laser step (median of the step's passing frames)
+        Settings as the benchmark's logistic regression; scaling inside the fold; cells weighted by their rows. Permutation
+        p: labels shuffled across CELLS (every frame of a cell keeps its cell's label), the whole thing rerun.
+
+    Combinations: the equal-weight mean of the members' held-out P(high) -- no weights are fitted, so nothing is learnt
+    from the test cell and a combination needs no extra validation. Called high at >= 0.5. Members: the CNN (fine-tuned,
+    cell crop, mean of 3 seeds), the eight classifiers on the label-free selection, LR and the ANN on all 29, the nested feature-ranking runs, the instance
+    LRs. A combination of classical models only has a permutation p (every member rerun under the same shuffle); one with
+    the CNN has none (one shuffle = 45 CNN trainings) -- it has a 2 000-resample cell-bootstrap interval on the AUC.
+
+    Outputs in results/classification/<model>/: instance_cells.csv, combine_cells.csv (every model's and combination's
+    held-out P(high)), combine_metrics.csv, combine_null.csv. The thesis figures are drawn by
+    scripts/report/plot_classification_thesis.py.
+
+    options:
+      -h, --help     show this help message and exit
+      --model MODEL
+      --perms PERMS
     ```
 
 ### `celldform-deformation-regression`

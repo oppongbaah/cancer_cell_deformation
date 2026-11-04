@@ -29,6 +29,7 @@ Outputs in results/classification/<model>/: power.csv, resolution.csv, classify_
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import sys
 from pathlib import Path
 
@@ -38,12 +39,14 @@ from scipy.stats import binom, norm
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT))
+_spec = importlib.util.spec_from_file_location("bench", ROOT / "scripts/classification/benchmark_cells.py")
+_bench = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_bench)
+BENCH_NAMES = _bench.NAMES
 
 ALPHA, POWER, MW_EFFICIENCY = 0.05, 0.80, 0.955
 STEPS, BASE = 50, 10
-NAMES = {"len_par_base": "Baseline length along the beam", "len_perp_base": "Baseline length across",
-         "volume_change": "Volume change", "circularity": "Circularity", "compliance_par": "Compliance along the beam",
-         "compliance_perp": "Compliance across", "orient_spread": "Orientation spread"}
+NAMES = BENCH_NAMES                  # every per-cell feature's report name (benchmark_cells.NAMES)
 
 
 def cells_per_class(d: float) -> float:
