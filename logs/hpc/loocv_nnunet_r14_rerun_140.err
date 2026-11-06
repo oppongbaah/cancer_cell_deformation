@@ -1,0 +1,78 @@
+[celldform] job 140 (loocv_nnunet_r14_rerun) on casev-hpc-lg01 started Tue Oct 27 05:05:56 PM EDT 2026
+[celldform] args: (none)
+Failed to initialize NVML: Driver/library version mismatch
+NVML library version: 580.178
+[celldform] nvidia-smi unavailable (NVML) -- not fatal; checking CUDA through torch
+[celldform] torch 2.14.1+cu126 | cuda True | Tesla V100-PCIE-32GB
+[randswap/experiment_4_loocv/nnunet_r14_rerun] round 14 (nnU-Net fold 13): training with nnUNetTrainer
+
+############################
+INFO: You are using the old nnU-Net default plans. We have updated our recommendations. Please consider using those instead! Read more here: https://github.com/MIC-DKFZ/nnUNet/blob/master/documentation/resenc_presets.md
+############################
+
+using port 46075
+I am local rank 1. 2 GPUs are available. The world size is 2.Setting device to cuda
+
+#######################################################################
+Please cite the following paper when using nnU-Net:
+Isensee, F., Jaeger, P. F., Kohl, S. A., Petersen, J., & Maier-Hein, K. H. (2021). nnU-Net: a self-configuring method for deep learning-based biomedical image segmentation. Nature methods, 18(2), 203-211.
+#######################################################################
+
+worker 1 oversample 1.0
+worker 1 batch_size 1
+Using torch.compile...
+I am local rank 0. 2 GPUs are available. The world size is 2.Setting device to cuda
+
+#######################################################################
+Please cite the following paper when using nnU-Net:
+Isensee, F., Jaeger, P. F., Kohl, S. A., Petersen, J., & Maier-Hein, K. H. (2021). nnU-Net: a self-configuring method for deep learning-based biomedical image segmentation. Nature methods, 18(2), 203-211.
+#######################################################################
+
+worker 0 oversample 0.0
+worker 0 batch_size 1
+2026-10-27 17:06:08.576060: Using torch.compile...
+W1027 17:06:10.833000 1809939 site-packages/torch/multiprocessing/spawn.py:165] Terminating process 1810105 via signal SIGTERM
+Traceback (most recent call last):
+  File "/home/hpcadmin/Desktop/Isaac/thesis/cancer_cell_deformation/scripts/training/train_nnunet_cv.py", line 219, in <module>
+    main()
+  File "/home/hpcadmin/Desktop/Isaac/thesis/cancer_cell_deformation/scripts/training/train_nnunet_cv.py", line 212, in main
+    run_round(k, a.trainer, a.continue_training, a.exp, a.num_gpus)
+  File "/home/hpcadmin/Desktop/Isaac/thesis/cancer_cell_deformation/scripts/training/train_nnunet_cv.py", line 122, in run_round
+    run_training(str(DATASET_ID), CONFIGURATION, str(fold), trainer, PLANS, continue_training=continue_training,
+  File "/home/hpcadmin/.conda/envs/celldform/lib/python3.11/site-packages/nnunetv2/run/run_training.py", line 168, in run_training
+    mp.spawn(run_ddp,
+  File "/home/hpcadmin/.conda/envs/celldform/lib/python3.11/site-packages/torch/multiprocessing/spawn.py", line 340, in spawn
+    return start_processes(fn, args, nprocs, join, daemon, start_method="spawn")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hpcadmin/.conda/envs/celldform/lib/python3.11/site-packages/torch/multiprocessing/spawn.py", line 296, in start_processes
+    while not context.join():
+              ^^^^^^^^^^^^^^
+  File "/home/hpcadmin/.conda/envs/celldform/lib/python3.11/site-packages/torch/multiprocessing/spawn.py", line 211, in join
+    raise ProcessRaisedException(msg, error_index, failed_process.pid)
+torch.multiprocessing.spawn.ProcessRaisedException: 
+
+-- Process 0 terminated with the following error:
+Traceback (most recent call last):
+  File "/home/hpcadmin/.conda/envs/celldform/lib/python3.11/site-packages/torch/multiprocessing/spawn.py", line 87, in _wrap
+    fn(i, *args)
+  File "/home/hpcadmin/.conda/envs/celldform/lib/python3.11/site-packages/nnunetv2/run/run_training.py", line 122, in run_ddp
+    nnunet_trainer.run_training()
+  File "/home/hpcadmin/.conda/envs/celldform/lib/python3.11/site-packages/nnunetv2/training/nnUNetTrainer/nnUNetTrainer.py", line 1418, in run_training
+    self.on_train_start()
+  File "/home/hpcadmin/.conda/envs/celldform/lib/python3.11/site-packages/nnunetv2/training/nnUNetTrainer/nnUNetTrainer.py", line 942, in on_train_start
+    self.initialize()
+  File "/home/hpcadmin/.conda/envs/celldform/lib/python3.11/site-packages/nnunetv2/training/nnUNetTrainer/nnUNetTrainer.py", line 253, in initialize
+    self.network = DDP(self.network, device_ids=[self.local_rank])
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hpcadmin/.conda/envs/celldform/lib/python3.11/site-packages/torch/nn/parallel/distributed.py", line 1064, in __init__
+    _verify_param_shape_across_processes(self.process_group, parameters)
+  File "/home/hpcadmin/.conda/envs/celldform/lib/python3.11/site-packages/torch/distributed/utils.py", line 299, in _verify_param_shape_across_processes
+    return dist._verify_params_across_processes(process_group, tensors, logger)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+torch.distributed.DistBackendError: NCCL error in: /__w/pytorch/pytorch/torch/csrc/distributed/c10d/NCCLUtils.cpp:92, unhandled system error (run with NCCL_DEBUG=INFO for details), NCCL version 2.29.3
+ncclSystemError: System call (e.g. socket, malloc) or external library call failed or device error. 
+Last error:
+nvmlInit_v2() failed: Driver/library version mismatch
+
+[celldform] job 140 finished (exit 1) Tue Oct 27 05:06:11 PM EDT 2026
+[celldform] job FAILED (exit 1) at Tue Oct 27 05:06:11 PM EDT 2026 -- full job log (stdout + stderr): logs/hpc/loocv_nnunet_r14_rerun_140.err
