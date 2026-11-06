@@ -2,24 +2,16 @@
 """
 high-1, the cell drawn largest against its hand masks (feature-extraction report).
 
-Two panels, both from disk:
-  (a) high-1 and high-9 -- the two smallest cells after high-10, ~700 px each -- at the same laser steps:
-      each cell's raw frame (labelled with its laser step), then the hand-drawn mask (green) and the outline of the mask of the
-      model that never saw the cell (white), on black, with every pixel where they differ in yellow, the
-      pixel counts and the size ratio. Cropped around the hand mask's centre.
-  (b) every cell's mask size relative to its hand mask, for every model that never saw it (the four
-      cross-validated nnU-Net runs' eval logs: predicted / hand-drawn trapped-cell pixels over the cell's
-      20 hand-masked frames), against the cell-validation limits (configs/analysis/features.yaml). A model error that changes
-      with the run would scatter; a bias that repeats in every run belongs to the cell. nnU-Net runs only:
-      the U-Net draws high-1 at about its hand size (0.89x, 0.94x), but scores worse on most other cells,
-      so it is not the feature model (said in the report text, not drawn).
+From disk: high-1 and high-9 -- the two smallest cells after high-10, ~700 px each -- at the same laser steps:
+each cell's raw frame (labelled with its laser step), then the hand-drawn mask (green) and the outline of the mask of
+the model that never saw the cell (white), on black, with every pixel where they differ in yellow, the pixel counts and
+the size ratio. Cropped around the hand mask's centre. (The every-run size-ratio panel went with the 5-fold report.)
 
-    python scripts/report/plot_high1_exclusion.py --model nnunet100_5fold --output ../masters_thesis/images/high1_exclusion.png
+    python scripts/report/plot_high1_exclusion.py --model nnunet1000_loocv --output ../masters_thesis/images/nnunet1000_loocv/high1_exclusion.png
 """
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 from pathlib import Path
 
@@ -29,7 +21,6 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
 
 REPO = Path(__file__).resolve().parent.parent.parent
@@ -38,11 +29,6 @@ from celldform.features.quality import select_trapped_region  # noqa: E402
 from celldform.features.segmenters import DATASET_5FOLD, five_fold_records  # noqa: E402
 
 CELL, REF = "high_cell1", "high_cell9"
-RUNS = {   # label -> experiment whose eval log scores every cell with the model that never saw it
-    "nnU-Net 100 ep, 5-fold": ("randswap/experiment_1_nnunet", "o"),
-    "nnU-Net 1000 ep, 5-fold": ("randswap/experiment_1b_nnunet_1000ep", "s"),
-    "nnU-Net 1000 ep, leave-one-out": ("randswap/experiment_4_loocv/nnunet", "D"),
-}
 from celldform.analysis_config import load as load_config  # noqa: E402
 LIMITS = tuple(load_config("features").cell_validation.size_bias_range)   # cell validation, configs/analysis/features.yaml
 TRUTH, DIFF, PRED = (0.18, 0.80, 0.30), (1.0, 0.82, 0.12), "#ffffff"   # green ground truth, yellow difference, white prediction
@@ -52,17 +38,6 @@ INK, INK2, GRID = "#0b0b0b", "#52514e", "#e6e5e1"
 
 def short(c: str) -> str:
     return c.replace("_cell", "-")
-
-
-def size_ratios() -> pd.DataFrame:
-    rows = {}
-    for label, (exp, _) in RUNS.items():
-        for line in (REPO / "results" / exp / "eval_log_native.jsonl").read_text().splitlines():
-            r = json.loads(line)
-            if r["filter"]:
-                m = r["metrics"]["1"]
-                rows.setdefault(label, {})[r["filter"]] = (m["tp"] + m["fp"]) / (m["tp"] + m["fn"])
-    return pd.DataFrame(rows)
 
 
 def tile(model: str, stem: str, gt_path: Path, trap: tuple[float, float], half: int = 30) -> dict:
@@ -164,17 +139,14 @@ def tile_figure(cell: str, cols: list, output: Path) -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("--model", default="nnunet100_5fold", help="run whose saved test-frame masks panel (a) draws")
+    ap.add_argument("--model", default="nnunet1000_loocv", help="run whose saved test-frame masks panel (a) draws")
     ap.add_argument("--output", type=Path, required=True)
-    ap.add_argument("--sizes-output", type=Path, required=True, help="panel (b): every cell's size ratio, every run")
     ap.add_argument("--table-output", type=Path, help="LaTeX table of high-1's pixel counts")
     ap.add_argument("--ref-output", type=Path, help="the same tile figure for the reference cell (high-9)")
     ap.add_argument("--ref-table-output", type=Path, help="LaTeX table of the reference cell's pixel counts")
     a = ap.parse_args()
     gt = {s: REPO / m for r in five_fold_records().values() for s, m in r["test_masks_native"].items()}
     chk = pd.read_csv(REPO / "results/features" / a.model / "checks_test.csv")
-    ratios = size_ratios()
-    cells = sorted(ratios.index, key=lambda c: (not c.startswith("high"), int(c.split("cell")[1])))
 
     n = 5
     picks = chk[chk.cell == CELL].sort_values("laser_step")
@@ -192,49 +164,6 @@ def main() -> None:
         write_table(CELL, cols1, a.table_output)
     if a.ref_table_output:
         write_table(REF, cols9, a.ref_table_output)
-
-    fig, bx = plt.subplots(figsize=(7.4, 2.5), facecolor="white")
-    bx.axhspan(*LIMITS, color="#e8f3ea", zorder=0)
-    bx.axhline(1, color="#1b7a3a", lw=0.8, ls=(0, (4, 3)), zorder=1)
-    bx.text(len(cells) - 0.45, LIMITS[1] + 0.012, "cell-validation limits", ha="right", va="bottom", fontsize=7,
-            color="#1b7a3a")
-    offs = np.linspace(-0.24, 0.24, len(RUNS))
-    for (label, (_, mk)), dx in zip(RUNS.items(), offs):
-        for j, c in enumerate(cells):
-            v = ratios.loc[c, label]
-            col = HIGH if c.startswith("high") else LOW
-            bx.scatter(j + dx, v, marker=mk, s=22, facecolor=col if c == CELL else "white", edgecolor=col,
-                       lw=1.0, zorder=3)
-    j = cells.index(CELL)
-    lo, hi = ratios.loc[CELL].min(), ratios.loc[CELL].max()
-    bx.annotate(f"{short(CELL)}: {lo:.2f}–{hi:.2f}×, outside the limits in every run", xy=(j + 0.3, (lo + hi) / 2),
-                xytext=(j + 1.6, hi + 0.02), fontsize=7.6, color=INK, va="center",
-                arrowprops=dict(arrowstyle="-", color=INK2, lw=0.7))
-    k = cells.index("high_cell10")
-    v = ratios.loc["high_cell10"].max()
-    bx.annotate("high-10, leave-one-out round 14: its untrapped neighbour\nalso marked; 1.01× once the trapped region is selected", xy=(k + 0.12, v), xytext=(k + 0.7, v),
-                fontsize=6.8, color=INK2, va="center", arrowprops=dict(arrowstyle="-", color=INK2, lw=0.6))
-    bx.set_xticks(range(len(cells)))
-    bx.set_xticklabels([short(c) for c in cells], fontsize=7.2, rotation=0)
-    for t, c in zip(bx.get_xticklabels(), cells):
-        t.set_color(HIGH if c.startswith("high") else LOW)
-    bx.set_xlim(-0.6, len(cells) - 0.4)
-    bx.set_ylim(0.8, max(1.6, ratios.max().max() + 0.06))
-    bx.set_ylabel("predicted / ground truth", fontsize=7.8, color=INK2)
-    bx.set_title("Every cell, every model that never saw it", fontsize=8.8, color=INK, loc="left", pad=4)
-    bx.legend(handles=[Line2D([], [], ls="", marker=mk, mfc="white", mec=INK2, label=label)
-                       for label, (_, mk) in RUNS.items()], loc="upper center", bbox_to_anchor=(0.5, -0.13), fontsize=6.8, frameon=False, ncol=3,
-              handletextpad=0.2, columnspacing=1.0)
-    bx.tick_params(colors=INK2, labelsize=7.2, length=0)
-    for sp in ("top", "right"):
-        bx.spines[sp].set_visible(False)
-    for sp in ("left", "bottom"):
-        bx.spines[sp].set_color(GRID)
-    bx.grid(axis="y", color=GRID, lw=0.7)
-    bx.set_axisbelow(True)
-    fig.savefig(a.sizes_output, dpi=200, bbox_inches="tight", facecolor="white")
-    plt.close(fig)
-    print(f"-> {a.sizes_output}")
 
 
 if __name__ == "__main__":

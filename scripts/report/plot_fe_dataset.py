@@ -29,7 +29,7 @@ nnunet1000_5fold, nnunet1000_loocv). Read from disk: the run's round plan (segme
 extraction tables (results/features/<model>/{features_frames,checks_test}.csv). No scores are drawn:
 the figures describe the data, not a run's result.
 
-    python scripts/report/plot_fe_dataset.py --model nnunet100_5fold --output ../masters_thesis/images/fe_dataset.png \
+    python scripts/report/plot_fe_dataset.py --model nnunet1000_loocv --output ../masters_thesis/images/fe_dataset.png \
         --rounds-output ../masters_thesis/images/fe_rounds.png
 """
 from __future__ import annotations
@@ -372,7 +372,7 @@ def plot_overview(model: str, feat: pd.DataFrame, chk: pd.DataFrame, output: Pat
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("--model", choices=list(MODELS), default="nnunet100_5fold")
+    ap.add_argument("--model", choices=list(MODELS), default="nnunet1000_loocv")
     ap.add_argument("--output", type=Path, required=True)
     ap.add_argument("--rounds-output", type=Path)
     ap.add_argument("--table-output", type=Path)

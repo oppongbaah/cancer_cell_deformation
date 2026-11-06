@@ -115,6 +115,7 @@ SCRIPT_COMMANDS: dict[str, dict[str, str]] = {
         "sequence-net":         "classification/sequence_net.py",
         "feature-ranking":      "classification/feature_ranking.py",
         "combine-models":       "classification/combine_models.py",
+        "pca-models":           "classification/pca_models.py",
     },
     "biomechanics": {
         "deformation-regression": "biomechanics/deformation_regression.py",

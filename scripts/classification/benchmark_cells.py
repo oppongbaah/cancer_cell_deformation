@@ -1,7 +1,7 @@
 """
 Per-cell HER2 benchmark: seven classical classifiers on the per-cell features, leave-one-cell-out.
 
-    python scripts/classification/benchmark_cells.py --model nnunet100_5fold [--perms 1000]
+    python scripts/classification/benchmark_cells.py --model nnunet1000_loocv [--perms 1000]
 
 One row per usable cell (features_cells.csv, usable == True), label high = 1. Every model sees the same
 14 folds; scaling and missing-value filling are fitted inside each fold. Hyperparameters are FIXED in
@@ -13,9 +13,10 @@ Feature sets
                               on the hand-masked frames: Spearman rho across the cells >= 0.8 (where testable)
                 2. split-half the per-cell value from the even laser steps against the same from the odd ones,
                               on the feature frames: Spearman rho >= 0.8
-                3. redundancy of features that pass and move together across cells (|rho| > 0.9), only the
-                              highest-ranked is kept
-              ranked by the weaker of the two rho; at most 7 (two cells per feature). The HER2 labels are never
+                3. groups     the candidates are grouped by the correlation matrix (average-linkage clustering on
+                              1 - |Spearman rho| across the cells, cut at |rho| = 0.7, as AutoSpearman); from each
+                              group only its highest-ranked passing feature is kept
+              ranked by the weaker of the two rho; every group's best passing feature is kept (no cap). The HER2 labels are never
               used, so the selection cannot leak the held-out cell.  -> feature_selection.csv / .tex
     all       every per-cell shape and deformation feature, no selection                       (sensitivity)
 Baselines
@@ -73,10 +74,10 @@ from celldform.utils.runlog import start_run_log  # noqa: E402
 def configure(cfg) -> None:
     """Settings from configs/analysis/classifiers.yaml (--config for another file). The selection rules were
     fixed on 2026-10-28, before the selected-set run."""
-    global CFG, SEED, RHO_MIN, REDUNDANT, MAX_SELECTED, MIN_CELLS
+    global CFG, SEED, RHO_MIN, GROUP_RHO, MAX_SELECTED, MIN_CELLS
     fs = cfg.feature_selection
     CFG, SEED = cfg, cfg.seed
-    RHO_MIN, REDUNDANT, MAX_SELECTED, MIN_CELLS = fs.rho_min, fs.redundant_rho, fs.max_selected, fs.min_cells
+    RHO_MIN, GROUP_RHO, MAX_SELECTED, MIN_CELLS = fs.rho_min, fs.group_rho, fs.max_selected, fs.min_cells
 
 
 configure(load_config("classifiers"))
@@ -183,6 +184,19 @@ def half_values(frames: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows).T
 
 
+def groups(cells: pd.DataFrame, feats: list[str]) -> list[int]:
+    """Group label per feature: average-linkage clustering of the Spearman correlation matrix across the cells
+    (distance 1 - |rho|), cut at |rho| = GROUP_RHO. A pair with fewer than MIN_CELLS shared values counts as
+    uncorrelated. GROUP_RHO None: every feature its own group."""
+    from scipy.cluster.hierarchy import fcluster, linkage
+    from scipy.spatial.distance import squareform
+    if GROUP_RHO is None:
+        return list(range(1, len(feats) + 1))
+    v = cells.set_index("cell")
+    C = np.array([[1.0 if a == b else abs(np.nan_to_num(spearman(v[a], v[b]))) for b in feats] for a in feats])
+    return fcluster(linkage(squareform(1 - C, checks=False), "average"), 1 - GROUP_RHO, "distance").tolist()
+
+
 def select_features(model: str, cells: pd.DataFrame) -> pd.DataFrame:
     """The label-free selection (module docstring): one row per candidate feature with both checks, the
     redundancy decision, the rank and whether it is selected."""
@@ -211,17 +225,17 @@ def select_features(model: str, cells: pd.DataFrame) -> pd.DataFrame:
                           t.split_half_rho)
     t["passes"] = t.score >= RHO_MIN
     t = t.sort_values("score", ascending=False, na_position="last").reset_index(drop=True)
-    # 3. redundancy among the passing features, values over the usable cells
-    kept, t["redundant_with"] = [], ""
-    for i, r in t[t.passes].iterrows():
-        twin = next((k for k in kept if abs(spearman(cells.set_index("cell")[r.feature],
-                                                     cells.set_index("cell")[k])) > REDUNDANT), None)
+    # 3. groups of the correlation matrix, over every candidate with values in enough cells
+    t["group"], t["redundant_with"] = groups(cells, t.feature.tolist()), ""
+    kept = []
+    for i, r in t[t.passes].iterrows():          # t is in rank order: the first passing member of a group is kept
+        twin = next((k for k in kept if GROUP_RHO is not None and t.set_index("feature").group[k] == r.group), None)
         if twin:
             t.loc[i, "redundant_with"] = twin
         else:
             kept.append(r.feature)
     t["rank"] = t.feature.map({f: i + 1 for i, f in enumerate(kept)})
-    t["selected"] = t.feature.isin(kept[:MAX_SELECTED])
+    t["selected"] = t.feature.isin(kept if MAX_SELECTED is None else kept[:MAX_SELECTED])
     return t
 
 
@@ -232,7 +246,7 @@ def selection_latex(t: pd.DataFrame, out: Path) -> None:
         if r.selected:
             verdict = r"\textcolor{tpcol}{\textbf{selected}} (%d)" % r["rank"]
         elif r.redundant_with:
-            verdict = r"redundant with %s" % NAMES[r.redundant_with]
+            verdict = r"same group as %s" % NAMES[r.redundant_with]
         elif r.passes:
             verdict = "passes, beyond the 7"
         else:
@@ -357,17 +371,17 @@ def save_final(model: str, cells: pd.DataFrame, sets: dict[str, list[str]], tabl
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--model", default="nnunet100_5fold", help="feature run in results/features/")
+    ap.add_argument("--model", default="nnunet1000_loocv", help="feature run in results/features/")
     ap.add_argument("--config", type=Path, default=None,
                     help="settings file (default configs/analysis/classifiers.yaml)")
     ap.add_argument("--perms", type=int, default=None, help="label shuffles for the permutation p (0 = skip; "
                                                             "default: the config's)")
     ap.add_argument("--out", type=Path, default=None, help="output folder (default results/classification/<model>)")
     ap.add_argument("--replot", action="store_true", help="redraw the figure and table from the saved CSVs only")
-    ap.add_argument("--img", type=Path, default=None, help="also write the figure here (report images folder)")
-    ap.add_argument("--tables", type=Path, default=None, help="also write the LaTeX table here")
     ap.add_argument("--only", nargs="+", default=None,
                     help="run only these classifiers (config names) and merge them into the saved results")
+    ap.add_argument("--selection-only", action="store_true",
+                    help="only run the feature selection and write feature_selection.csv (no classifiers)")
     ap.add_argument("--final", action="store_true",
                     help="only fit the final models on all cells and save them (uses the saved selection and scores)")
     a = ap.parse_args()
@@ -391,7 +405,7 @@ def main() -> None:
     if a.replot:
         table = pd.read_csv(out / "benchmark_cells.csv")
         sel_path = out / "feature_selection.csv"
-        publish(table, pd.read_csv(out / "scores_cells.csv"), cells, out, a.img, a.tables,
+        publish(table, pd.read_csv(out / "scores_cells.csv"), cells, out,
                 pd.read_csv(sel_path).fillna({"redundant_with": ""}) if sel_path.exists() else None)
         return
     y = (cells.her2 == "high").astype(int).to_numpy()
@@ -400,10 +414,12 @@ def main() -> None:
         warnings.simplefilter("ignore")
         selection = select_features(a.model, cells)
     selection.to_csv(out / "feature_selection.csv", index=False)
-    print("\nFEATURE SELECTION (label-free):")
+    print("\nFEATURE SELECTION (without the labels):")
     print(selection.to_string(index=False, float_format=lambda v: f"{v:.2f}"))
     chosen = selection[selection.selected].sort_values("rank").feature.tolist()
     print(f"selected: {', '.join(chosen)}\n")
+    if a.selection_only:
+        return
     sets = {"selected": chosen, "all": SHAPE + DEFORMATION}
     runs = [(f, name, est, sets[f]) for f in sets for name, est in models().items()]
     runs += [("size", "Logistic regression", baseline_lr(), ["len_par_base"]),
@@ -442,26 +458,20 @@ def main() -> None:
         table, scores = merged(table, out / "benchmark_cells.csv"), merged(scores, out / "scores_cells.csv")
     table.to_csv(out / "benchmark_cells.csv", index=False)
     scores.to_csv(out / "scores_cells.csv", index=False)
-    publish(table, scores, cells, out, a.img, a.tables, selection)
+    publish(table, scores, cells, out, selection)
     if not a.out:                        # a run into a scratch folder keeps no models
         save_final(a.model, cells, sets, table, a.only)
 
 
-def publish(table: pd.DataFrame, scores: pd.DataFrame, cells: pd.DataFrame, out: Path, img: Path | None,
-            tables: Path | None, selection: pd.DataFrame | None = None) -> None:
+def publish(table: pd.DataFrame, scores: pd.DataFrame, cells: pd.DataFrame, out: Path,
+            selection: pd.DataFrame | None = None) -> None:
     table = table[table.features != "majority"]          # dropped 2026-10-29 (older runs still carry the row)
     scores = scores[scores.features != "majority"]
     latex(table, len(cells), out / "benchmark_cells.tex")
     if selection is not None:
-        selection_latex(selection, out / "feature_selection.tex")
-        if tables:
-            selection_latex(selection, tables / "feature_selection.tex")
+        selection_latex(selection, out / "feature_selection.tex")   # results only: the report it fed is retired
     plot(scores, table, cells, out / "benchmark_cells.png")
-    if tables:
-        latex(table, len(cells), tables / "classify_cells.tex")
-    if img:
-        plot(scores, table, cells, img / "classify_cells.png")
-    print(f"wrote {out}" + (f", {img}" if img else "") + (f", {tables}" if tables else ""))
+    print(f"wrote {out}")
 
 
 if __name__ == "__main__":

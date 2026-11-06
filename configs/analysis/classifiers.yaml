@@ -5,10 +5,11 @@ seed: 0
 permutations: 1000          # label shuffles for the permutation p-value (0 = skip; ~50 min at 1000)
 n_jobs: 8                   # parallel workers of the permutation tests (-1 = every core: 32 ran out of memory)
 
-feature_selection:          # label-free; run once on all cells before any classifier
+feature_selection:          # without the HER2 labels; run once on all cells before any classifier
   rho_min: 0.8              # minimum Spearman rho: agreement with the hand masks AND split-half reliability
-  redundant_rho: 0.9        # of two passing features with |rho| above this, only the higher-ranked is kept
-  max_selected: 7           # at most this many (about two cells per feature)
+  group_rho: 0.7            # correlation-matrix groups: average linkage on 1-|rho|, cut at |rho| = 0.7 (AutoSpearman,
+                            # Jiarpakdee et al. 2018); one feature per group. Was redundant_rho 0.9 (same 4 selected)
+  max_selected: null        # no cap: every group's best passing feature (was 7; never binding -- 4 pass)
   min_cells: 12             # a feature must have a value in at least this many cells to be tested
 
 # The classifiers run, in this order, with their settings (scikit-learn keyword arguments). Remove an entry to

@@ -15,7 +15,7 @@ Instance-level logistic regression (fitted here)
 
 Combinations: the equal-weight mean of the members' held-out P(high) -- no weights are fitted, so nothing is learnt
 from the test cell and a combination needs no extra validation. Called high at >= 0.5. Members: the CNN (fine-tuned,
-cell crop, mean of 3 seeds), the eight classifiers on the label-free selection, LR and the ANN on all 29, the nested feature-ranking runs, the instance
+cell crop, mean of 3 seeds), the eight classifiers on the selected features, LR and the ANN on all 29, the nested feature-ranking runs, the instance
 LRs. A combination of classical models only has a permutation p (every member rerun under the same shuffle); one with
 the CNN has none (one shuffle = 45 CNN trainings) -- it has a 2 000-resample cell-bootstrap interval on the AUC.
 
@@ -106,7 +106,7 @@ def main() -> None:
     # the other runs' held-out P(high)
     sel = pd.read_csv(res / "feature_selection.csv")
     chosen = sel[sel.selected].sort_values("rank").feature.tolist()
-    LF = f"label-free {len(chosen)}"
+    LF = f"selected {len(chosen)}"
     sc = pd.read_csv(res / "scores_cells.csv")
     for f, label in (("selected", LF), ("all", "all 29"), ("size", None), ("image", None)):
         for _, r in sc[sc.features == f].iterrows():

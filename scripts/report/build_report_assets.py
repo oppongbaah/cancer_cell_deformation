@@ -80,7 +80,7 @@ STRIP_COLORS = ["--gt-color", "0,200,0", "--pred-color", "170,95,40",
                 "--overlap-color", "220,220,0"]
 
 
-def jobs(img: Path, tab: Path, feature_model: str = "nnunet100_5fold") -> dict[str, list[str]]:
+def jobs(img: Path, tab: Path, feature_model: str = "nnunet1000_loocv") -> dict[str, list[str]]:
     """Assets for progress_report_10_1_26.tex.
 
     The 2026-09-24 report is closed too; pool_flow_9_24.png stays as presented (it
@@ -91,9 +91,10 @@ def jobs(img: Path, tab: Path, feature_model: str = "nnunet100_5fold") -> dict[s
     produces a result.
     """
     CELLS = ["high_cell9=high-9", "high_cell10=high-10", "low_cell6=low-6", "low_cell5=low-5"]
-    # The feature-extraction and classification assets of any other segmentation run go to a folder of their
-    # own (images/<model>/, tables/<model>/), so the 5-fold reports keep theirs (2026-10-28, LOOCV FE report).
-    fimg, ftab = (img, tab) if feature_model == "nnunet100_5fold" else (img / feature_model, tab / feature_model)
+    # Feature-extraction and classification assets go to a folder of the segmentation run's own
+    # (images/<model>/, tables/<model>/). The 5-fold reports, which used the top-level folders, were deleted
+    # 2026-11-04 along with their assets; only the leave-one-out run is built.
+    fimg, ftab = img / feature_model, tab / feature_model
     return {
         # ── Dataset Organization ────────────────────────────────────────────
         "pools": ["scripts/report/plot_pool_flow.py", "--output", str(img / "pool_flow_10_1.png")],
@@ -127,15 +128,11 @@ def jobs(img: Path, tab: Path, feature_model: str = "nnunet100_5fold") -> dict[s
                              "--cross-output", str(ftab / "frame_checks_cross.tex")],
         "high1-exclusion": ["scripts/report/plot_high1_exclusion.py", "--model", feature_model,
                             "--output", str(fimg / "high1_exclusion.png"),
-                            "--sizes-output", str(fimg / "high1_sizes.png"), "--table-output", str(ftab / "high1_steps.tex"),
+                            "--table-output", str(ftab / "high1_steps.tex"),
                             "--ref-output", str(fimg / "high9_segmentation.png"),
                             "--ref-table-output", str(ftab / "high9_steps.tex")],
         "features": ["scripts/report/plot_features.py", "--model", feature_model, "--out", str(fimg),
                      "--tables", str(ftab)],
-        "classify-cells": ["scripts/classification/benchmark_cells.py", "--model", feature_model, "--replot",
-                           "--img", str(fimg), "--tables", str(ftab)],
-        "classify-cnn": ["scripts/classification/frames_cnn.py", "report", "--model", feature_model,
-                         "--img", str(fimg), "--tables", str(ftab)],
         "classify-power": ["scripts/classification/power_resolution.py", "--model", feature_model,
                            "--tables", str(ftab)],
         "classify-thesis": ["scripts/report/plot_classification_thesis.py", "--model", feature_model,
@@ -181,8 +178,7 @@ def main() -> None:
                         "and delete the temp files")
     p.add_argument("--tex", default="progress_report_10_8_26.tex",
                    help="Report .tex to compile with --compile")
-    p.add_argument("--feature-model", default="nnunet100_5fold",
-                   choices=["nnunet100_5fold", "nnunet1000_5fold", "nnunet1000_loocv"],
+    p.add_argument("--feature-model", default="nnunet1000_loocv", choices=["nnunet1000_loocv"],
                    help="Segmentation run the feature-extraction figures and tables are built from "
                         "(jobs fe-dataset and features; see celldform/features/segmenters.py)")
     args = p.parse_args()
@@ -205,9 +201,8 @@ def main() -> None:
 
     img.mkdir(parents=True, exist_ok=True)
     tab.mkdir(parents=True, exist_ok=True)
-    if args.feature_model != "nnunet100_5fold":
-        (img / args.feature_model).mkdir(exist_ok=True)
-        (tab / args.feature_model).mkdir(exist_ok=True)
+    (img / args.feature_model).mkdir(exist_ok=True)
+    (tab / args.feature_model).mkdir(exist_ok=True)
 
     failed = []
     for i, name in enumerate(names, 1):

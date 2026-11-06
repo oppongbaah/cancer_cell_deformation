@@ -1,0 +1,51 @@
+[run log] logs/classification/nnunet1000_loocv/pca_models_20261105-021920.log
+[run log] command: python scripts/classification/pca_models.py
+[run log] started 2026-11-05 02:19:20 on ISAAC2024, git 3af6c85 (uncommitted changes), cwd /home/mega/work/thesis/cancer_cell_deformation
+LR, all 29, raw                    12/15 F1 0.82/0.77 AUC 0.89 p 0.025 counted 0.184  high-2 high-4 low-6
+Step LR + LR, all 29, raw          12/15 F1 0.82/0.77 AUC 0.91 p 0.030 counted 0.184  high-2 high-4 low-6
+LR, all 29, PC1                    10/15 F1 0.71/0.62 AUC 0.76 p 0.292 counted 0.695  high-1 high-2 high-3 low-5 low-6
+Step LR + LR, all 29, PC1          12/15 F1 0.84/0.73 AUC 0.81 p 0.047 counted 0.232  high-2 low-5 low-6
+LR, all 29, PC1-2                  11/15 F1 0.78/0.67 AUC 0.76 p 0.105 counted 0.454  high-2 high-4 low-5 low-6
+Step LR + LR, all 29, PC1-2        11/15 F1 0.78/0.67 AUC 0.85 p 0.111 counted 0.454  high-2 high-4 low-5 low-6
+LR, all 29, PC1-3                  11/15 F1 0.78/0.67 AUC 0.70 p 0.092 counted 0.454  high-1 high-2 low-5 low-6
+Step LR + LR, all 29, PC1-3        10/15 F1 0.71/0.62 AUC 0.85 p 0.170 counted 0.695  high-1 high-2 high-4 low-5 low-6
+LR, all 29, PC1-4                  10/15 F1 0.71/0.62 AUC 0.76 p 0.151 counted 0.695  high-1 high-2 high-4 low-5 low-6
+Step LR + LR, all 29, PC1-4        10/15 F1 0.71/0.62 AUC 0.85 p 0.160 counted 0.695  high-1 high-2 high-4 low-5 low-6
+LR, all 29, PC1-5                  11/15 F1 0.78/0.67 AUC 0.74 p 0.074 counted 0.454  high-1 high-2 low-5 low-6
+Step LR + LR, all 29, PC1-5        11/15 F1 0.78/0.67 AUC 0.83 p 0.090 counted 0.454  high-1 high-2 low-5 low-6
+LR, all 29, PC1-6                  11/15 F1 0.78/0.67 AUC 0.78 p 0.070 counted 0.454  high-2 high-3 low-5 low-6
+Step LR + LR, all 29, PC1-6        12/15 F1 0.84/0.73 AUC 0.85 p 0.044 counted 0.232  high-2 low-5 low-6
+LR, reliable 9, raw                11/15 F1 0.78/0.67 AUC 0.80 p 0.106 counted 0.454  high-2 high-4 low-3 low-6
+Step LR + LR, reliable 9, raw      12/15 F1 0.82/0.77 AUC 0.89 p 0.028 counted 0.184  high-2 high-4 low-6
+LR, reliable 9, PC1                12/15 F1 0.82/0.77 AUC 0.83 p 0.064 counted 0.184  high-2 high-4 low-6
+Step LR + LR, reliable 9, PC1      11/15 F1 0.78/0.67 AUC 0.89 p 0.112 counted 0.454  high-2 high-4 low-5 low-6
+LR, reliable 9, PC1-2              12/15 F1 0.82/0.77 AUC 0.85 p 0.031 counted 0.184  high-2 high-4 low-6
+Step LR + LR, reliable 9, PC1-2    11/15 F1 0.78/0.67 AUC 0.87 p 0.104 counted 0.454  high-2 high-4 low-5 low-6
+LR, reliable 9, PC1-3              11/15 F1 0.78/0.67 AUC 0.83 p 0.080 counted 0.454  high-2 high-4 low-3 low-6
+Step LR + LR, reliable 9, PC1-3    12/15 F1 0.82/0.77 AUC 0.91 p 0.029 counted 0.184  high-2 high-4 low-6
+LR, reliable 9, PC1-4              11/15 F1 0.78/0.67 AUC 0.80 p 0.103 counted 0.454  high-2 high-4 low-3 low-6
+Step LR + LR, reliable 9, PC1-4    12/15 F1 0.82/0.77 AUC 0.89 p 0.030 counted 0.184  high-2 high-4 low-6
+LR, reliable 9, PC1-5              11/15 F1 0.78/0.67 AUC 0.80 p 0.100 counted 0.454  high-2 high-4 low-3 low-6
+Step LR + LR, reliable 9, PC1-5    12/15 F1 0.82/0.77 AUC 0.89 p 0.029 counted 0.184  high-2 high-4 low-6
+LR, reliable 9, PC1-6              11/15 F1 0.78/0.67 AUC 0.80 p 0.104 counted 0.454  high-2 high-4 low-3 low-6
+Step LR + LR, reliable 9, PC1-6    12/15 F1 0.82/0.77 AUC 0.89 p 0.029 counted 0.184  high-2 high-4 low-6
+LR, selected 4, raw                12/15 F1 0.82/0.77 AUC 0.81 p 0.031 counted 0.184  high-2 high-4 low-3
+Step LR + LR, selected 4, raw      13/15 F1 0.88/0.86 AUC 0.89 p 0.007 counted 0.027  high-2 high-4
+LR, selected 4, PC1                11/15 F1 0.75/0.71 AUC 0.81 p 0.070 counted 0.346  high-1 high-2 high-3 low-3
+Step LR + LR, selected 4, PC1      14/15 F1 0.94/0.92 AUC 0.94 p 0.004 counted 0.011  high-2
+LR, selected 4, PC1-2              12/15 F1 0.82/0.77 AUC 0.85 p 0.019 counted 0.184  high-2 high-4 low-3
+Step LR + LR, selected 4, PC1-2    13/15 F1 0.88/0.86 AUC 0.91 p 0.004 counted 0.027  high-2 high-4
+LR, selected 4, PC1-3              11/15 F1 0.75/0.71 AUC 0.80 p 0.054 counted 0.346  high-2 high-4 high-8 low-3
+Step LR + LR, selected 4, PC1-3    13/15 F1 0.88/0.86 AUC 0.89 p 0.005 counted 0.027  high-2 high-4
+                        model    C  correct      auc                    missed
+Step LR + LR, selected 4, PC1  0.1       11 0.907407 high-2 high-4 low-5 low-6
+Step LR + LR, selected 4, raw  0.1       11 0.907407 high-2 high-4 low-5 low-6
+Step LR + LR, selected 4, PC1  0.3       12 0.944444       high-2 high-4 low-6
+Step LR + LR, selected 4, raw  0.3       11 0.888889 high-2 high-4 low-5 low-6
+Step LR + LR, selected 4, PC1  1.0       14 0.944444                    high-2
+Step LR + LR, selected 4, raw  1.0       13 0.888889             high-2 high-4
+Step LR + LR, selected 4, PC1  3.0       13 0.925926             high-1 high-2
+Step LR + LR, selected 4, raw  3.0       13 0.870370             high-2 high-4
+Step LR + LR, selected 4, PC1 10.0       13 0.907407             high-1 high-2
+Step LR + LR, selected 4, raw 10.0       11 0.833333 high-2 high-4 low-3 low-6
+[run log] ended 2026-11-05 02:27:44

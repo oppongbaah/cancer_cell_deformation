@@ -133,6 +133,7 @@ command, a command without a script, or a script without an argument parser fail
 | [`celldform-sequence-net`](#celldform-sequence-net) | Sequence networks on the deformation curves: can HER2 be told from HOW a cell deforms over the laser ramp? |
 | [`celldform-feature-ranking`](#celldform-feature-ranking) | Feature rankings x k x classifiers, best-of-grid and nested choice, with permutation tests: does choosing features with the labels help? |
 | [`celldform-combine-models`](#celldform-combine-models) | Frame- and step-level logistic regression and the soft-voting ensembles (equal-weight mean of P(high)), with permutation tests. |
+| [`celldform-pca-models`](#celldform-pca-models) | PCA in place of feature selection: does compressing the features beat the selected 4? |
 | [`celldform-deformation-regression`](#celldform-deformation-regression) | Deformation regression: does the strain grow with the laser power, and differently for high and low HER2 cells? |
 | [`celldform-rate-of-deformation`](#celldform-rate-of-deformation) | Rate of deformation (RoD) per cell: measured over the full ramp, in real time, and predicted early. |
 
@@ -1360,6 +1361,7 @@ celldform-build-report-assets --dry-run          # print commands only
     usage: celldform-build-report-assets [-h] [--report-root REPORT_ROOT]
                                   [--only ONLY [ONLY ...]] [--list] [--dry-run]
                                   [--python PYTHON] [--compile] [--tex TEX]
+                                  [--feature-model {nnunet1000_loocv}]
 
     Rebuild every report figure and table
 
@@ -1374,6 +1376,10 @@ celldform-build-report-assets --dry-run          # print commands only
       --compile             After building assets, run pdflatex the required
                             number of times and delete the temp files
       --tex TEX             Report .tex to compile with --compile
+      --feature-model {nnunet1000_loocv}
+                            Segmentation run the feature-extraction figures and
+                            tables are built from (jobs fe-dataset and features;
+                            see celldform/features/segmenters.py)
     ```
 
 ---
@@ -2093,20 +2099,17 @@ Script: `scripts/report/plot_high1_exclusion.py`
 ??? note "All options (`--help`)"
     ```text
     usage: celldform-plot-high1-exclusion [-h] [--model MODEL] --output OUTPUT
-                                   --sizes-output SIZES_OUTPUT
                                    [--table-output TABLE_OUTPUT]
                                    [--ref-output REF_OUTPUT]
                                    [--ref-table-output REF_TABLE_OUTPUT]
 
-    Why high-1 is excluded from the features (22 October report, feature
-    extraction).
+    high-1, the cell drawn largest against its hand masks (feature-extraction
+    report).
 
     options:
       -h, --help            show this help message and exit
       --model MODEL         run whose saved test-frame masks panel (a) draws
       --output OUTPUT
-      --sizes-output SIZES_OUTPUT
-                            panel (b): every cell's size ratio, every run
       --table-output TABLE_OUTPUT
                             LaTeX table of high-1's pixel counts
       --ref-output REF_OUTPUT
@@ -2325,12 +2328,13 @@ Script: `scripts/classification/benchmark_cells.py`
 ??? note "All options (`--help`)"
     ```text
     usage: celldform-benchmark-cells [-h] [--model MODEL] [--config CONFIG]
-                                     [--perms PERMS] [--out OUT] [--replot] [--img IMG]
-                                     [--tables TABLES] [--only ONLY [ONLY ...]] [--final]
+                              [--perms PERMS] [--out OUT] [--replot]
+                              [--only ONLY [ONLY ...]] [--selection-only]
+                              [--final]
 
     Per-cell HER2 benchmark: seven classical classifiers on the per-cell features, leave-one-cell-out.
 
-        python scripts/classification/benchmark_cells.py --model nnunet100_5fold [--perms 1000]
+        python scripts/classification/benchmark_cells.py --model nnunet1000_loocv [--perms 1000]
 
     One row per usable cell (features_cells.csv, usable == True), label high = 1. Every model sees the same
     14 folds; scaling and missing-value filling are fitted inside each fold. Hyperparameters are FIXED in
@@ -2342,9 +2346,10 @@ Script: `scripts/classification/benchmark_cells.py`
                                   on the hand-masked frames: Spearman rho across the cells >= 0.8 (where testable)
                     2. split-half the per-cell value from the even laser steps against the same from the odd ones,
                                   on the feature frames: Spearman rho >= 0.8
-                    3. redundancy of features that pass and move together across cells (|rho| > 0.9), only the
-                                  highest-ranked is kept
-                  ranked by the weaker of the two rho; at most 7 (two cells per feature). The HER2 labels are never
+                    3. groups     the candidates are grouped by the correlation matrix (average-linkage clustering on
+                                  1 - |Spearman rho| across the cells, cut at |rho| = 0.7, as AutoSpearman); from each
+                                  group only its highest-ranked passing feature is kept
+                  ranked by the weaker of the two rho; every group's best passing feature is kept (no cap). The HER2 labels are never
                   used, so the selection cannot leak the held-out cell.  -> feature_selection.csv / .tex
         all       every per-cell shape and deformation feature, no selection                       (sensitivity)
     Baselines
@@ -2373,11 +2378,11 @@ Script: `scripts/classification/benchmark_cells.py`
                             default: the config's)
       --out OUT             output folder (default results/classification/<model>)
       --replot              redraw the figure and table from the saved CSVs only
-      --img IMG             also write the figure here (report images folder)
-      --tables TABLES       also write the LaTeX table here
       --only ONLY [ONLY ...]
                             run only these classifiers (config names) and merge
                             them into the saved results
+      --selection-only      only run the feature selection and write
+                            feature_selection.csv (no classifiers)
       --final               only fit the final models on all cells and save them
                             (uses the saved selection and scores)
     ```
@@ -2391,19 +2396,18 @@ Script: `scripts/classification/frames_cnn.py`
 ??? note "All options (`--help`)"
     ```text
     usage: celldform-frames-cnn [-h] [--model MODEL] [--config CONFIG] [--epochs EPOCHS]
-                                [--device DEVICE] [--img IMG] [--tables TABLES]
-                                [--seed SEED]
-                                [--variants {masked,mask} [{masked,mask} ...]]
-                                [--seeds SEEDS [SEEDS ...]]
-                                {crops,frozen,finetune,tune,final,report,all}
+                         [--device DEVICE] [--seed SEED]
+                         [--variants {masked,mask} [{masked,mask} ...]]
+                         [--seeds SEEDS [SEEDS ...]]
+                         {crops,frozen,finetune,tune,final,report,all}
 
     Per-frame HER2 classifier (deep learning), judged per held-out cell.
 
-        python scripts/classification/frames_cnn.py crops      --model nnunet100_5fold   # cut the cell crops once
-        python scripts/classification/frames_cnn.py frozen     --model nnunet100_5fold   # ResNet-18 features + LR
-        python scripts/classification/frames_cnn.py finetune   --model nnunet100_5fold   # fine-tune the last block
-        python scripts/classification/frames_cnn.py report     --model nnunet100_5fold   # table + figure
-        python scripts/classification/frames_cnn.py final      --model nnunet100_5fold --seeds 0 1 2
+        python scripts/classification/frames_cnn.py crops      --model nnunet1000_loocv   # cut the cell crops once
+        python scripts/classification/frames_cnn.py frozen     --model nnunet1000_loocv   # ResNet-18 features + LR
+        python scripts/classification/frames_cnn.py finetune   --model nnunet1000_loocv   # fine-tune the last block
+        python scripts/classification/frames_cnn.py report     --model nnunet1000_loocv   # table + figure
+        python scripts/classification/frames_cnn.py final      --model nnunet1000_loocv --seeds 0 1 2
                                          # train on ALL cells, save to checkpoints/classification/<model>/cnn/
 
     Data: every passing feature frame of the usable cells (~3 800 frames, ~6 per laser step).
@@ -2440,8 +2444,6 @@ Script: `scripts/classification/frames_cnn.py`
       --config CONFIG       settings file (default configs/analysis/cnn.yaml)
       --epochs EPOCHS       fine-tuning epochs per fold (default: the config's)
       --device DEVICE
-      --img IMG             report step: also write the figure here
-      --tables TABLES       report step: also write the LaTeX table here
       --seed SEED           fine-tuning seed (default: the config's)
       --variants {masked,mask} [{masked,mask} ...]
       --seeds SEEDS [SEEDS ...]
@@ -2651,6 +2653,48 @@ Script: `scripts/classification/combine_models.py`
     Outputs in results/classification/<model>/: instance_cells.csv, combine_cells.csv (every model's and combination's
     held-out P(high)), combine_metrics.csv, combine_null.csv. The thesis figures are drawn by
     scripts/report/plot_classification_thesis.py.
+
+    options:
+      -h, --help     show this help message and exit
+      --model MODEL
+      --perms PERMS
+    ```
+
+### `celldform-pca-models`
+
+PCA in place of feature selection: does compressing the features beat the selected 4?
+
+Script: `scripts/classification/pca_models.py`
+
+??? note "All options (`--help`)"
+    ```text
+    usage: celldform-pca-models [-h] [--model MODEL] [--perms PERMS]
+
+    PCA in place of feature selection: does compressing the features beat the selected 4? Leave-one-cell-out.
+
+        python scripts/classification/pca_models.py --model nnunet1000_loocv [--perms N]
+
+    Run after benchmark_cells.py and combine_models.py (it reads feature_selection.csv and the step-level LR's held-out
+    P(high) from instance_cells.csv).
+
+    What is fitted
+        Three starting sets -- all 29, the 9 that pass reliability (rules 1-2), the selected 4 -- each standardised and
+        reduced to its first k principal components (k = 1..6, below the set size), then a logistic regression (the
+        benchmark's settings). PCA, imputation and scaling are fitted on the 14 training cells of each fold only, so the
+        held-out cell never shapes the components. Each setting is scored alone and as the best model's ensemble
+        (equal-weight mean with the step-level LR). The raw sets (no PCA) are in the grid as k = 0.
+
+    Statistics
+        p            permutation of the whole procedure (labels shuffled across cells, step LR and every setting rerun)
+        p_counted    the same shuffles, scored against the BEST balanced accuracy of the whole grid in each shuffle --
+                     the p of "pick the best of the 36 settings", the choice actually made after seeing the results
+        parallel analysis: the eigenvalues against those of 15 x n_features standard-normal data (5 000 draws); a
+                     component is real only above the noise 95th percentile
+        C sweep      the finalist and the current best model with both LRs at C = 0.1, 0.3, 1, 3, 10
+
+    Outputs in results/classification/<model>/: pca_metrics.csv (every setting, per-class metrics, AUC interval, p,
+    p_counted), pca_cells.csv (held-out P(high)), pca_null.csv (every shuffle's score), pca_variance.csv, pca_loadings.csv, pca_csweep.csv.
+    The figure is cls_pca.png in scripts/report/plot_classification_thesis.py.
 
     options:
       -h, --help     show this help message and exit

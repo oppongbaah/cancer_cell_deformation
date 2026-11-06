@@ -3,7 +3,7 @@ Which features, chosen how? Six feature rankings x seven feature counts x the ei
 
     python scripts/classification/feature_ranking.py --model nnunet1000_loocv [--perms N] [--nested-perms N]
 
-The label-free selection (benchmark_cells.py) fixes 7 features before any classifier. This asks whether other
+The label-free selection (benchmark_cells.py) fixes its features before any classifier. This asks whether other
 choices -- rankings that DO use the labels, and other feature counts -- do better. A ranking that uses the labels is
 refitted inside every fold on the training cells only, so the held-out cell never influences which features it gets.
 

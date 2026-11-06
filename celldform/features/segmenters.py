@@ -5,9 +5,10 @@ Every cell's feature frames are segmented by a cross-validation round model that
 Two protocols supply such models; pick one by its tag (``--model`` in scripts/features/extract_features.py,
 ``--feature-model`` in scripts/report/build_report_assets.py):
 
-    nnunet100_5fold    5-fold, nnU-Net 100 epochs   (checkpoints on the workstation)
-    nnunet1000_5fold   5-fold, nnU-Net 1000 epochs  (checkpoints on the cluster)
-    nnunet1000_loocv   leave-one-cell-out, nnU-Net 1000 epochs (checkpoints on the cluster)
+    nnunet1000_loocv   leave-one-cell-out, nnU-Net 1000 epochs (checkpoints on the cluster) -- the current run
+    nnunet100_5fold    5-fold, nnU-Net 100 epochs   (checkpoints on the workstation) -- deprecated 2026-11-04,
+                       results in results/{features,classification}/_deprecated/
+    nnunet1000_5fold   5-fold, nnU-Net 1000 epochs  (checkpoints on the cluster) -- deprecated, never extracted
 
 ``plan(tag)`` gives, per round, the nnU-Net fold, and the cells it trained on, validated on and tests
 (segments). Read from disk, never typed in:

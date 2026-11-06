@@ -86,8 +86,9 @@ class CNNConfig:
 @dataclass
 class FeatureSelection:
     rho_min: float = 0.8                           # agreement with the hand masks and split-half reliability
-    redundant_rho: float = 0.9                     # of two features moving together, keep the higher-ranked
-    max_selected: int = 7
+    group_rho: Any = 0.7                           # correlation-matrix groups (average linkage on 1 - |rho|, cut
+                                                   # here); one feature per group; None = no grouping
+    max_selected: Any = None                       # at most this many; None = every feature that passes
     min_cells: int = 12                            # a feature must have a value in this many cells
 
 

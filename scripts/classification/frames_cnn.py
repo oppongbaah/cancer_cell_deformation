@@ -1,11 +1,11 @@
 """
 Per-frame HER2 classifier (deep learning), judged per held-out cell.
 
-    python scripts/classification/frames_cnn.py crops      --model nnunet100_5fold   # cut the cell crops once
-    python scripts/classification/frames_cnn.py frozen     --model nnunet100_5fold   # ResNet-18 features + LR
-    python scripts/classification/frames_cnn.py finetune   --model nnunet100_5fold   # fine-tune the last block
-    python scripts/classification/frames_cnn.py report     --model nnunet100_5fold   # table + figure
-    python scripts/classification/frames_cnn.py final      --model nnunet100_5fold --seeds 0 1 2
+    python scripts/classification/frames_cnn.py crops      --model nnunet1000_loocv   # cut the cell crops once
+    python scripts/classification/frames_cnn.py frozen     --model nnunet1000_loocv   # ResNet-18 features + LR
+    python scripts/classification/frames_cnn.py finetune   --model nnunet1000_loocv   # fine-tune the last block
+    python scripts/classification/frames_cnn.py report     --model nnunet1000_loocv   # table + figure
+    python scripts/classification/frames_cnn.py final      --model nnunet1000_loocv --seeds 0 1 2
                                      # train on ALL cells, save to checkpoints/classification/<model>/cnn/
 
 Data: every passing feature frame of the usable cells (~3 800 frames, ~6 per laser step).
@@ -406,7 +406,7 @@ def save_frames(model: str, name: str, meta: pd.DataFrame, p: np.ndarray) -> Non
     meta.assign(p_high=p).to_csv(out / f"cnn_frames_{name}.csv", index=False)
 
 
-def report(model: str, img: Path | None = None, tables: Path | None = None) -> None:
+def report(model: str) -> None:
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -478,10 +478,6 @@ def report(model: str, img: Path | None = None, tables: Path | None = None) -> N
     ax.legend(fontsize=7, frameon=False, loc="lower right")
     fig.tight_layout()
     fig.savefig(out / "cnn_frames_seen.png", dpi=200)
-    if img:
-        fig.savefig(img / "classify_cnn.png", dpi=200)
-    if tables:
-        (tables / "classify_cnn.tex").write_text((out / "cnn_cells.tex").read_text())
     print(f"wrote {out}")
 
 
@@ -490,12 +486,10 @@ def main() -> None:
     ap.add_argument("step", choices=["crops", "frozen", "finetune", "tune", "final", "report", "all"],
                     help="tune: nested-CV hyperparameter tuning of the fine-tuned cell-crop CNN; final: train on all "
                          "cells and save to checkpoints/classification/<model>/cnn/ (neither is part of all)")
-    ap.add_argument("--model", default="nnunet100_5fold")
+    ap.add_argument("--model", default="nnunet1000_loocv")
     ap.add_argument("--config", type=Path, default=None, help="settings file (default configs/analysis/cnn.yaml)")
     ap.add_argument("--epochs", type=int, default=None, help="fine-tuning epochs per fold (default: the config's)")
     ap.add_argument("--device", default=None)
-    ap.add_argument("--img", type=Path, default=None, help="report step: also write the figure here")
-    ap.add_argument("--tables", type=Path, default=None, help="report step: also write the LaTeX table here")
     ap.add_argument("--seed", type=int, default=None, help="fine-tuning seed (default: the config's)")
     ap.add_argument("--variants", nargs="+", default=None, choices=["masked", "mask"])
     ap.add_argument("--seeds", nargs="+", type=int, default=None,
@@ -529,7 +523,7 @@ def main() -> None:
     if a.step == "final":
         final(a.model, device, a.epochs, a.seeds or [a.seed], tuple(a.variants))
     if a.step in ("report", "all"):
-        report(a.model, a.img, a.tables)
+        report(a.model)
 
 
 if __name__ == "__main__":

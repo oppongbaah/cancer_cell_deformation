@@ -7,7 +7,7 @@ checks_test.csv, calibration.json, cell_validation.csv, features_frames.csv, fea
 image_quality_session.csv -- plus the predicted masks and raw frames for the example tiles.
 Nothing is typed in here.
 
-    python scripts/report/plot_features.py --model nnunet100_5fold \
+    python scripts/report/plot_features.py --model nnunet1000_loocv \
         --out ../masters_thesis/images --tables ../masters_thesis/main_work/tables
 
 Writes
@@ -170,7 +170,7 @@ def write_cell_check(chk: pd.DataFrame, out: Path) -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("--model", default="nnunet100_5fold")
+    ap.add_argument("--model", default="nnunet1000_loocv")
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--tables", type=Path, required=True)
     a = ap.parse_args()

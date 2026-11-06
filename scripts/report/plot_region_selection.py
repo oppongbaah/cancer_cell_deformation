@@ -20,7 +20,7 @@ checks and reasons; every feature frame, up to 6 per laser step) and data/featur
 (the masks: the step frames and the other frames of a step were segmented from two folders). The masks are shown as they
 are, label 1 only, on black -- no frame underneath.
 
-    python scripts/report/plot_region_selection.py --model nnunet100_5fold --output ../masters_thesis/images/region_selection.png
+    python scripts/report/plot_region_selection.py --model nnunet1000_loocv --output ../masters_thesis/images/region_selection.png
 """
 from __future__ import annotations
 
@@ -313,7 +313,7 @@ def write_rejections(df: pd.DataFrame, out: Path) -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("--model", default="nnunet100_5fold")
+    ap.add_argument("--model", default="nnunet1000_loocv")
     ap.add_argument("--output", type=Path, required=True, help="figure (a): frames with more than one region")
     ap.add_argument("--dropped-output", type=Path, required=True, help="figure (b): dropped frames")
     ap.add_argument("--table-output", type=Path, help="table: every rejected frame, by the check it failed")

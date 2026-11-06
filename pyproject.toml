@@ -127,6 +127,7 @@ celldform-tune-cells            = "celldform.cli:tune_cells"
 celldform-sequence-net          = "celldform.cli:sequence_net"
 celldform-feature-ranking       = "celldform.cli:feature_ranking"
 celldform-combine-models        = "celldform.cli:combine_models"
+celldform-pca-models            = "celldform.cli:pca_models"
 celldform-deformation-regression = "celldform.cli:deformation_regression"
 celldform-rate-of-deformation   = "celldform.cli:rate_of_deformation"
 
