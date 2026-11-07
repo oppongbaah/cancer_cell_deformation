@@ -42,12 +42,25 @@ class CellValidation:
 
 
 @dataclass
+class LaserProtocolCfg:
+    """Nominal laser settings per frame (celldform.acquisition.protocol): the recording protocol."""
+    fps: float = 22.0
+    hold_s: float = 30.0                           # time at each power level
+    start_mA: float = 500.0
+    step_mA: float = 50.0
+    n_levels: int = 15                             # 500 -> 1200 mA
+    calibration_mA: tuple = (500.0, 1200.0)        # power of each beam at the fiber output vs drive current
+    calibration_mW: tuple = (270.0, 685.0)
+
+
+@dataclass
 class FeaturesConfig:
     frames_per_step: int = 200
     dense_offsets: tuple = (20, 60, 100, 140, 180)  # frames into a step cut besides the step frame
     good_dice: float = 0.85                        # calibration: a hand-masked frame below this is a bad mask
     frame_checks: FrameChecks = field(default_factory=FrameChecks)
     cell_validation: CellValidation = field(default_factory=CellValidation)
+    laser_protocol: LaserProtocolCfg = field(default_factory=LaserProtocolCfg)
 
 
 # ── CNN ──────────────────────────────────────────────────────────────────────

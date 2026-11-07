@@ -33,6 +33,9 @@ Steps (each reads the previous one's files, so any can be rerun alone):
              of passing frames, image quality (focus, illumination, contrast, noise) of every frame, the
              per-cell deformation summaries, and a high-vs-low comparison of the image measurements
              (recording-session check).
+  laser      adds each frame's NOMINAL laser settings (time, power level, drive current, beam power; from the
+             recording protocol, configs/analysis/features.yaml `laser_protocol`) to the existing
+             checks_*.csv and features_frames.csv -- no re-segmentation. `extract` adds them itself.
   (cut       cuts the frames between the step frames from the videos -- once, before segment)
 
 The trapped cell is the predicted region nearest the video's trap (median cell position over its own
@@ -81,6 +84,7 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT))
 from celldform.acquisition.extractor import FrameExtractor
+from celldform.acquisition.protocol import LaserProtocol, add_laser_columns
 from celldform.features.deformation import (FRAME_FEATURES, cell_summary,
                                             frame_features, within_step)
 from celldform.features.extractor import MorphologyExtractor
@@ -97,7 +101,8 @@ SETS = {"feature": ("feature", "dense")}   # the feature frames are segmented fr
 # The settings below come from configs/analysis/features.yaml (celldform.analysis_config; --config for another
 # file). What each one is for:
 #   DENSE_OFFSETS      frames into a step cut besides the step frame: within-step behaviour, a steadier step value
-#   FRAMES_PER_STEP    one laser step = 200 video frames
+#   FRAMES_PER_STEP    one sampling step ("laser_step") = 200 video frames = 9.1 s. NOT a power level: the laser
+#                      holds each of its 15 levels for 30 s (660 frames) -- see LASER and the `laser` step
 #   GOOD_DSC           a hand-masked frame with Dice below this counts as a bad mask in calibration
 #   AREA_WINDOW        "typical area" = median over frames within +-window_steps laser steps (2026-10-21: a
 #                      whole-video median rejected the real shrinking of the cell at high laser power)
@@ -112,8 +117,12 @@ SETS = {"feature": ("feature", "dense")}   # the feature frames are segmented fr
 def configure(cfg) -> None:
     """Set the module's settings from a FeaturesConfig."""
     global CFG, GATES, DENSE_OFFSETS, FRAMES_PER_STEP, GOOD_DSC, AREA_WINDOW, TRAP_WINDOW, MIN_PASS_FRACTION
-    global CELL_MIN_DSC, CELL_SIZE_BIAS
+    global CELL_MIN_DSC, CELL_SIZE_BIAS, LASER
     CFG = cfg
+    lp = cfg.laser_protocol
+    LASER = LaserProtocol(fps=lp.fps, hold_s=lp.hold_s, start_mA=lp.start_mA, step_mA=lp.step_mA,
+                          n_levels=lp.n_levels, calibration_mA=tuple(lp.calibration_mA),
+                          calibration_mW=tuple(lp.calibration_mW))
     fc, cv = cfg.frame_checks, cfg.cell_validation
     GATES = Gates(max_trap_dist=fc.max_trap_dist, min_solidity=fc.min_solidity,
                   area_ratio_range=tuple(fc.area_ratio_range), min_boundary_conf=fc.min_boundary_conf,
@@ -335,7 +344,7 @@ def check_frames(model: str, which: str, gates: Gates, ex: MorphologyExtractor) 
             rows.append(row)
         print(f"  {which:7s} {cell:12s} trap ({trap[0]:.0f}, {trap[1]:.0f})  passed "
               f"{sum(r['passed'] for r in rows if r['cell'] == cell)}/{len(cs)}" if trap else f"  {cell}: no trap found")
-    return pd.DataFrame(rows)
+    return add_laser_columns(pd.DataFrame(rows), LASER)
 
 
 def limits_from(good: pd.DataFrame) -> Gates:
@@ -627,9 +636,30 @@ def extract(model: str, gates: Gates) -> None:
     print(sess.to_string(index=False, float_format=lambda v: f"{v:.3g}"))
 
 
+def laser(model: str) -> None:
+    """Add the nominal laser settings to the frame tables already on disk (no re-segmentation)."""
+    res = ROOT / "results" / "features" / model
+    done = []
+    for name in ("checks_test.csv", "checks_feature.csv", "features_frames.csv"):
+        f = res / name
+        if f.exists():
+            add_laser_columns(pd.read_csv(f), LASER).to_csv(f, index=False)
+            done.append(name)
+    if not done:
+        raise SystemExit(f"no frame tables in {res}: run the extract step first")
+    df = pd.read_csv(res / "features_frames.csv") if "features_frames.csv" in done else pd.read_csv(res / done[0])
+    print(f"LASER SETTINGS ({model}): added to {', '.join(done)}")
+    print(f"protocol: {LASER.start_mA:.0f}-{LASER.currents_mA[-1]:.0f} mA in {LASER.step_mA:.0f} mA steps, "
+          f"{LASER.hold_s:.0f} s each ({LASER.frames_per_level:.0f} frames); power per beam "
+          f"{float(LASER.power_mW(LASER.start_mA)):.0f}-{float(LASER.power_mW(LASER.currents_mA[-1])):.0f} mW (nominal)")
+    per = df.groupby("cell").agg(frames=("frame_index", "size"), last_frame=("frame_index", "max"),
+                                 levels=("power_level", "nunique"), beyond_ramp=("beyond_ramp", "sum"))
+    print(per.to_string())
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("step", choices=["cut", "segment", "calibrate", "extract", "all"])
+    ap.add_argument("step", choices=["cut", "segment", "calibrate", "extract", "all", "laser"])
     ap.add_argument("--model", choices=list(MODELS), default="nnunet1000_loocv")
     ap.add_argument("--config", type=Path, default=None,
                     help="settings file (default configs/analysis/features.yaml)")
@@ -647,6 +677,8 @@ def main() -> None:
         calibrate(a.model, gates)
     if a.step in ("extract", "all"):
         extract(a.model, gates)
+    if a.step == "laser":
+        laser(a.model)
 
 
 if __name__ == "__main__":

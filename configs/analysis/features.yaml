@@ -2,7 +2,7 @@
 # These values produced the reported results (2026-10-28). Changing them changes which frames and cells are
 # used: rerun `calibrate` and `extract`, then the classification and deformation analyses.
 
-frames_per_step: 200                  # video frames per laser step (acquisition protocol; not a tuning knob)
+frames_per_step: 200                  # video frames per sampling step (9.1 s); NOT a power level -- see laser_protocol
 dense_offsets: [20, 60, 100, 140, 180]  # frames into each step cut besides the step frame (`cut` step)
 good_dice: 0.85                       # calibration: a hand-masked frame below this Dice is a "bad mask"
 
@@ -19,3 +19,12 @@ cell_validation:                      # a cell is used only if, on its own hand-
   size_bias_range: [0.80, 1.25]       #   median predicted / hand-drawn area within this: 1st-99th pct of the
                                       #   good masks' size ratio (0.82-1.23), rounded outward, as the frame checks
   min_pass_fraction: 0.8              # ... and at least this share of its feature frames pass the checks
+
+laser_protocol:                       # nominal laser settings of each frame (celldform/acquisition/protocol.py)
+  fps: 22.0                           #   recording protocol (Arkorful 2025; confirmed by Y. Sefa-Boateng 2026-11-05):
+  hold_s: 30.0                        #   both lasers 500 mA, +50 mA every 30 s, to 1200 mA = 15 levels, 450 s
+  start_mA: 500.0
+  step_mA: 50.0
+  n_levels: 15
+  calibration_mA: [500.0, 1200.0]     # power of each beam at the fiber output (mW) vs drive current (mA),
+  calibration_mW: [270.0, 685.0]      #   interpolated; replace with the full calibration table when available

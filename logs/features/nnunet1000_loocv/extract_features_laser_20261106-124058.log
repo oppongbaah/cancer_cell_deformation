@@ -1,0 +1,23 @@
+[run log] logs/features/nnunet1000_loocv/extract_features_laser_20261106-124058.log
+[run log] command: python scripts/features/extract_features.py laser --model nnunet1000_loocv
+[run log] started 2026-11-06 12:40:58 on ISAAC2024, git ccd6c1c (uncommitted changes), cwd /home/mega/work/thesis/cancer_cell_deformation
+LASER SETTINGS (nnunet1000_loocv): added to checks_test.csv, features_frames.csv
+protocol: 500-1200 mA in 50 mA steps, 30 s each (660 frames); power per beam 270-685 mW (nominal)
+             frames  last_frame  levels  beyond_ramp
+cell                                                
+high_cell1      248       10180      15            8
+high_cell10     248        9900      15            1
+high_cell2      292        9940      15            2
+high_cell3      292        9900      15            1
+high_cell4      290        9860      15            0
+high_cell6      291        9860      15            0
+high_cell7      305       10340      15           14
+high_cell8      302       10020      15            5
+high_cell9      249        9940      15            2
+low_cell1       292        9900      15            1
+low_cell2       291        9900      15            1
+low_cell3       305       10140      15            8
+low_cell4       303       10140      15            8
+low_cell5       250        9980      15            3
+low_cell6       250        9980      15            3
+[run log] ended 2026-11-06 12:40:58
