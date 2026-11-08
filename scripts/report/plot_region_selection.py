@@ -20,7 +20,7 @@ checks and reasons; every feature frame, up to 6 per laser step) and data/featur
 (the masks: the step frames and the other frames of a step were segmented from two folders). The masks are shown as they
 are, label 1 only, on black -- no frame underneath.
 
-    python scripts/report/plot_region_selection.py --model nnunet1000_loocv --output ../masters_thesis/images/region_selection.png
+    python scripts/report/plot_region_selection.py --model nnunet1000_loocv --output ../masters_thesis/main_work/images/region_selection.png
 """
 from __future__ import annotations
 

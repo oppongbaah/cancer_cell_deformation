@@ -13,7 +13,7 @@ this script exists to fix.
     python scripts/report/build_report_assets.py --dry-run          # print commands only
 
 Outputs land in the report repo, not here:
-    <report-root>/images/*.png              figures
+    <report-root>/main_work/images/*.png              figures
     <report-root>/main_work/tables/*.tex    \\input{}-able LaTeX tables
 
 After running, recompile the report:
@@ -183,7 +183,7 @@ def main() -> None:
                         "(jobs fe-dataset and features; see celldform/features/segmenters.py)")
     args = p.parse_args()
 
-    img = (args.report_root / "images").resolve()
+    img = (args.report_root / "main_work" / "images").resolve()
     tab = (args.report_root / "main_work" / "tables").resolve()
     all_jobs = jobs(img, tab, args.feature_model)
 

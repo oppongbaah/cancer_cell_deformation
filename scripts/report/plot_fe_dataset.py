@@ -29,8 +29,8 @@ nnunet1000_5fold, nnunet1000_loocv). Read from disk: the run's round plan (segme
 extraction tables (results/features/<model>/{features_frames,checks_test}.csv). No scores are drawn:
 the figures describe the data, not a run's result.
 
-    python scripts/report/plot_fe_dataset.py --model nnunet1000_loocv --output ../masters_thesis/images/fe_dataset.png \
-        --rounds-output ../masters_thesis/images/fe_rounds.png
+    python scripts/report/plot_fe_dataset.py --model nnunet1000_loocv --output ../masters_thesis/main_work/images/fe_dataset.png \
+        --rounds-output ../masters_thesis/main_work/images/fe_rounds.png
 """
 from __future__ import annotations
 

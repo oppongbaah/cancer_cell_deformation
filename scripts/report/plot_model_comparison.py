@@ -3,7 +3,7 @@
 The four candidate segmenters side by side, on the same 15 cross-validated cells: one small panel
 per measure, every value labelled. Used by the report to choose the deployment models.
 
-    python scripts/report/plot_model_comparison.py --out ../masters_thesis/images \
+    python scripts/report/plot_model_comparison.py --out ../masters_thesis/main_work/images \
         --tables ../masters_thesis/main_work/tables
 
 Models: ours (CV model), nnU-Net (teacher), the ensemble (ours + nnU-Net, 0.5/0.5) and MegaNet (the

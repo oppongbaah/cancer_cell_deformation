@@ -7,7 +7,7 @@ round and cell) and nnU-Net's own training logs (checkpoints/<exp>/Dataset*/*/fo
 training_log_*.txt). Nothing is typed in here.
 
     python scripts/report/plot_nnunet_epochs.py \
-        --out ../masters_thesis/images --tables ../masters_thesis/main_work/tables
+        --out ../masters_thesis/main_work/images --tables ../masters_thesis/main_work/tables
 
 Writes nnunet_epochs.png -- (a) every cell's Test DSC at 100 and 1000 epochs, (b) each round's
 internal validation Dice over the 1000 epochs -- and nnunet_epochs.tex.

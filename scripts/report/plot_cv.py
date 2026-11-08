@@ -7,7 +7,7 @@ results/<exp>/<run>_cv_cells.csv, <run>_cv_rounds.csv and <run>_cv_summary.json.
 Nothing is typed in here.
 
     python scripts/report/plot_cv.py --exp randswap/experiment_0_cv_baseline --run cv_baseline \
-        --out ../masters_thesis/images --tables ../masters_thesis/main_work/tables
+        --out ../masters_thesis/main_work/images --tables ../masters_thesis/main_work/tables
 
 Writes cv_cells.png (every cell's Test DSC, grouped by HER2 class, labelled with the round
 that tested it), cv_rounds.tex and cv_cells.tex.

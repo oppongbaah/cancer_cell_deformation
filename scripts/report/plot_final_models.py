@@ -10,7 +10,7 @@ The two models the project keeps, each estimated by BOTH cross-validations:
 Reads the four runs' native eval logs, the latency benchmark, and the two deployment models'
 training logs. Nothing is typed in here except what each model is FOR.
 
-    python scripts/report/plot_final_models.py --out ../masters_thesis/images --tables ../masters_thesis/main_work/tables
+    python scripts/report/plot_final_models.py --out ../masters_thesis/main_work/images --tables ../masters_thesis/main_work/tables
 
 Writes final_models.png -- (a) accuracy against time per frame, every cell's score behind each
 estimate, the camera's real-time budget shaded; (b) every cell's score under both CVs, both models --

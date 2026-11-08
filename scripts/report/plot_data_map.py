@@ -14,7 +14,7 @@ Everything is read from disk: the per-round split records the CV wrote
 and the feature-factory folder. Nothing is typed in.
 
     python scripts/report/plot_data_map.py --exp randswap/experiment_0_cv_baseline \
-        --run cv_baseline --output ../masters_thesis/images/data_map.png
+        --run cv_baseline --output ../masters_thesis/main_work/images/data_map.png
 """
 from __future__ import annotations
 

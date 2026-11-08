@@ -8,7 +8,7 @@ image_quality_session.csv -- plus the predicted masks and raw frames for the exa
 Nothing is typed in here.
 
     python scripts/report/plot_features.py --model nnunet1000_loocv \
-        --out ../masters_thesis/images --tables ../masters_thesis/main_work/tables
+        --out ../masters_thesis/main_work/images --tables ../masters_thesis/main_work/tables
 
 Writes
   features_validation.png   (a) predicted vs hand-drawn area on the annotated frames, passed / rejected;

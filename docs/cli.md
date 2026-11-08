@@ -1704,7 +1704,7 @@ Script: `scripts/report/plot_cv.py`
 
 ```bash
 celldform-plot-cv --exp randswap/experiment_0_cv_baseline --run cv_baseline \
-    --out ../masters_thesis/images --tables ../masters_thesis/main_work/tables
+    --out ../masters_thesis/main_work/images --tables ../masters_thesis/main_work/tables
 ```
 
 ??? note "All options (`--help`)"
@@ -1739,7 +1739,7 @@ Script: `scripts/report/plot_data_map.py`
 
 ```bash
 celldform-plot-data-map --exp randswap/experiment_0_cv_baseline \
-    --run cv_baseline --output ../masters_thesis/images/data_map.png
+    --run cv_baseline --output ../masters_thesis/main_work/images/data_map.png
 ```
 
 ??? note "All options (`--help`)"
@@ -1766,7 +1766,7 @@ Figures for the experiments chapter of the 1 October report.
 Script: `scripts/report/plot_experiments.py`
 
 ```bash
-celldform-plot-experiments --out ../masters_thesis/images
+celldform-plot-experiments --out ../masters_thesis/main_work/images
 ```
 
 ??? note "All options (`--help`)"
@@ -1790,7 +1790,7 @@ The four candidate segmenters side by side, on the same 15 cross-validated cells
 Script: `scripts/report/plot_model_comparison.py`
 
 ```bash
-celldform-plot-model-comparison --out ../masters_thesis/images \
+celldform-plot-model-comparison --out ../masters_thesis/main_work/images \
     --tables ../masters_thesis/main_work/tables
 ```
 
@@ -1818,7 +1818,7 @@ Script: `scripts/report/plot_nnunet_epochs.py` · build job: `celldform-build-re
 
 ```bash
 celldform-plot-nnunet-epochs \
-    --out ../masters_thesis/images --tables ../masters_thesis/main_work/tables
+    --out ../masters_thesis/main_work/images --tables ../masters_thesis/main_work/tables
 ```
 
 ??? note "All options (`--help`)"

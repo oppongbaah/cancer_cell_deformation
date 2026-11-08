@@ -8,7 +8,7 @@ rounds are still coming in) is drawn with the cells it has, and the table compar
 those cells -- the "same cells" rows say how many.
 
     python scripts/report/plot_loocv.py \
-        --out ../masters_thesis/images --tables ../masters_thesis/main_work/tables
+        --out ../masters_thesis/main_work/images --tables ../masters_thesis/main_work/tables
 
 Writes loocv.png -- every cell's Test DSC under both splits, (a) U-Net, (b) nnU-Net -- and loocv.tex.
 """

@@ -17,7 +17,7 @@ Table: every cell's Dice in both cross-validations, as logged (every pixel the m
 the feature pipeline's selection (only the "cell" region nearest the trap, select_trapped_region; trap = the
 median centroid of the largest predicted "cell" region over the cell's own frames).
 
-    python scripts/report/plot_high10.py --output ../masters_thesis/images/high10_round14.png \\
+    python scripts/report/plot_high10.py --output ../masters_thesis/main_work/images/high10_round14.png \\
         --table-output ../masters_thesis/main_work/tables/high10_selected.tex
 """
 from __future__ import annotations

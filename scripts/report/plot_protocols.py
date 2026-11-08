@@ -18,7 +18,7 @@ Read from disk: the 5-fold and deployment split records (results/<exp>/<run>_fol
 the leave-one-out round table its summary job printed (logs/hpc/loocv_unet/loocv_unet_summary_*.out; the
 split files of that run stay on the cluster).
 
-    python scripts/report/plot_protocols.py --output ../masters_thesis/images/protocols.png
+    python scripts/report/plot_protocols.py --output ../masters_thesis/main_work/images/protocols.png
 """
 from __future__ import annotations
 

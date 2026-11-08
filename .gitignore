@@ -79,7 +79,7 @@ CLAUDE.md
 # Deliberately NOT tracked, because each is derived data whose source IS in git:
 #   results/**/*.png          training curves — regenerate from logs/**/*.log
 #   results/_report_strips/   render_holdout_comparison.py intermediates; the variants
-#                             that reach the report are tracked in masters_thesis/images/
+#                             that reach the report are tracked in masters_thesis/main_work/images/
 # Git stores a whole new blob per regenerated binary, so tracking figures grows the repo
 # by their full size on every rebuild rather than by their diff.
 results/**

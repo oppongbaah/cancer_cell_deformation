@@ -7,7 +7,7 @@ each cell's raw frame (labelled with its laser step), then the hand-drawn mask (
 the model that never saw the cell (white), on black, with every pixel where they differ in yellow, the pixel counts and
 the size ratio. Cropped around the hand mask's centre. (The every-run size-ratio panel went with the 5-fold report.)
 
-    python scripts/report/plot_high1_exclusion.py --model nnunet1000_loocv --output ../masters_thesis/images/nnunet1000_loocv/high1_exclusion.png
+    python scripts/report/plot_high1_exclusion.py --model nnunet1000_loocv --output ../masters_thesis/main_work/images/nnunet1000_loocv/high1_exclusion.png
 """
 from __future__ import annotations
 

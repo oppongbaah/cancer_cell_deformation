@@ -95,7 +95,7 @@ python scripts/report/build_report_assets.py --only sweep pools  # rebuild a sub
 python scripts/report/build_report_assets.py --report-root ../masters_thesis
 ```
 
-Figures are written to `<report-root>/images/`, LaTeX tables to `<report-root>/main_work/tables/` (the report `\input{}`s those). Intermediates from the comparison-strip renderer stay in `results/_report_strips/` rather than cluttering the report repo.
+Figures are written to `<report-root>/main_work/images/`, LaTeX tables to `<report-root>/main_work/tables/` (the report `\input{}`s those). Intermediates from the comparison-strip renderer stay in `results/_report_strips/` rather than cluttering the report repo.
 
 | Option | Default | Description |
 |--------|---------|-------------|
