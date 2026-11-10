@@ -39,6 +39,23 @@ import pandas as pd
 from matplotlib.lines import Line2D
 from matplotlib.patches import Circle, Patch
 
+THESIS = False   # --thesis: thesis styling (serif, no title) and the thesis's words
+
+
+def W(text: str) -> str:
+    """Report wording -> thesis wording (sampling 'interval', 'ground truth', 'other object')."""
+    if not THESIS:
+        return text
+    for a, b in (("no hand mask", "no ground truth"), ("hand mask", "ground truth"), ("decoy", "other object"),
+                 ("same step", "same interval"), ("that step", "that interval"), ("nearby", "nearby intervals")):
+        text = text.replace(a, b)
+    return text
+
+
+def stepname(s: int) -> str:
+    """A laser step as the report names it, or the thesis's 1-based sampling interval."""
+    return f"interval {int(s) + 1}" if THESIS else f"step {int(s)}"
+
 REPO = Path(__file__).resolve().parent.parent.parent
 FACTORY = REPO / "data" / "frames" / "03_mask_factory"     # the step frames
 DENSE = REPO / "data" / "frames" / "05_dense_frames"       # the other feature frames of each step
@@ -320,7 +337,16 @@ def main() -> None:
     ap.add_argument("--checks-output", type=Path, help="table: how each frame check is computed, its limit, good masks")
     ap.add_argument("--cross-output", type=Path, help="table: the checks on frames that did not set their limits")
     ap.add_argument("--n", type=int, default=4, help="tiles per row")
+    ap.add_argument("--thesis", action="store_true", help="thesis styling: serif font, no title, thesis wording")
     a = ap.parse_args()
+    if a.thesis:
+        global THESIS
+        THESIS = True
+        from matplotlib import font_manager
+        for f in Path("/usr/share/texmf/fonts/opentype/public/tex-gyre").glob("texgyretermes-*.otf"):
+            font_manager.fontManager.addfont(str(f))       # Times clone, matches the thesis text
+        plt.rcParams.update({"font.family": "serif", "font.serif": ["TeX Gyre Termes", "Nimbus Roman", "Times New Roman"],
+                             "mathtext.fontset": "stix"})
     res = REPO / "results/features" / a.model
     df = pd.read_csv(res / "features_frames.csv")
     df["reasons"] = df.reasons.fillna("")
@@ -349,18 +375,18 @@ def main() -> None:
         for c, (r, v, lines, bad) in enumerate(examples):
             ax = fig.add_subplot(gs[0, c])
             plain(ax, v["raw"], short(r.cell), gray=True)
-            ax.text(0.04, 0.95, f"step {r.laser_step}", transform=ax.transAxes, fontsize=7.4, color=INK, va="top",
+            ax.text(0.04, 0.95, stepname(r.laser_step), transform=ax.transAxes, fontsize=7.4, color=INK, va="top",
                     fontweight="bold", bbox=dict(boxstyle="round,pad=0.15", fc="white", ec="none", alpha=0.85))
             gx = fig.add_subplot(gs[1, c])
             if v["gt_step"] == r.laser_step:     # a hand mask of the same laser step: comparable position
                 plain(gx, v["gt"])
-                gx.text(0.04, 0.95, f"step {v['gt_step']}", transform=gx.transAxes, fontsize=7.4, color=INK,
+                gx.text(0.04, 0.95, stepname(v['gt_step']), transform=gx.transAxes, fontsize=7.4, color=INK,
                         va="top", fontweight="bold",
                         bbox=dict(boxstyle="round,pad=0.15", fc="white", ec="none", alpha=0.85))
             else:                                # a mask from another step would show the cell elsewhere
                 plain(gx, np.zeros_like(v["gt"]))
-                gx.text(0.5, 0.5, f"no hand mask\nin step {r.laser_step}\n\n(nearest: step {v['gt_step']},\n"
-                        f"a different moment)", transform=gx.transAxes, ha="center", va="center", fontsize=7.4,
+                gx.text(0.5, 0.5, W(f"no hand mask\nin {stepname(r.laser_step)}\n\n(nearest: {stepname(v['gt_step'])},\n"
+                        f"a different moment)"), transform=gx.transAxes, ha="center", va="center", fontsize=7.4,
                         color="#bdbdbd", linespacing=1.15)
             plain(fig.add_subplot(gs[2, c]), v["model"])
             draw(fig.add_subplot(gs[3, c]), v, None, lines, bad)
@@ -368,7 +394,8 @@ def main() -> None:
                 for k, axx in enumerate(fig.axes[-4:]):
                     axx.set_ylabel(rowlab[k], fontsize=8, color=HIGH, fontweight="bold", linespacing=0.95)
                     axx.yaxis.set_label_coords(-0.06, 0.5)       # one column for every row label
-        fig.text(0.075, 0.995, title, fontsize=9, color=INK, va="top")
+        if not THESIS:
+            fig.text(0.075, 0.995, title, fontsize=9, color=INK, va="top")
         cols = [ex[0] for ex in examples]
         k = sum(gt_same_step(r) for r in cols)           # aligned examples come first
         for lo, hi, text in ((0, k, "ground truth in the same step"), (k, len(cols), "no ground truth in that step")):
@@ -377,12 +404,12 @@ def main() -> None:
                 x1 = fig.axes[4 * (hi - 1)].get_position().x1
                 y = fig.axes[0].get_position().y1 + 0.03
                 fig.add_artist(Line2D([x0, x1], [y, y], transform=fig.transFigure, color=INK2, lw=1))
-                fig.text((x0 + x1) / 2, y + 0.006, text, ha="center", va="bottom", fontsize=8, color=INK2,
+                fig.text((x0 + x1) / 2, y + 0.006, W(text), ha="center", va="bottom", fontsize=8, color=INK2,
                          fontstyle="italic")
         fig.legend(handles=[Patch(fc=PRED, ec="#555", lw=0.6, label="predicted: trapped cell"),
                             Patch(color=PRED_DECOY, label="predicted: other object"),
                             Patch(color=KEPT, label="ground truth: trapped cell / selected region"),
-                            Patch(color=DECOY, label="ground truth: decoy"),
+                            Patch(color=DECOY, label=W("ground truth: decoy")),
                             Patch(fc=OTHER, ec="#555", lw=0.6, label="also marked trapped, not selected"),
                             Line2D([], [], color=TRAP, ls=(0, (3, 2)), marker="+", ms=7, label="trap, 45 px limit")],
                    loc="upper left", bbox_to_anchor=(0.068, 0.975), ncol=3, fontsize=7, frameon=False,
@@ -399,7 +426,7 @@ def main() -> None:
         passed.append((r, v, lines + [("→ passed every check", "#1b7a3a")], False))
     figure(passed, "More than one region marked as the trapped cell: the one nearest the trap is selected",
            a.output)
-    figure([(r, v, [(KINDS[kind][1], INK)] + reason_lines(r, v) + [("→ dropped", BAD)], True)
+    figure([(r, v, [(W(KINDS[kind][1]), INK)] + [(W(t), c) for t, c in reason_lines(r, v)] + [("→ dropped", BAD)], True)
             for kind, r, v in dropped], "Frames dropped by the frame checks, one per kind of failure", a.dropped_output)
 
 
