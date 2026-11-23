@@ -1,7 +1,0 @@
-[run log] logs/classification/nnunet1000_loocv/frames_cnn_final_20261029-103350.log
-[run log] command: python scripts/classification/frames_cnn.py final --model nnunet1000_loocv --seeds 0 1 2
-[run log] started 2026-10-29 10:33:50 on ISAAC2024, git 420579f (uncommitted changes), cwd /home/mega/work/thesis/cancer_cell_deformation
-final/masked seed 0: trained on 3926 frames of 14 cells (last loss 0.049) -> /home/mega/work/thesis/cancer_cell_deformation/checkpoints/classification/nnunet1000_loocv/cnn/finetune_masked_seed0.pt
-final/masked seed 1: trained on 3926 frames of 14 cells (last loss 0.025) -> /home/mega/work/thesis/cancer_cell_deformation/checkpoints/classification/nnunet1000_loocv/cnn/finetune_masked_seed1.pt
-final/masked seed 2: trained on 3926 frames of 14 cells (last loss 0.055) -> /home/mega/work/thesis/cancer_cell_deformation/checkpoints/classification/nnunet1000_loocv/cnn/finetune_masked_seed2.pt
-[run log] ended 2026-10-29 10:35:03

@@ -1,6 +1,0 @@
-source,frame_index,saved_index,timestamp_s,output_path,width,height
-/home/mega/work/thesis/cancer_cell_deformation/data/raw/low/cell 4 low 50 increments.mp4,1020,0,46.363636,/home/mega/work/thesis/cancer_cell_deformation/data/frames/05_dense_frames/low_cell4_001020.jpg,1228,922
-/home/mega/work/thesis/cancer_cell_deformation/data/raw/low/cell 4 low 50 increments.mp4,1980,1,90.0,/home/mega/work/thesis/cancer_cell_deformation/data/frames/05_dense_frames/low_cell4_001980.jpg,1228,922
-/home/mega/work/thesis/cancer_cell_deformation/data/raw/low/cell 4 low 50 increments.mp4,4940,2,224.545455,/home/mega/work/thesis/cancer_cell_deformation/data/frames/05_dense_frames/low_cell4_004940.jpg,1228,922
-/home/mega/work/thesis/cancer_cell_deformation/data/raw/low/cell 4 low 50 increments.mp4,4980,3,226.363636,/home/mega/work/thesis/cancer_cell_deformation/data/frames/05_dense_frames/low_cell4_004980.jpg,1228,922
-/home/mega/work/thesis/cancer_cell_deformation/data/raw/low/cell 4 low 50 increments.mp4,9180,4,417.272727,/home/mega/work/thesis/cancer_cell_deformation/data/frames/05_dense_frames/low_cell4_009180.jpg,1228,922

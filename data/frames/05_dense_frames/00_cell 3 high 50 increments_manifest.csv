@@ -1,8 +1,0 @@
-source,frame_index,saved_index,timestamp_s,output_path,width,height
-/home/mega/work/thesis/cancer_cell_deformation/data/raw/high/cell 3 high 50 increments.mp4,1020,0,46.363636,/home/mega/work/thesis/cancer_cell_deformation/data/frames/05_dense_frames/high_cell3_001020.jpg,1228,922
-/home/mega/work/thesis/cancer_cell_deformation/data/raw/high/cell 3 high 50 increments.mp4,1980,1,90.0,/home/mega/work/thesis/cancer_cell_deformation/data/frames/05_dense_frames/high_cell3_001980.jpg,1228,922
-/home/mega/work/thesis/cancer_cell_deformation/data/raw/high/cell 3 high 50 increments.mp4,2540,2,115.454545,/home/mega/work/thesis/cancer_cell_deformation/data/frames/05_dense_frames/high_cell3_002540.jpg,1228,922
-/home/mega/work/thesis/cancer_cell_deformation/data/raw/high/cell 3 high 50 increments.mp4,4940,3,224.545455,/home/mega/work/thesis/cancer_cell_deformation/data/frames/05_dense_frames/high_cell3_004940.jpg,1228,922
-/home/mega/work/thesis/cancer_cell_deformation/data/raw/high/cell 3 high 50 increments.mp4,4980,4,226.363636,/home/mega/work/thesis/cancer_cell_deformation/data/frames/05_dense_frames/high_cell3_004980.jpg,1228,922
-/home/mega/work/thesis/cancer_cell_deformation/data/raw/high/cell 3 high 50 increments.mp4,7620,5,346.363636,/home/mega/work/thesis/cancer_cell_deformation/data/frames/05_dense_frames/high_cell3_007620.jpg,1228,922
-/home/mega/work/thesis/cancer_cell_deformation/data/raw/high/cell 3 high 50 increments.mp4,9180,6,417.272727,/home/mega/work/thesis/cancer_cell_deformation/data/frames/05_dense_frames/high_cell3_009180.jpg,1228,922
