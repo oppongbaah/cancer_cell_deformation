@@ -39,16 +39,16 @@ def make_recording(folder: Path, n: int, log=None):
 
 
 def test_short_recording_runs_and_withholds_verdict(tmp_path):
-    rec = make_recording(tmp_path / "r", 450)
+    rec = make_recording(tmp_path / "r", 350)
     DiscSegmenter.calls = 0
     v = run(rec, tmp_path / "out", DiscSegmenter(), fake_framework(), size=(W, H))
     assert v.status == "insufficient" and v.label is None
-    assert DiscSegmenter.calls == 14                      # steps 0,1: 6 frames each; step 2: frames 400, 420
+    assert DiscSegmenter.calls == 11                      # step 0: 6 frames; step 1: 5 (offset 180 is past the end)
     out = tmp_path / "out"
     info = json.loads((out / "verdict.json").read_text())
-    assert info["frames_measured"] == 14 and info["cell_label"] == "SKBR3" and info["status"] == "insufficient"
+    assert info["frames_measured"] == 11 and info["cell_label"] == "SKBR3" and info["status"] == "insufficient"
     f = pd.read_csv(out / "frames.csv")
-    assert len(f) == 14 and f.passed.all()
+    assert len(f) == 11 and f.passed.all()
     assert (out / "steps.csv").exists() and (out / "annotated.mp4").stat().st_size > 0
 
 
@@ -100,10 +100,10 @@ def test_stop_hook_ends_the_run_early_but_still_writes_results(tmp_path):
 
 def test_run_from_images_logs_every_measured_frame_and_saves_the_log(tmp_path):
     import cv2 as _cv
-    folder = make_recording(tmp_path / "r", 450)
+    folder = make_recording(tmp_path / "r", 350)
     d = folder / "stills_1GB"; d.mkdir()
     rows = []
-    for k in range(450):
+    for k in range(350):
         n = f"still_{k + 1:06d}.png"
         _cv2 = _cv.imwrite(str(d / n), np.full((H, W, 3), 120, np.uint8))
         rows.append((n, k + 1))
@@ -115,34 +115,34 @@ def test_run_from_images_logs_every_measured_frame_and_saves_the_log(tmp_path):
     assert text == seen                                              # the window and the file get the same lines
     assert "source=images" in text[0] and text[0].split()[0].count(":") == 2            # timestamped
     frame_lines = [l for l in text if " frame " in l and "seg" in l]
-    assert len(frame_lines) == 14 and all("PASS" in l or "REJECT" in l for l in frame_lines)
+    assert len(frame_lines) == 11 and all("PASS" in l or "REJECT" in l for l in frame_lines)
     assert any("step usable" in l for l in text) and any(l.split("  ", 1)[1].startswith("finished") for l in text)
     assert text[-1].split("  ", 1)[1].startswith("saved") and any("result: no verdict" in l for l in text)
-    assert json.loads((tmp_path / "out" / "verdict.json").read_text())["frames_measured"] == 14
+    assert json.loads((tmp_path / "out" / "verdict.json").read_text())["frames_measured"] == 11
 
 
 def test_run_accepts_a_list_of_image_files(tmp_path):
-    folder = make_recording(tmp_path / "r", 450)
+    folder = make_recording(tmp_path / "r", 350)
     d = folder / "pics"; d.mkdir()
     files = []
-    for k in range(450):
+    for k in range(350):
         files.append(d / f"p{k:04d}.png")
         cv2.imwrite(str(files[-1]), np.full((H, W, 3), 120, np.uint8))
     seen = []
     v = run(files, tmp_path / "out", DiscSegmenter(), fake_framework(), size=(W, H), log=seen.append)
     assert v.status == "insufficient"
-    assert "450 images from pics" in seen[0] and "source=images" in seen[0]
-    assert json.loads((tmp_path / "out" / "verdict.json").read_text())["frames_measured"] == 14
+    assert "350 images from pics" in seen[0] and "source=images" in seen[0]
+    assert json.loads((tmp_path / "out" / "verdict.json").read_text())["frames_measured"] == 11
 
 
 def test_run_provisional_marks_everything_as_not_validated(tmp_path):
-    rec = make_recording(tmp_path / "r", 450)
+    rec = make_recording(tmp_path / "r", 350)
     seen = []
     v = run(rec, tmp_path / "out", DiscSegmenter(), fake_framework(), size=(W, H), provisional=True, log=seen.append)
     assert v.status == "provisional" and v.label in ("high", "low")
     j = json.loads((tmp_path / "out" / "verdict.json").read_text())
     assert j["status"] == "provisional" and j["validated"] is False and j["label"] == v.label
-    assert "needs 10" in j["reason"]
+    assert "at least 3" in j["reason"]
     assert any("PROVISIONAL, NOT VALIDATED" in l for l in seen if "result:" in l)
     assert any("PROVISIONAL" in l for l in seen if "step usable" in l)            # also while it builds up
     assert "PROVISIONAL" in (tmp_path / "out" / "inference.log").read_text()
@@ -150,7 +150,7 @@ def test_run_provisional_marks_everything_as_not_validated(tmp_path):
 
 
 def test_run_default_has_no_label_and_says_not_validated_in_json(tmp_path):
-    v = run(make_recording(tmp_path / "r", 450), tmp_path / "out", DiscSegmenter(), fake_framework(), size=(W, H))
+    v = run(make_recording(tmp_path / "r", 350), tmp_path / "out", DiscSegmenter(), fake_framework(), size=(W, H))
     j = json.loads((tmp_path / "out" / "verdict.json").read_text())
     assert v.status == "insufficient" and j["validated"] is False and j["label"] is None
 
@@ -209,3 +209,14 @@ def test_the_command_line_takes_a_bundle(tmp_path, monkeypatch):
     (b / "classifier.joblib").write_bytes(b"changed")
     with pytest.raises(M.BundleError, match="wrong size"):
         _cli(monkeypatch, tmp_path, "--bundle", str(b))                         # a damaged bundle is refused before anything runs
+
+
+def test_a_short_recording_gets_a_labelled_result_without_the_provisional_option(tmp_path):
+    rec = make_recording(tmp_path / "r", 450)                          # 3 laser steps: the minimum
+    seen = []
+    v = run(rec, tmp_path / "out", DiscSegmenter(), fake_framework(), size=(W, H), log=seen.append)
+    assert v.status == "short" and v.label in ("high", "low") and not v.validated
+    j = json.loads((tmp_path / "out" / "verdict.json").read_text())
+    assert j["status"] == "short" and j["validated"] is False and j["label"] == v.label and j["n_steps"] == 3
+    assert any("result: SHORT RECORDING, STEP MODEL ONLY" in l for l in seen)
+    assert (tmp_path / "out" / "dashboard.png").stat().st_size > 1000

@@ -30,6 +30,7 @@ SHAPE = ["area", "perimeter", "major_axis", "minor_axis", "aspect_ratio", "eccen
 STEP_FEATURES = SHAPE + ["len_par", "len_perp", "volume", "ellip_f2", "roughness"]
 SELECTED = ["len_par_base", "fluctuation", "volume_change", "orient_spread"]
 MIN_STEPS = 10            # cell_summary needs 10 steps (and 3 baseline steps) before it returns anything
+MIN_STEPS_SHORT = 3       # fewest steps that still give a verdict: the step model alone, labelled as a short recording
 
 
 @dataclass
@@ -49,8 +50,14 @@ class HER2Framework:
         x = np.array([[cell.get(f, np.nan) for f in self.cell_features]], float)
         return float(self.cell_model.predict_proba(x)[0, 1])
 
-    def p_high(self, steps: pd.DataFrame, cell: Dict[str, float]) -> Dict[str, float]:
-        a, b = self.p_step(steps), self.p_cell(cell)
+    def p_high(self, steps: pd.DataFrame, cell: Dict[str, float], step_only: bool = False) -> Dict[str, float]:
+        """The equal-weight mean of both models. ``step_only`` (a short recording, where the per-cell features cannot be
+        measured) returns the step model alone and ``p_cell`` NaN: averaging in a model fed only the training cells'
+        median would pull every answer toward the middle."""
+        a = self.p_step(steps)
+        if step_only:
+            return {"p_step": a, "p_cell": float("nan"), "p_high": a}
+        b = self.p_cell(cell)
         return {"p_step": a, "p_cell": b, "p_high": (a + b) / 2}
 
 

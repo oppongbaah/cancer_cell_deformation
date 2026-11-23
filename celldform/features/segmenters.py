@@ -37,9 +37,12 @@ class Segmenter:
     dataset: str        # nnU-Net dataset name
     trainer: str        # nnU-Net trainer class
     label: str          # for figures and tables
+    kind: str = "nnunet"    # "nnunet" or "unet" (our U-Net: checkpoints are <exp>/<run>/fold_<k>/unet_*.pt)
 
     @property
     def model_dir(self) -> Path:
+        if self.kind == "unet":
+            return ROOT / "checkpoints" / self.exp / self.trainer
         return ROOT / "checkpoints" / self.exp / self.dataset / f"{self.trainer}__nnUNetPlans__2d"
 
 
@@ -48,6 +51,10 @@ MODELS = {
                                  "nnUNetTrainer_100epochs", "nnU-Net, 100 epochs, 5-fold"),
     "nnunet1000_5fold": Segmenter("5fold", "randswap/experiment_1b_nnunet_1000ep", DATASET_5FOLD,
                                   "nnUNetTrainer", "nnU-Net, 1000 epochs, 5-fold"),
+    "unet_deploy": Segmenter("deploy", "randswap/experiment_0_cv_baseline", "", "cv_baseline",
+                             "U-Net, deployment model (all 15 cells)", "unet"),
+    "unet_loocv": Segmenter("loocv", "randswap/experiment_4_loocv/unet", "", "loocv_baseline",
+                            "U-Net, leave-one-cell-out", "unet"),
     "nnunet1000_loocv": Segmenter("loocv", "randswap/experiment_4_loocv/nnunet", "Dataset502_CellTrapLOOCV",
                                   "nnUNetTrainer", "nnU-Net, 1000 epochs, leave-one-cell-out"),
 }
@@ -71,6 +78,19 @@ def plan(tag: str) -> list[dict]:
     round's checkpoint segments."""
     seg = MODELS[tag]
     cells = sorted(her2())
+    if seg.protocol == "deploy":     # one model, trained on every cell: it segments all of them (in-sample)
+        return [{"round": 0, "fold": "deploy", "train": cells, "val": [], "test": cells}]
+    if seg.kind == "unet":           # the U-Net LOOCV: fold k -> the cell its eval log scored (fold numbers != rounds)
+        test = {}
+        for line in (ROOT / "results" / seg.exp / "eval_log_native.jsonl").read_text().splitlines():
+            r = json.loads(line)
+            if r["filter"]:
+                test[int(re.search(r"fold_(\d+)/", r["checkpoint"]).group(1))] = r["filter"]
+        rounds = [{"round": k, "fold": k, "val": [], "test": [t], "train": [c for c in cells if c != t]}
+                  for k, t in sorted(test.items())]
+        if sorted(c for r in rounds for c in r["test"]) != cells:
+            raise ValueError(f"{tag}: the rounds do not test each of the {len(cells)} cells exactly once")
+        return rounds
     if seg.protocol == "5fold":
         rounds = [{"round": k, "fold": k - 1, **{role: list(r["cells"][role]) for role in ("train", "val", "test")}}
                   for k, r in five_fold_records().items()]

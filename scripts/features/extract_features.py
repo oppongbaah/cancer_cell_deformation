@@ -227,7 +227,47 @@ def fold_inputs(protocol: str, f: int, cells: list[str]) -> dict[str, Path]:
     return {w: base / w for w in srcs}
 
 
+def segment_unet(model: str) -> None:
+    """Our U-Net segments the same frames as nnU-Net does, into the same files (labels, top-class probability, native
+    1228x922). unet_deploy: the one deployment checkpoint segments every cell (it trained on all of them -- in-sample,
+    so the test-set calibration/validation is optimistic); unet_loocv: each cell by the checkpoint that held it out."""
+    import torch
+    from celldform.demo.segment import UNetSegmenter
+    seg = MODELS[model]
+    raw = ROOT / "data" / "nnunet" / "raw" / DATASET
+    for r in plan(model):
+        ck = seg.model_dir / f"fold_{r['fold']}"
+        ck_file = next(iter(sorted(ck.glob("unet_*.pt"))), None)
+        if ck_file is None:
+            raise SystemExit(f"{ck.relative_to(ROOT)}: no unet_*.pt")
+        cells, net = r["test"], None
+        for which in ("feature", "test", "dense"):
+            files = {"feature": [p for c in cells for p in sorted(FACTORY.glob(f"{c}_*.jpg"))],
+                     "dense": [p for c in cells for p in sorted(DENSE.glob(f"{c}_*.jpg"))],
+                     "test": [p for c in cells for p in sorted(raw.glob(f"imagesTs_round*/*{c}_*_0000.png"))
+                              if cell_of(p.name) == c]}[which]
+            lab, mp = out_dirs(model, which)
+            todo = [p for p in files if not ((lab / f"{p.name[:-9] if p.suffix == '.png' else p.stem}.png").exists()
+                                             and (mp / f"{p.name[:-9] if p.suffix == '.png' else p.stem}.png").exists())]
+            if not todo:
+                continue
+            net = net or UNetSegmenter.from_file(ck_file)
+            lab.mkdir(parents=True, exist_ok=True)
+            mp.mkdir(parents=True, exist_ok=True)
+            print(f"{ck_file.relative_to(ROOT)} {which} ({', '.join(cells) if len(cells) < 4 else 'all cells'}): "
+                  f"{len(todo)} frames", flush=True)
+            for i, src in enumerate(todo):
+                stem = src.name[:-9] if src.suffix == ".png" else src.stem
+                out = net.segment(cv2.imread(str(src), cv2.IMREAD_GRAYSCALE))
+                cv2.imwrite(str(lab / f"{stem}.png"), out.labels)
+                cv2.imwrite(str(mp / f"{stem}.png"), np.round(out.maxprob * 255).astype(np.uint8))
+        del net
+        torch.cuda.empty_cache()
+
+
 def segment(model: str) -> None:
+    if MODELS[model].kind == "unet":
+        return segment_unet(model)
     import torch
     from nnunetv2.inference.predict_from_raw_data import nnUNetPredictor
     seg = MODELS[model]
@@ -409,7 +449,10 @@ def calibrate(model: str, gates: Gates) -> None:
     df["size_vs_gt"] = df["area"] / df["gt_area"]
     cv = df[p].groupby("cell").agg(her2=("her2", "first"), frames=("stem", "size"), dsc=("dsc", "mean"),
                                    size_bias=("size_vs_gt", "median"), dsc_min=("dsc", "min"))
-    cv["validated"] = (cv.dsc >= CELL_MIN_DSC) & cv.size_bias.between(*CELL_SIZE_BIAS)
+    cv = cv.reindex(sorted(df.cell.unique()))      # a cell with no passing frame (U-Net, high-4) is listed, not validated
+    cv["her2"] = cv.index.map(df.groupby("cell").her2.first())
+    cv["frames"] = cv.frames.fillna(0).astype(int)
+    cv["validated"] = ((cv.dsc >= CELL_MIN_DSC) & cv.size_bias.between(*CELL_SIZE_BIAS)).fillna(False).astype(bool)
     cv.to_csv(res / "cell_validation.csv")
     cell_feature_check(df, cv, res)
     summary = {

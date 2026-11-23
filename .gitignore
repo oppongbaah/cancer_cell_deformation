@@ -9,44 +9,26 @@ build/
 .env
 .venv/
 venv/
-*.pth
 
-# Data and checkpoints (large files)
-# NOTE on the `data/**` + `!data/**/` form below: git cannot re-include a file if a
-# PARENT DIRECTORY is excluded, so a plain `data/` would make the `!` exception below
-# dead. `data/**` excludes the contents rather than the directory itself, and
-# `!data/**/` re-admits the directories so git will descend into them; only files
-# matching a later `!` rule are actually tracked.
-data/**
-!data/**/
-# ...except the manifests: small plain-text provenance records saying which frame came
-# from which video, at which index, into which pool. They make the dataset's structure
-# reviewable in git without committing a single pixel. Frames, masks and preprocessed
-# arrays stay out. `.bak` copies stay out too (they do not match the `00_` prefix).
-!data/**/00_*manifest*.csv
-# ...and the prose that explains the dataset, plus any undo manifest recording a
-# reorganisation. data/ is NOT recoverable through git (the bulk is ignored), so an
-# undo manifest is the only record of what a pool restructure actually moved -- it is
-# exactly the file you want in history rather than on one machine.
-!data/**/README.md
-!data/**/*_UNDO_*.json
-# Weights are 300 MB+ each (7 GB total) and stay out. The README does not: it is the
-# only tracked record of what each checkpoint is, which is current, and which are
-# invalid -- the weights themselves can be retrained, that knowledge cannot.
-checkpoints/**
-!checkpoints/**/
-!checkpoints/README.md
+# Data, trained models and logs are NOT part of the repository (they are large, and the recordings
+# are not ours to publish). They stay on the machines that made them; see "Data, models and logs"
+# in README.md for how to request them. Anchored to the repository root, so the code in
+# scripts/data/ and celldform/ is unaffected.
+/data/
+/checkpoints/
+/logs/
+/results/
 *.pt
 *.pth
 *.ckpt
+*.joblib
+*.log
 
-# Jupyter — scratch notebooks anywhere stay out, but notebooks/ is tracked: it is the
-# runnable pipeline walkthrough. Strip outputs before committing (see below) or the
-# diff becomes an unreadable blob of base64 PNGs.
+# Jupyter: scratch notebooks anywhere stay out, but notebooks/ is tracked (the runnable pipeline
+# walkthrough). Strip outputs before committing.
 .ipynb_checkpoints/
 *.ipynb
 !notebooks/**/*.ipynb
-
 
 # IDE
 .vscode/
@@ -56,47 +38,8 @@ checkpoints/**
 .DS_Store
 Thumbs.db
 
-# Logs — stray logs anywhere stay out, but the training logs under logs/ are kept.
-# They hold every per-epoch train/val loss and DSC, which is what the training-curve
-# figures are drawn from: ~292 KB of text carrying strictly more information than the
-# 6.4 MB of PNGs it can regenerate, and unlike a PNG it diffs and compresses.
-*.log
-!logs/
-!logs/**/
-!logs/**/*.log
-runs/
-
-# Supporting documents (kept local only)
+# Local only
 supporting_docs/
 CLAUDE.md
 .claude
-
-# results/ — only the evaluation logs. They are the experimental record every report
-# table and figure is generated from (scripts/report/build_report_assets.py), they are
-# append-only, and nothing can rebuild them: that would mean re-running every
-# checkpoint, and several have already been deleted.
-#
-# Deliberately NOT tracked, because each is derived data whose source IS in git:
-#   results/**/*.png          training curves — regenerate from logs/**/*.log
-#   results/_report_strips/   render_holdout_comparison.py intermediates; the variants
-#                             that reach the report are tracked in masters_thesis/main_work/images/
-# Git stores a whole new blob per regenerated binary, so tracking figures grows the repo
-# by their full size on every rebuild rather than by their diff.
-results/**
-!results/**/
-!results/**/*.jsonl
-
-# Notebook sandbox -- LAST ON PURPOSE. Later rules win, so these must come after
-# the !results/**/*.jsonl and !logs/**/*.log exceptions above or they are overridden.
-# Runs launched from a notebook write here instead of preswap/ or
-# postswap/, so exploratory output never enters the experimental record that
-# compare_postswap.py and the report tables are generated from. Scratch by definition,
-# so none of it is tracked -- including its eval log, which the results/**/*.jsonl rule
-# would otherwise pick up.
 configs/notebook/
-checkpoints/notebook/
-logs/notebook/
-results/notebook/
-
-# One line per finished SLURM job: what scripts/hpc/_autocommit.sh committed/pushed. Local only.
-logs/hpc/autocommit.log

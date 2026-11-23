@@ -464,9 +464,10 @@ class MainWindow(QtWidgets.QMainWindow):
             buttons.addWidget(b)
         self.chk_provisional = QtWidgets.QCheckBox("Give a provisional verdict even if the checks fail")
         self.chk_provisional.setToolTip(
-            "Off by default. The classifier was validated only on cells that pass the frame checks and have all 10 laser "
-            "steps. With this on, a verdict is also computed from whatever steps passed, but it is always labelled "
-            "PROVISIONAL, NOT VALIDATED and is not a HER2 result.")
+            "Off by default. The classifier was validated only on cells that pass the frame checks and have at least 10 "
+            "laser steps. (A recording of 3 to 9 steps gets a result labelled SHORT RECORDING without this box.) With this "
+            "on, a verdict is also computed when the frame checks fail or there are fewer than 3 steps, but it is always "
+            "labelled PROVISIONAL, NOT VALIDATED and is not a HER2 result.")
         self.chk_provisional.setStyleSheet("QCheckBox{color:#a05a00;}")
         self.models_box = QtWidgets.QGroupBox("Required files")
         mv = QtWidgets.QVBoxLayout(self.models_box)
@@ -1115,16 +1116,18 @@ class MainWindow(QtWidgets.QMainWindow):
     BASE_STYLE = "font-size:20px;font-weight:bold;"
 
     def show_verdict(self, v, final: bool = False) -> None:
-        self.verdict_lbl.setStyleSheet(self.BASE_STYLE + ("color:#b85c00;" if v.status == "provisional" else ""))
+        self.verdict_lbl.setStyleSheet(self.BASE_STYLE + ("color:#b85c00;" if v.status in ("provisional", "short") else ""))
         if v.status == "ok":
             self.verdict_lbl.setText(f"{v.label.upper()} HER2  (P high {v.p_high:.2f})")
+        elif v.status == "short":
+            self.verdict_lbl.setText(f"SHORT RECORDING: {v.label.upper()} HER2  (P high {v.p_high:.2f})")
         elif v.status == "provisional":
             self.verdict_lbl.setText(f"PROVISIONAL, not validated: {v.label.upper()} HER2  (P high {v.p_high:.2f})")
         elif final:
             self.verdict_lbl.setText("Finished: no HER2 verdict could be given")
         else:
             self.verdict_lbl.setText("No verdict yet")
-        lead = {"ok": "", "provisional": "Not a HER2 result, because: "}.get(v.status, "")
+        lead = {"ok": "", "short": "Read with care: ", "provisional": "Not a HER2 result, because: "}.get(v.status, "")
         self.info.setText((lead + v.reason + "\n" if v.status != "ok" else "") +
                           f"{v.n_steps} laser steps, {v.pass_fraction:.0%} of measured frames pass the checks")
         self.caveats.setText("\n".join("• " + c for c in v.caveats))

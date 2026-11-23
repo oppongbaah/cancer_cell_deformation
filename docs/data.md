@@ -1,6 +1,6 @@
 # Data Layout
 
-Full documentation of the `data/` directory — see also `data/README.md` for the contamination-firewall details.
+Full documentation of the `data/` directory. The data itself is not in the repository (see [Data, models and logs](https://github.com/oppongbaah/cancer_cell_deformation#data-models-and-logs)); this page describes its layout so that the code and the scripts can be followed.
 
 !!! note "Snapshot of 2026-09-04"
     The folder structure and the contamination-firewall principle below still hold. The **pool counts and which cells play

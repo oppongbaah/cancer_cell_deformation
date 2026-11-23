@@ -5,10 +5,12 @@ Sampling follows the feature step (configs/analysis/features.yaml): in every ``f
 frame (offset 0) and the ``dense_offsets`` are measured. Frames are assigned to laser steps by ``frame_index // 200``.
 
 The verdict is withheld, with the reason, when the recording cannot support one:
-    - fewer than MIN_STEPS laser steps with a passing frame (the per-cell features need 10; baseline = first 10 steps),
+    - fewer than MIN_STEPS_SHORT (3) laser steps with a passing frame,
     - fewer than ``min_pass_fraction`` (0.8) of the sampled frames pass the frame checks (the cell is then not
       "usable" by the thesis' own rule).
-Otherwise ``p_high`` is the framework's equal-weight mean, called high at >= 0.5. ``caveats`` lists what the framework
+With 10 or more steps (MIN_STEPS) ``p_high`` is the framework's equal-weight mean, called high at >= 0.5. With 3 to 9
+steps the per-cell features cannot be measured (the baseline is the first 10 steps), so the verdict is the step model
+alone and its status is "short": it says so, and it is not the validated classifier. ``caveats`` lists what the framework
 was NOT validated for (e.g. a laser protocol other than 500->1200 mA / 30 s steps, or a segmenter other than the one
 the classifier's features came from).
 """
@@ -22,7 +24,7 @@ import pandas as pd
 
 from celldform.analysis_config import load as load_config
 from celldform.demo.analyze import FrameAnalyzer, FrameResult
-from celldform.demo.framework import MIN_STEPS, SELECTED, STEP_FEATURES, HER2Framework
+from celldform.demo.framework import MIN_STEPS, MIN_STEPS_SHORT, SELECTED, STEP_FEATURES, HER2Framework
 from celldform.demo.segment import Seg
 from celldform.features.deformation import FRAME_FEATURES, cell_summary, within_step
 from celldform.features.quality import Gates
@@ -30,7 +32,7 @@ from celldform.features.quality import Gates
 
 @dataclass
 class Verdict:
-    status: str                         # "ok" (validated) | "provisional" (computed, NOT validated) | "insufficient"
+    status: str                         # "ok" (validated) | "short" (3-9 steps, step model only) | "provisional" | "insufficient"
     reason: str = ""                    # why there is no verdict, or why a provisional one is not validated
     label: Optional[str] = None         # "high" | "low" HER2 (None when insufficient)
     p_high: float = float("nan")
@@ -48,6 +50,8 @@ class Verdict:
         """One line that cannot be mistaken: a provisional verdict always says so."""
         if self.status == "ok":
             return f"HER2 {self.label} (P high {self.p_high:.2f})"
+        if self.status == "short":
+            return f"SHORT RECORDING, STEP MODEL ONLY: HER2 {self.label} (P high {self.p_high:.2f})"
         if self.status == "provisional":
             return f"PROVISIONAL, NOT VALIDATED: HER2 {self.label} (P high {self.p_high:.2f})"
         return "no verdict - " + self.reason
@@ -120,9 +124,10 @@ class CellSession:
         st = self.steps()
         v = Verdict("insufficient", n_steps=len(st), pass_fraction=pf, caveats=list(self.caveats))
         fails = []
-        if len(st) < MIN_STEPS:
-            fails.append(f"{len(st)} laser steps measured; the classifier needs {MIN_STEPS} "
-                         f"({MIN_STEPS * self.frames_per_step} frames = {MIN_STEPS * self.frames_per_step / self.fps:.0f} s)")
+        short = MIN_STEPS_SHORT <= len(st) < MIN_STEPS
+        if len(st) < MIN_STEPS_SHORT:
+            fails.append(f"{len(st)} laser steps measured; at least {MIN_STEPS_SHORT} are needed "
+                         f"({MIN_STEPS_SHORT * self.frames_per_step} frames = {MIN_STEPS_SHORT * self.frames_per_step / self.fps:.0f} s)")
         if pf < self.min_pass_fraction:
             fails.append(f"only {pf:.0%} of measured frames pass the checks (need {self.min_pass_fraction:.0%})")
         if self.framework is None:
@@ -131,12 +136,18 @@ class CellSession:
             v.reason = fails[0]
         else:
             cf = self.cell_features()
-            p = self.framework.p_high(st, cf)
+            p = self.framework.p_high(st, cf, step_only=short and not fails)
             if not np.isfinite(p["p_high"]):
                 v.reason = "a per-cell feature could not be computed"
             else:
                 v.status, v.p_high, v.p_step, v.p_cell = "ok", p["p_high"], p["p_step"], p["p_cell"]
                 v.label = "high" if p["p_high"] >= 0.5 else "low"
+                if short and not fails:
+                    v.status = "short"
+                    v.reason = (f"only the step model is used, because the cell-level model needs {MIN_STEPS} laser steps "
+                                f"({MIN_STEPS * self.frames_per_step / self.fps:.0f} s) and this recording has {len(st)}; "
+                                "a recording this short stays at the first, low laser powers, so the answer rests on the "
+                                "cell's size and shape rather than on how it deforms under load")
                 if fails:                                    # computed anyway, on request: say what is missing
                     missing = [k for k in SELECTED if not np.isfinite(cf.get(k, np.nan))]
                     if missing:

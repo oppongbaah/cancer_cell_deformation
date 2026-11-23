@@ -80,8 +80,9 @@ forgets them (the files themselves are never deleted or changed).
    time, with `verdict.json`, `frames.csv`, `steps.csv`, `dashboard.png` and `inference.log`. They do not say which folder the
    recording came from or who ran it.
 
-The app gives a verdict only when a recording has at least 10 usable laser steps and 80 % of the measured frames pass the checks;
-otherwise it says why. Details, and the optional provisional verdict, are in [the demonstration app](demo.md).
+The app gives a verdict only when a recording has at least 3 usable laser steps (about 27 s) and 80 % of the measured frames pass the checks;
+otherwise it says why. From 10 steps (about 91 s) it uses the full validated classifier; shorter recordings get a result labelled
+as a short recording, from the step model alone. Details, and the optional provisional verdict, are in [the demonstration app](demo.md).
 
 ## Uninstall
 

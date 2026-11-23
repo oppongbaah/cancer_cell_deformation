@@ -237,7 +237,9 @@ def test_an_error_inside_the_analysis_returns_to_idle_and_analyze_works_again(ap
     w.segmenter = DiscSegmenter()                                            # fixed: it runs
     w.btn_analyze.click()
     settle(w)
-    assert "finished:" in w.dash.log.toPlainText() and w.verdict_lbl.text().startswith("Finished")
+    # the 900-frame recording has 5 laser steps: a labelled short-recording result (before 2026-11-23, "no verdict")
+    assert "finished:" in w.dash.log.toPlainText() and "model exploded" not in w.verdict_lbl.text()
+    assert w.verdict_lbl.text().startswith(("Finished", "SHORT RECORDING"))
 
 
 def test_an_error_while_starting_does_not_leave_the_window_stuck(app, tmp_path, monkeypatch):

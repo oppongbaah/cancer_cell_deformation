@@ -44,7 +44,7 @@ class State:
     crops: Dict[int, np.ndarray] = field(default_factory=dict)       # laser step -> small image of the cell
     info: Dict = field(default_factory=dict)                         # the classifier's training record
     reference: Optional[pd.DataFrame] = None                         # the 15 training cells' per-cell features
-    min_steps: int = 10
+    min_steps: int = 3
     min_pass: float = 0.8
     title: str = ""
     source: str = "video"                        # where the frames were read from: video or images
@@ -84,7 +84,7 @@ def make_crop(gray: np.ndarray, region: Optional[np.ndarray], size: int = CROP) 
 def build_state(sess, rec=None, n_measured: int = 0, elapsed_s: float = 0.0, segmenter: str = "unet",
                 device: str = "", reference: Optional[pd.DataFrame] = None) -> State:
     """Snapshot of a :class:`~celldform.demo.session.CellSession` (copies, so it is safe to hand to another thread)."""
-    from celldform.demo.framework import MIN_STEPS
+    from celldform.demo.framework import MIN_STEPS_SHORT
     t = mA = None
     log = getattr(rec, "frame_log", None)
     if log is not None and "set_current_mA" in log:
@@ -95,7 +95,7 @@ def build_state(sess, rec=None, n_measured: int = 0, elapsed_s: float = 0.0, seg
                  total_frames=int(getattr(rec, "declared_frames", 0) or 0), n_measured=n_measured,
                  elapsed_s=elapsed_s, segmenter=segmenter, device=device, crops=dict(getattr(sess, "crops", {})),
                  info=dict(getattr(sess.framework, "info", {}) or {}), reference=reference,
-                 min_steps=MIN_STEPS, min_pass=sess.min_pass_fraction, source=str(getattr(rec, "source", "video")),
+                 min_steps=MIN_STEPS_SHORT, min_pass=sess.min_pass_fraction, source=str(getattr(rec, "source", "video")),
                  title=str(getattr(rec, "cell_label", "") or (getattr(rec, "name", "") if rec is not None else "")))
 
 
@@ -233,28 +233,31 @@ def panel_verdict(ax, s: State) -> None:
     v = s.verdict
     if v is None:
         ax.text(0.5, 0.5, "nothing run yet", ha="center", color="#777"); return
-    if v.label is not None:                                  # a verdict: validated ("ok") or provisional
+    if v.label is not None:                                  # a verdict: validated ("ok"), short-recording or provisional
         col = HIGH if v.label == "high" else LOW
-        prov = v.status == "provisional"
-        g = 0.55 if prov else 0.30                          # bottom of the gauge; a provisional one leaves room below for why
-        ax.text(0.0, 0.96 if prov else 0.86, f"{v.label.upper()} HER2", fontsize=20, fontweight="bold", color=col, va="center")
-        if prov:
-            ax.text(0.0, 0.86, "PROVISIONAL: NOT VALIDATED", fontsize=11, fontweight="bold", color="#b85c00", va="center",
+        flag = v.status != "ok"
+        g = 0.55 if flag else 0.30                          # bottom of the gauge; a flagged one leaves room below for why
+        ax.text(0.0, 0.96 if flag else 0.86, f"{v.label.upper()} HER2", fontsize=20, fontweight="bold", color=col, va="center")
+        if flag:
+            banner = "SHORT RECORDING: STEP MODEL ONLY" if v.status == "short" else "PROVISIONAL: NOT VALIDATED"
+            ax.text(0.0, 0.86, banner, fontsize=11, fontweight="bold", color="#b85c00", va="center",
                     bbox=dict(boxstyle="round,pad=0.25", fc="#fff3e0", ec="#b85c00"))
-        ax.text(0.0, 0.77 if prov else 0.70, f"P(high) = {v.p_high:.2f}", fontsize=11, color=INK, va="center")
+        ax.text(0.0, 0.77 if flag else 0.70, f"P(high) = {v.p_high:.2f}", fontsize=11, color=INK, va="center")
         xs = np.linspace(0, 1, 200)
         for lo, hi in zip(xs[:-1], xs[1:]):
             ax.axvspan(lo, hi, g, g + 0.12, color=plt_blend(LOW, HIGH, (lo + hi) / 2), lw=0)
         ax.plot([0.5, 0.5], [g - 0.04, g + 0.16], color=INK, lw=1)
         for p, name in ((v.p_step, "step model"), (v.p_cell, "cell model"), (v.p_high, "average")):
-            ax.plot([p], [g + 0.06], marker="v" if name == "average" else "o", ms=9 if name == "average" else 6,
-                    color=INK, mec="white", zorder=5, clip_on=False)
+            if p == p:                                       # the cell model is absent from a short recording
+                ax.plot([p], [g + 0.06], marker="v" if name == "average" else "o", ms=9 if name == "average" else 6,
+                        color=INK, mec="white", zorder=5, clip_on=False)
         ax.text(0.0, g + 0.17, "low", fontsize=7, color=LOW); ax.text(1.0, g + 0.17, "high", fontsize=7, color=HIGH, ha="right")
-        if prov:                                             # what is missing, so nobody takes it for a result
+        cell_txt = f"cell model {v.p_cell:.2f}" if v.p_cell == v.p_cell else "cell model not used"
+        if flag:                                             # what is missing, so nobody takes it for a validated result
             import textwrap
-            ax.text(0.0, g - 0.11, f"step model {v.p_step:.2f}    cell model {v.p_cell:.2f}    average {v.p_high:.2f}",
+            ax.text(0.0, g - 0.11, f"step model {v.p_step:.2f}    {cell_txt}    average {v.p_high:.2f}",
                     fontsize=8, color=INK, va="center")
-            why = "\n".join(textwrap.wrap("Not validated: " + v.reason, 64))
+            why = "\n".join(textwrap.wrap(("Not validated: " if v.status == "provisional" else "") + v.reason, 64))
             ax.text(0.0, g - 0.2, why, fontsize=6.5, color="#a05a00", va="top", linespacing=1.3)
         else:
             for yy, (p, name) in zip((0.18, 0.10, 0.02), ((v.p_step, "step model"), (v.p_cell, "cell model"), (v.p_high, "average"))):
@@ -377,7 +380,8 @@ def save(s: State, path: Path | str, dpi: int = 130) -> Path:
     top = fig.subfigures(4, 1, height_ratios=[0.35, 1.2, 1.2, 0.85], hspace=0.02)
     head = top[0].subplots(1, 1); head.axis("off")
     v = s.verdict
-    res = (("" if v.status == "ok" else "PROVISIONAL, NOT VALIDATED: ") + f"{v.label.upper()} HER2  (P high {v.p_high:.2f})"
+    res = ({"ok": "", "short": "SHORT RECORDING, STEP MODEL ONLY: "}.get(v.status if v is not None else "", "PROVISIONAL, NOT VALIDATED: ")
+           + f"{v.label.upper()} HER2  (P high {v.p_high:.2f})"
            if v is not None and v.label is not None
            else "No HER2 verdict: " + (v.reason if v is not None else "nothing run"))
     head.text(0.0, 0.75, f"celldform demo: {s.title}".strip(), fontsize=16, fontweight="bold", color=INK, transform=head.transAxes)

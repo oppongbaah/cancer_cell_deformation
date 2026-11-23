@@ -24,8 +24,9 @@ A recording folder holds `video.avi` and, if present, `SKBR3.txt` and `frames.cs
 4. `analyze.py`: trapped cell = region nearest the trap (learned from the frames seen so far, or set by a click), the
    five frame checks, shape and deformation features.
 5. `session.py`: laser steps accumulate; the framework classifier (step LR + LR on PC1 of the selected 4, equal-weight
-   mean, 14/15 leave-one-cell-out) gives P(high) **only** with >= 10 laser steps and >= 80 % of measured frames passing.
-   Otherwise the verdict is withheld with the reason.
+   mean, 14/15 leave-one-cell-out) gives P(high) **only** with >= 80 % of measured frames passing and >= 3 laser steps. With >= 10 steps it is the full
+   classifier; with 3 to 9 it is the step model alone, labelled *short recording* (see below). Otherwise the verdict is
+   withheld with the reason.
 
 Outputs of the headless run: `annotated.mp4` (predicted mask outlined white, decoy grey), `frames.csv`, `steps.csv`,
 `verdict.json` (includes the caveats and timing).
@@ -209,14 +210,31 @@ analysis is doing, and runs after every change, so no stage can be left with a s
 - `import cv2` makes Qt look for OpenCV's own plugins, which can stop Qt from creating a window; `main()` undoes it.
 
 
-## Provisional verdicts (when validation fails)
+## Short recordings and provisional verdicts
 
-By default the app **withholds** a verdict unless the recording has at least 10 usable laser steps and at least 80% of
-measured frames pass the five frame checks, because those are the conditions the classifier was validated under
-(leave-one-cell-out 14/15, AUC 0.94, on cells that passed them).
+The classifier was validated (leave-one-cell-out 14/15, AUC 0.94) on whole recordings: 10 or more laser steps, and at
+least 80% of measured frames passing the five frame checks. The app treats a recording by its length:
+
+| Usable laser steps | Result |
+|---|---|
+| fewer than 3 | no verdict (the reason says how many steps and seconds are needed) |
+| 3 to 9 | a **short-recording** verdict: the step model alone, labelled `SHORT RECORDING, STEP MODEL ONLY` |
+| 10 or more | the full classifier, an ordinary verdict |
+
+A laser step is 200 frames, 9.1 s, so 3 steps is about 27 s and 10 steps about 91 s. **Why the short result is weaker:**
+the per-cell measures (baseline length, volume change and so on) compare the end of the ramp with its first 10 steps and
+cannot be computed from fewer, so the cell-level half of the classifier is left out rather than filled with the training
+cells' median, which would pull every answer toward the middle. A recording that short also stays at the first, low
+laser powers, so the cell is barely loaded and the answer rests on its size and shape rather than on how it deforms.
+In a test that cut the 15 recordings short, the step model alone placed 11 to 12 of 15 cells correctly from 3 to 10
+steps, no better than from the full ramp (11 of 15), and one cell is about 7 points; do not read a short result as the
+14/15 of the full classifier. The recording must still pass the 80% frame check.
+
+The short-recording label appears in the window (orange, *Read with care:*), on the dashboard (badge, and "cell model not
+used"), in `verdict.json` (`"status": "short"`, `"validated": false`) and in the logs. No option is needed for it.
 
 The **Give a provisional verdict even if the checks fail** box (command line: `--provisional`) also computes a verdict
-from whatever steps did pass. It is opt-in, off by default, locked while a run is going, and everything it produces
+when the frame checks fail or there are fewer than 3 steps. It is opt-in, off by default, locked while a run is going, and everything it produces
 says so:
 
 - the window shows *PROVISIONAL, not validated: HIGH HER2 (P high 0.52)* in orange, with *Not a HER2 result, because:*

@@ -27,8 +27,8 @@
     `high-1` into evaluation), so pre- and post-swap numbers are not comparable at all.
 
     Current baseline: `postswap_ftl_cw142_s42`, **evaluated DSC 0.816 ± 0.057**
-    (3-seed mean, 4 cells, 203 frames). See `configs/README.md` and
-    `checkpoints/README.md`.
+    (3-seed mean, 4 cells, 203 frames). See `configs/README.md`;
+    the checkpoints themselves are not in the repository.
 
 ---
 

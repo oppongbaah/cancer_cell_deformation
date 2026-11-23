@@ -51,9 +51,9 @@ def test_empty_and_short_session_withholds_verdict():
     feed_steps = s.steps()
     assert len(feed_steps) == 11
     s2 = CellSession(fake_framework())
-    feed(s2, 5 * 200)
+    feed(s2, 2 * 200)
     v2 = s2.verdict()
-    assert v2.status == "insufficient" and v2.label is None and "needs 10" in v2.reason and v2.n_steps == 5
+    assert v2.status == "insufficient" and v2.label is None and "at least 3" in v2.reason and v2.n_steps == 2
 
 
 def test_no_classifier_is_reported():
@@ -120,25 +120,65 @@ def test_framework_load_checks_what_it_opened(tmp_path):
 
 def test_the_default_still_withholds_a_verdict_that_fails_validation():
     s = CellSession(fake_framework())
-    feed(s, 800)                                                  # 4 laser steps
+    feed(s, 400)                                                  # 2 laser steps: under the minimum of 3
     v = s.verdict()
-    assert v.status == "insufficient" and v.label is None and not v.validated and "needs 10" in v.reason
+    assert v.status == "insufficient" and v.label is None and not v.validated and "at least 3" in v.reason
+
+
+def test_a_short_recording_gets_a_labelled_step_model_verdict_without_the_provisional_option():
+    s = CellSession(fake_framework())                             # provisional is OFF
+    feed(s, 4 * 200)                                              # 4 laser steps: more than 2, fewer than 10
+    v = s.verdict()
+    assert v.status == "short" and v.label in ("high", "low") and v.n_steps == 4 and not v.validated
+    assert v.p_high == v.p_step and v.p_cell != v.p_cell                    # the step model alone; no cell model
+    assert "step model" in v.reason and "10 laser steps" in v.reason and "size and shape" in v.reason
+    assert v.headline().startswith("SHORT RECORDING, STEP MODEL ONLY: HER2 ") and f"{v.p_high:.2f}" in v.headline()
+
+
+@pytest.mark.parametrize("steps, status", [(2, "insufficient"), (3, "short"), (9, "short"), (10, "ok")])
+def test_the_step_count_boundaries(steps, status):
+    s = CellSession(fake_framework())
+    feed(s, steps * 200)
+    v = s.verdict()
+    assert v.n_steps == steps and v.status == status
+
+
+def test_a_short_recording_that_fails_the_frame_checks_still_gets_no_verdict():
+    s = CellSession(fake_framework())
+    k = 0
+    for i in range(800):
+        if s.wants(i):
+            s.add(seg(x=100 if k % 4 == 3 else 600), i)
+            k += 1
+    v = s.verdict()
+    assert v.status == "insufficient" and "of measured frames pass the checks" in v.reason
+
+
+def test_a_short_recording_with_a_failed_pass_rate_is_provisional_with_the_old_imputed_cell_model():
+    s = CellSession(fake_framework(), provisional=True)
+    k = 0
+    for i in range(800):
+        if s.wants(i):
+            s.add(seg(x=100 if k % 4 == 3 else 600), i)
+            k += 1
+    v = s.verdict()
+    assert v.status == "provisional" and v.p_cell == v.p_cell
 
 
 def test_provisional_gives_a_verdict_when_there_are_too_few_steps_and_says_so():
     s = CellSession(fake_framework(), provisional=True)
-    feed(s, 800)
+    feed(s, 400)
     v = s.verdict()
     assert v.status == "provisional" and v.label in ("high", "low") and 0 <= v.p_high <= 1 and not v.validated
-    assert v.p_high == pytest.approx((v.p_step + v.p_cell) / 2) and v.n_steps == 4
-    assert "laser steps measured; the classifier needs 10" in v.reason and "validated only on cells that pass" in v.reason
+    assert v.p_high == pytest.approx((v.p_step + v.p_cell) / 2) and v.n_steps == 2
+    assert "laser steps measured; at least 3 are needed" in v.reason and "validated only on cells that pass" in v.reason
     assert v.headline().startswith("PROVISIONAL, NOT VALIDATED: HER2 ") and f"{v.p_high:.2f}" in v.headline()
 
 
 def test_provisional_with_a_low_pass_rate_and_both_reasons_listed():
     s = CellSession(fake_framework(), provisional=True)
     k = 0
-    for i in range(800):                                          # few steps AND every 4th frame jumps away
+    for i in range(400):                                          # few steps AND every 4th frame jumps away
         if s.wants(i):
             s.add(seg(x=100 if k % 4 == 3 else 600), i)
             k += 1
@@ -149,7 +189,7 @@ def test_provisional_with_a_low_pass_rate_and_both_reasons_listed():
 
 def test_provisional_notes_cell_measures_that_were_filled_in(monkeypatch):
     s = CellSession(fake_framework(), provisional=True)
-    feed(s, 800)
+    feed(s, 400)
     monkeypatch.setattr(s, "cell_features", lambda: {})           # nothing could be measured at cell level
     v = s.verdict()
     assert v.status == "provisional" and "4 of 4 cell-level measures could not be computed" in v.reason
@@ -184,4 +224,5 @@ def test_headlines_for_every_status():
     from celldform.demo.session import Verdict
     assert Verdict("insufficient", "why").headline() == "no verdict - why"
     assert Verdict("ok", "", "low", 0.2).headline() == "HER2 low (P high 0.20)"
+    assert Verdict("short", "r", "low", 0.4).headline() == "SHORT RECORDING, STEP MODEL ONLY: HER2 low (P high 0.40)"
     assert Verdict("provisional", "r", "high", 0.7).headline() == "PROVISIONAL, NOT VALIDATED: HER2 high (P high 0.70)"

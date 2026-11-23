@@ -165,8 +165,9 @@ Key methods:
 The desktop application (`celldform-demo`) runs the trained models over a **recorded** video or image sequence and
 reports the HER2 class of the trapped cell, with the evidence behind it. It reads the recording, measures a fixed
 sample of frames (offsets 0, 20, 60, 100, 140 and 180 in every 200-frame laser step), applies the five frame checks,
-accumulates the laser steps, and gives a verdict only when at least 10 steps are usable and 80 % of the measured frames
-pass; otherwise it says why. The classifier is the final framework (step-level logistic regression plus a
+accumulates the laser steps, and gives a verdict only when at least 3 steps are usable and 80 % of the measured frames
+pass; otherwise it says why. With 10 or more steps it is the full validated classifier; with 3 to 9 it is the step
+model alone, labelled as a short recording. The classifier is the final framework (step-level logistic regression plus a
 cell-level model on the first principal component of four features, equal-weight mean).
 
 It is **not real-time and not connected to the instrument**: it analyses recordings, and a measured frame costs a

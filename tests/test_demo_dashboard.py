@@ -48,11 +48,22 @@ def test_protocol_only_state_draws():
 
 
 def test_short_session_state_shows_what_is_missing():
-    s = _session(1000)
-    st = D.build_state(s, _log(1000), n_measured=30, elapsed_s=3.0, segmenter="unet", device="cpu")
+    s = _session(400)
+    st = D.build_state(s, _log(400), n_measured=30, elapsed_s=3.0, segmenter="unet", device="cpu")
     assert st.verdict.status == "insufficient" and len(st.steps) < st.min_steps
-    assert len(st.frames) == 30 and st.mA is not None and len(st.crops) == 0   # no gray passed: no pictures
+    assert len(st.frames) == 12 and st.mA is not None and len(st.crops) == 0   # no gray passed: no pictures
     _draw_all(st)
+
+
+def test_short_recording_state_draws_the_flagged_gauge_without_a_cell_model():
+    s = _session(1000)                                                          # 5 laser steps
+    st = D.build_state(s, _log(1000), n_measured=30, elapsed_s=3.0, segmenter="unet", device="cpu")
+    assert st.verdict.status == "short" and st.verdict.p_cell != st.verdict.p_cell
+    _draw_all(st)
+    fig = Figure(figsize=(9, 3.2)); ax = fig.subplots(1, 1)
+    D.panel_verdict(ax, st)
+    text = " ".join(t.get_text() for t in ax.texts)
+    assert "SHORT RECORDING: STEP MODEL ONLY" in text and "cell model not used" in text and "nan" not in text
 
 
 def test_full_session_state_draws_the_gauge_and_reference():

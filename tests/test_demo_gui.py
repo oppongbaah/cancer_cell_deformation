@@ -144,12 +144,12 @@ def test_stop_works_while_paused(app, tmp_path, monkeypatch):
 def test_log_tab_shows_the_inference_log_and_start_clears_it(app, tmp_path, monkeypatch):
     _patched_run(monkeypatch)
     w = MainWindow(DiscSegmenter(), fake_framework())
-    w.load(str(make_recording(tmp_path / "r", 450)))
+    w.load(str(make_recording(tmp_path / "r", 350)))
     log_tab = [w.dash.tabText(i) for i in range(w.dash.count())].index("Log")
     w.btn_analyze.click()
     assert wait(lambda: w.worker.isFinished())
     text = w.dash.log.toPlainText()
-    assert "start:" in text and "result: no verdict" in text and text.count("seg ") == 14
+    assert "start:" in text and "result: no verdict" in text and text.count("seg ") == 11
     assert (w.out / "inference.log").read_text().strip() == text.strip()
     w.dash.setCurrentIndex(log_tab); w.dash.redraw()                           # drawing the text tab must not fail
     w.btn_analyze.click()
@@ -281,7 +281,7 @@ def test_provisional_is_off_by_default_and_explains_itself(app):
 def test_without_the_option_a_failed_validation_gives_no_verdict(app, tmp_path, monkeypatch):
     _patched_run(monkeypatch)
     w = MainWindow(DiscSegmenter(), fake_framework())
-    w.load(str(make_recording(tmp_path / "r", 450)))
+    w.load(str(make_recording(tmp_path / "r", 350)))
     w.btn_analyze.click()
     assert wait(lambda: w.worker.isFinished())
     assert w.verdict_lbl.text().startswith("Finished: no HER2 verdict") and "PROVISIONAL" not in w.verdict_lbl.text()
@@ -291,7 +291,7 @@ def test_with_the_option_the_verdict_is_shown_as_provisional_everywhere(app, tmp
     import json
     _patched_run(monkeypatch)
     w = MainWindow(DiscSegmenter(), fake_framework())
-    w.load(str(make_recording(tmp_path / "r", 450)))
+    w.load(str(make_recording(tmp_path / "r", 350)))
     w.chk_provisional.setChecked(True)
     w.btn_analyze.click()
     assert not w.chk_provisional.isEnabled()                                # locked while running
@@ -299,7 +299,7 @@ def test_with_the_option_the_verdict_is_shown_as_provisional_everywhere(app, tmp
     assert w.chk_provisional.isEnabled()
     assert w.verdict_lbl.text().startswith("PROVISIONAL, not validated:") and "HER2" in w.verdict_lbl.text()
     assert "color:#b85c00" in w.verdict_lbl.styleSheet()
-    assert w.info.text().startswith("Not a HER2 result, because:") and "needs 10" in w.info.text()
+    assert w.info.text().startswith("Not a HER2 result, because:") and "at least 3" in w.info.text()
     log = w.dash.log.toPlainText()
     assert "result: PROVISIONAL, NOT VALIDATED" in log
     j = json.loads((w.out / "verdict.json").read_text())
@@ -309,3 +309,17 @@ def test_with_the_option_the_verdict_is_shown_as_provisional_everywhere(app, tmp
     w.btn_analyze.click()
     assert wait(lambda: w.worker.isFinished())
     assert "PROVISIONAL" not in w.verdict_lbl.text() and "b85c00" not in w.verdict_lbl.styleSheet()
+
+
+def test_a_short_recording_is_labelled_short_and_needs_no_option(app, tmp_path, monkeypatch):
+    import json
+    _patched_run(monkeypatch)
+    w = MainWindow(DiscSegmenter(), fake_framework())
+    w.load(str(make_recording(tmp_path / "r", 450)))                    # 3 laser steps
+    assert not w.chk_provisional.isChecked()
+    w.btn_analyze.click()
+    assert wait(lambda: w.worker.isFinished())
+    assert w.verdict_lbl.text().startswith("SHORT RECORDING:") and "HER2" in w.verdict_lbl.text()
+    assert "color:#b85c00" in w.verdict_lbl.styleSheet()
+    assert w.info.text().startswith("Read with care:") and "step model" in w.info.text()
+    assert json.loads((w.out / "verdict.json").read_text())["status"] == "short"

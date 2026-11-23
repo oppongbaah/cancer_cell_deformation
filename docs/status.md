@@ -43,9 +43,10 @@ permutation p ≈ 0.002). It was then fitted on all 15 cells; that final model i
 - **A recording from a different setup may not work.** On four recordings from a newer setup (colour camera, a
   298–1000 mA ramp in steps of about 9 s) the U-Net found the cell in only 2–13 % of the measured frames, so the app
   correctly gave no verdict. Using it there needs new annotated frames and fine-tuning.
-- **The app is cautious on purpose.** It gives a verdict only when at least 10 laser steps are usable and 80 % of the
-  measured frames pass the checks, as that is what the classifier was validated on. An optional *provisional* verdict
-  exists; it is always labelled not validated and is not a result.
+- **The app is cautious on purpose.** It gives a verdict only when at least 3 laser steps are usable and 80 % of the
+  measured frames pass the checks. The classifier was validated on whole recordings (10 or more steps), so a recording of 3
+  to 9 steps gets a result labelled *short recording* from the step model alone, which is weaker. An optional
+  *provisional* verdict exists for recordings that fail the checks; it is always labelled not validated and is not a result.
 - **Not real-time.** The U-Net is faster than the camera's 45.5 ms frame interval, but the delivered software analyses
   recordings and is not connected to the instrument.
 - **Research software.** It is not a medical device and not for clinical decisions.

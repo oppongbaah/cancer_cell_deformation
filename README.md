@@ -36,6 +36,18 @@ their **HER2 expression (high or low)** from that deformation. It is a Python li
 files: a segmentation model (the U-Net weights with their settings file, **or** an nnU-Net checkpoint) and the HER2
 classifier, or one **model bundle** that carries all of them. You get them from whoever trained them; see [the app's guide](docs/demo.md#required-files-first-run-on-a-new-machine).
 
+## Data, models and logs
+
+The repository holds the code, configurations, tests and documentation only. **The recordings, annotated frames and masks,
+trained models (the U-Net weights, the nnU-Net checkpoint and the HER2 classifier), training and job logs, and the result
+tables are not included.** They are large, and the recordings are not ours to publish through this repository. Anyone who
+needs any of them can request them by email to **[oppongbaahisaac7@gmail.com](mailto:oppongbaahisaac7@gmail.com)**: say which you need and what for, and requests are answered individually.
+
+The code that produced them is here, so the layout they take is documented ([Data layout](docs/data.md),
+[the experiment index](EXPERIMENTS.md)), and the file names, settings and numbers in the thesis can be traced to a script
+and a configuration. Without the trained models the desktop app starts but cannot analyze a recording until you load them
+([required files](docs/demo.md#required-files-first-run-on-a-new-machine)).
+
 ## Install
 
 **Windows app.** Run `celldform-setup-<version>.exe`; you do not need to install Python or this library first. Step by
@@ -79,8 +91,9 @@ verdict = run("my_recording", "results/run1", segmenter, framework, segmenter_na
 print(verdict.headline())      # HER2 high/low with P(high), or why there is no verdict
 ```
 
-A verdict is given only if the recording has at least 10 usable laser steps and 80 % of the measured frames pass the checks
-the classifier was validated on; otherwise the result says why.
+A verdict is given only if the recording has at least 3 usable laser steps and 80 % of the measured frames pass the checks
+the classifier was validated on; otherwise the result says why. With 10 or more steps it is the full validated classifier;
+with 3 to 9 it is labelled a short-recording result and uses the step model alone.
 
 ## For researchers: the workflow
 
