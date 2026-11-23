@@ -7,7 +7,7 @@ Every number is read from the experiments' NATIVE-resolution eval logs
 1228x922 so runs trained at 256, 512 or on a crop sit on one grid) and from
 results/postswap/latency_ms.json. Nothing is typed in here.
 
-    python scripts/report/plot_experiments.py --out ../masters_thesis/images
+    python scripts/report/plot_experiments.py --out ../masters_thesis/main_work/images
 
 Writes:
   exp_summary.png   (a) pooled Dice of every run, experiment by experiment, with each run's

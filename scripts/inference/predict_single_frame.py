@@ -140,7 +140,7 @@ def main() -> None:
         out_channels=conf.unet.out_channels,
     )
     # SegmentationTrainer._save_checkpoint wraps the state dict with epoch/val_dsc/
-    # optimizer/scheduler state (see scripts/training/evaluate_unet.py for the same pattern);
+    # optimizer/scheduler state (see scripts/evaluation/evaluate_unet.py for the same pattern);
     # UNet.from_checkpoint expects a bare state dict, so load manually here instead.
     state = torch.load(ckpt_path, map_location=device)
     unet.load_state_dict(state["model_state_dict"] if "model_state_dict" in state else state)

@@ -9,11 +9,11 @@ The celldform pipeline is **strictly linear** — each stage's output is the nex
 ```
 Stage 1           Stage 2              Stage 3          Stage 4              Stage 5             Stage 6           Stage 7
 ──────────────    ─────────────────    ─────────────    ─────────────────    ───────────────     ─────────────     ─────────────────
-Acquisition   →  Preprocessing    →   U-Net        →  Feature          →   Classification  →   Biomechanics  →   Real-Time
-                 (separate stage)     Segmentation     Extraction                               Analysis          Integration
+Acquisition   →  Preprocessing    →   U-Net        →  Feature          →   Classification  →   Biomechanics  →   Desktop app
+                 (separate stage)     Segmentation     Extraction                               Analysis          (celldform.demo)
 
-FrameExtractor   PreprocessingPipeline UNet             MorphologyExtractor  CellClassifier      DeformationAnalyzer RealTimePipeline
-acquisition/     preprocessing/        segmentation/    features/            classification/     biomechanics/     integration/
+FrameExtractor   PreprocessingPipeline UNet             MorphologyExtractor  CellClassifier      DeformationAnalyzer HER2Framework + CellSession
+acquisition/     preprocessing/        segmentation/    features/            classification/     biomechanics/     demo/
 ```
 
 ---
@@ -97,7 +97,7 @@ Both are set in `configs/default.yaml` under `training`. In multiclass mode (`ou
     Cancer cells occupy roughly 0.18% of a 256×256 frame (~118 pixels out of 65,536). Without `pos_weight`, the BCE loss is dominated by background pixels and the model learns to ignore the cell entirely. `pos_weight=100` tells BCE to treat each cell pixel as if it were 100 background pixels. Increase it if recall is low; decrease it if precision is low and recall is near 1.0.
 
 !!! note "Multiclass evaluation"
-    `SegmentationTrainer.evaluate()` returns a flat metrics dict in binary mode, or a dict keyed by class id (plus `"mean"`) in multiclass mode — see `SegmentationMetrics.per_class()`. `scripts/training/evaluate_unet.py` and `Visualizer.plot_training_curves()` both handle either shape.
+    `SegmentationTrainer.evaluate()` returns a flat metrics dict in binary mode, or a dict keyed by class id (plus `"mean"`) in multiclass mode — see `SegmentationMetrics.per_class()`. `scripts/evaluation/evaluate_unet.py` and `Visualizer.plot_training_curves()` both handle either shape.
 
 **GPU:** The U-Net is the only stage that runs on the GPU. See [GPU & Hardware](gpu.md).
 
@@ -158,20 +158,19 @@ Key methods:
 
 ---
 
-## Stage 7 — Real-Time Integration
+## Stage 7 — Desktop app
 
-**Module:** `celldform/integration/realtime.py`
+**Module:** `celldform/demo/`
 
-`RealTimePipeline` composes stages 2–5 into a single `process_frame(frame, frame_index, timestamp)` call for live experiments. The C++ application passes raw camera frames; the pipeline returns:
+The desktop application (`celldform-demo`) runs the trained models over a **recorded** video or image sequence and
+reports the HER2 class of the trapped cell, with the evidence behind it. It reads the recording, measures a fixed
+sample of frames (offsets 0, 20, 60, 100, 140 and 180 in every 200-frame laser step), applies the five frame checks,
+accumulates the laser steps, and gives a verdict only when at least 3 steps are usable and 80 % of the measured frames
+pass; otherwise it says why. With 10 or more steps it is the full validated classifier; with 3 to 9 it is the step
+model alone, labelled as a short recording. The classifier is the final framework (step-level logistic regression plus a
+cell-level model on the first principal component of four features, equal-weight mean).
 
-```python
-{
-    "mask":         np.ndarray,   # binary cell mask
-    "features":     dict,         # 15 morphological features
-    "label":        int,          # 0 = low HER2, 1 = high HER2
-    "label_proba":  float,        # calibrated probability
-    "latency_ms":   float,        # end-to-end processing time
-}
-```
-
-The pipeline is **stateless across frames** — safe to share across processes without locking.
+It is **not real-time and not connected to the instrument**: it analyses recordings, and a measured frame costs a
+network pass (about 40 ms for the U-Net on a modern GPU, against the camera's 45.5 ms frame interval, which is only a
+speed reference). See [the demonstration app](demo.md); the older per-frame helper in `celldform.integration` is
+described in [Per-frame inference (legacy)](api/integration.md).

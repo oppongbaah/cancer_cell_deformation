@@ -1,9 +1,11 @@
 # Data Layout
 
-Full documentation of the `data/` directory — see also `data/README.md` for the contamination-firewall details.
+Full documentation of the `data/` directory. The data itself is not in the repository (see [Data, models and logs](https://github.com/oppongbaah/cancer_cell_deformation#data-models-and-logs)); this page describes its layout so that the code and the scripts can be followed.
 
-!!! note "Last verified against disk: 2026-09-04"
-    Update this page whenever pool counts or cell roles change — it should always match what's actually on disk, not a snapshot from whenever it was last convenient to check.
+!!! note "Snapshot of 2026-09-04"
+    The folder structure and the contamination-firewall principle below still hold. The **pool counts and which cells play
+    which role changed afterwards**: the final experiments split whole cells at random (5-fold and leave-one-cell-out, see
+    [Project status](status.md)), and the machine that holds the data is the reference, not this page.
 
 ---
 

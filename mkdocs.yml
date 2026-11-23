@@ -1,5 +1,5 @@
 site_name: celldform
-site_description: Real-Time Machine Learning Framework for Quantitative SKBR3 Cell Deformation Analysis in Dual-Beam Optical Tweezer Systems
+site_description: Machine learning for quantifying SKBR3 cell deformation in dual-beam optical tweezers and classifying HER2 expression, with a desktop app
 site_author: Isaac Oppong-Baah
 repo_url: https://github.com/oppongbaah/cancer_cell_deformation
 repo_name: oppongbaah/cancer_cell_deformation
@@ -46,14 +46,20 @@ plugins:
 nav:
   - Home: index.md
   - Project Status: status.md
+  - Desktop app:
+    - Demonstration app: demo.md
+    - Installing the desktop app: install_windows.md
+    - Privacy: privacy.md
   - Pipeline Overview: pipeline.md
   - Workflow Guide: workflow.md
-  - Training Results: training.md
   - Data Layout: data.md
   - Scripts Reference: scripts.md
   - CLI Reference: cli.md
   - GPU & Hardware: gpu.md
   - HPC Guide: hpc.md
+  - Research log:
+    - September 2026 status: research_log_2026-09.md
+    - Training results: training.md
   - API Reference:
     - Acquisition: api/acquisition.md
     - Preprocessing: api/preprocessing.md

@@ -6,7 +6,7 @@
 #  512 cannot hold batch 16 on the 8 GB GPU, so BOTH arms use micro-batch 4 with
 #  4-step gradient accumulation (effective batch 16): resolution is the ONLY
 #  difference between e2a and e2b. Scored at native resolution (eval_native.py).
-#  Run with: scripts/training/run_experiment.sh postswap/experiment_2_resolution e2a_res256_b4
+#  Run with: python scripts/training/train_experiment.py postswap/experiment_2_resolution e2a_res256_b4
 # ════════════════════════════════════════════════════════════════════════════
 # ════════════════════════════════════════════════════════════════════════════
 #  POST-SWAP REFERENCE RUN — Way Forward item 1 (2026-09-17)

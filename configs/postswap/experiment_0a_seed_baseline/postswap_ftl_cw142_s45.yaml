@@ -2,7 +2,7 @@
 #  POST-SWAP REFERENCE RUN — Way Forward item 1 (2026-09-17)
 #
 #  REPLACEMENT RUN (2026-09-23). Seed 45 replaces seed 44, which
-#  scripts/training/check_convergence.py flagged: internal val 0.905 against its
+#  scripts/evaluation/check_convergence.py flagged: internal val 0.905 against its
 #  siblings' 0.933/0.940, and it then scored 0.507 on high-1 against their
 #  0.818/0.833 -- tripling the pooled error bar for a reason unrelated to any
 #  change under test. s44 is kept on disk as the record, not pooled.

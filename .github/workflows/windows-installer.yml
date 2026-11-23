@@ -1,0 +1,30 @@
+# Builds the Windows installer on a clean Windows machine (so nothing of anyone's own computer ends up in it) and keeps
+# it as a workflow artifact for the repository's collaborators. It publishes nothing and needs no credentials.
+name: windows-installer
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Inno Setup
+        run: choco install innosetup -y --no-progress
+      - name: Build (stages in C:\celldform_build, audits, self-tests, then packs)
+        run: powershell -ExecutionPolicy Bypass -File installer\windows\build.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: celldform-windows-installer
+          path: |
+            dist/installer/celldform-setup-*.exe
+            dist/installer/celldform-setup-*.exe.sha256
+          retention-days: 30

@@ -92,7 +92,7 @@ def _lookup(rows: list[dict], ckpt_key: str, scope_key: str, cls: str) -> dict:
     ]
     if not hits:
         sys.exit(f"No eval-log entry for checkpoint '{ckpt_key}' with filter "
-                 f"{want_filter!r}. Run scripts/training/evaluate_unet.py for it first.")
+                 f"{want_filter!r}. Run scripts/evaluation/evaluate_unet.py for it first.")
     return max(hits, key=lambda r: r.get("timestamp", ""))["metrics"][cls]
 
 

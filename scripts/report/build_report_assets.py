@@ -13,11 +13,11 @@ this script exists to fix.
     python scripts/report/build_report_assets.py --dry-run          # print commands only
 
 Outputs land in the report repo, not here:
-    <report-root>/images/*.png              figures
+    <report-root>/main_work/images/*.png              figures
     <report-root>/main_work/tables/*.tex    \\input{}-able LaTeX tables
 
 After running, recompile the report:
-    cd <report-root>/main_work && pdflatex -interaction=nonstopmode progress_report_10_1_26.tex
+    cd <report-root>/main_work && pdflatex -interaction=nonstopmode progress_report_10_8_26.tex
 
 Run it after ANY change to the pools, the masks, or results/preswap/preswap_eval_log.jsonl.
 The comparison-strip jobs additionally need the two checkpoints they name to be
@@ -80,7 +80,7 @@ STRIP_COLORS = ["--gt-color", "0,200,0", "--pred-color", "170,95,40",
                 "--overlap-color", "220,220,0"]
 
 
-def jobs(img: Path, tab: Path) -> dict[str, list[str]]:
+def jobs(img: Path, tab: Path, feature_model: str = "nnunet1000_loocv") -> dict[str, list[str]]:
     """Assets for progress_report_10_1_26.tex.
 
     The 2026-09-24 report is closed too; pool_flow_9_24.png stays as presented (it
@@ -91,6 +91,10 @@ def jobs(img: Path, tab: Path) -> dict[str, list[str]]:
     produces a result.
     """
     CELLS = ["high_cell9=high-9", "high_cell10=high-10", "low_cell6=low-6", "low_cell5=low-5"]
+    # Feature-extraction and classification assets go to a folder of the segmentation run's own
+    # (images/<model>/, tables/<model>/). The 5-fold reports, which used the top-level folders, were deleted
+    # 2026-11-04 along with their assets; only the leave-one-out run is built.
+    fimg, ftab = img / feature_model, tab / feature_model
     return {
         # ── Dataset Organization ────────────────────────────────────────────
         "pools": ["scripts/report/plot_pool_flow.py", "--output", str(img / "pool_flow_10_1.png")],
@@ -107,9 +111,40 @@ def jobs(img: Path, tab: Path) -> dict[str, list[str]]:
                     "--distill-exp", "randswap/experiment_3_distill/cv", "--distill-run", "student_cv",
                     "--out", str(img), "--tables", str(tab)],
         "model-comparison": ["scripts/report/plot_model_comparison.py", "--out", str(img), "--tables", str(tab)],
+        "nnunet-epochs": ["scripts/report/plot_nnunet_epochs.py", "--out", str(img), "--tables", str(tab)],
+        "loocv": ["scripts/report/plot_loocv.py", "--out", str(img), "--tables", str(tab)],
+        "final-models": ["scripts/report/plot_final_models.py", "--out", str(img), "--tables", str(tab)],
+        "high10": ["scripts/report/plot_high10.py", "--output", str(img / "high10_round14.png"),
+                   "--table-output", str(tab / "high10_selected.tex")],
+        "protocols": ["scripts/report/plot_protocols.py", "--output", str(img / "protocols.png")],
+        "fe-dataset": ["scripts/report/plot_fe_dataset.py", "--model", feature_model,
+                       "--output", str(fimg / "fe_dataset.png"), "--rounds-output", str(fimg / "fe_rounds.png"),
+                       "--table-output", str(ftab / "fe_models.tex")],
+        "region-selection": ["scripts/report/plot_region_selection.py", "--model", feature_model,
+                             "--output", str(fimg / "region_selection.png"),
+                             "--dropped-output", str(fimg / "region_dropped.png"),
+                             "--table-output", str(ftab / "region_rejections.tex"),
+                             "--checks-output", str(ftab / "frame_checks.tex"),
+                             "--cross-output", str(ftab / "frame_checks_cross.tex")],
+        "high1-exclusion": ["scripts/report/plot_high1_exclusion.py", "--model", feature_model,
+                            "--output", str(fimg / "high1_exclusion.png"),
+                            "--table-output", str(ftab / "high1_steps.tex"),
+                            "--ref-output", str(fimg / "high9_segmentation.png"),
+                            "--ref-table-output", str(ftab / "high9_steps.tex")],
+        "features": ["scripts/report/plot_features.py", "--model", feature_model, "--out", str(fimg),
+                     "--tables", str(ftab)],
+        "classify-power": ["scripts/classification/power_resolution.py", "--model", feature_model,
+                           "--tables", str(ftab)],
+        "classify-thesis": ["scripts/report/plot_classification_thesis.py", "--model", feature_model,
+                            "--img", str(fimg)],
+        "deformation-regression": ["scripts/biomechanics/deformation_regression.py", "--model", feature_model,
+                                   "--img", str(fimg), "--tables", str(ftab)],
+        "rate-of-deformation": ["scripts/biomechanics/rate_of_deformation.py", "--model", feature_model,
+                                "--img", str(fimg), "--tables", str(ftab)],
+        "analysis-dataset": ["scripts/report/plot_analysis_dataset.py", "--model", feature_model, "--img", str(fimg)],
         "distill-labels": ["scripts/report/view_soft_target.py", "--round", "4", "--stem", "high_cell7_002525",
                            "domain_high_cell7_002585", "--output", str(img / "distill_soft_targets.png")],
-        "ensemble-gate": ["scripts/training/eval_ensemble_cv.py", "--gate-only", "--tables", str(tab)],
+        "ensemble-gate": ["scripts/evaluation/eval_ensemble_cv.py", "--gate-only", "--tables", str(tab)],
         "exp3-crop-example": ["scripts/report/plot_resize_vs_crop.py",
                               "--output", str(img / "exp3_resize_vs_crop.jpg")],
         "table-percell": ["scripts/report/make_report_tables.py", "percell",
@@ -141,13 +176,16 @@ def main() -> None:
     p.add_argument("--compile", action="store_true",
                    help="After building assets, run pdflatex the required number of times "
                         "and delete the temp files")
-    p.add_argument("--tex", default="progress_report_10_1_26.tex",
+    p.add_argument("--tex", default="progress_report_10_8_26.tex",
                    help="Report .tex to compile with --compile")
+    p.add_argument("--feature-model", default="nnunet1000_loocv", choices=["nnunet1000_loocv"],
+                   help="Segmentation run the feature-extraction figures and tables are built from "
+                        "(jobs fe-dataset and features; see celldform/features/segmenters.py)")
     args = p.parse_args()
 
-    img = (args.report_root / "images").resolve()
+    img = (args.report_root / "main_work" / "images").resolve()
     tab = (args.report_root / "main_work" / "tables").resolve()
-    all_jobs = jobs(img, tab)
+    all_jobs = jobs(img, tab, args.feature_model)
 
     if args.list:
         for name in all_jobs:
@@ -163,6 +201,8 @@ def main() -> None:
 
     img.mkdir(parents=True, exist_ok=True)
     tab.mkdir(parents=True, exist_ok=True)
+    (img / args.feature_model).mkdir(exist_ok=True)
+    (tab / args.feature_model).mkdir(exist_ok=True)
 
     failed = []
     for i, name in enumerate(names, 1):

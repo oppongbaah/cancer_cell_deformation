@@ -17,7 +17,7 @@ Stage 5 of the pipeline — classifies cells as low or high HER2 expression from
 
 ## Comparative classifiers
 
-The thesis requires comparative analysis of SVM, RF, and DT. All classifiers implement the same interface so they can be swapped in `scripts/inference/infer.py` and `RealTimePipeline` without any code changes:
+SVM, random-forest and decision-tree classifiers were compared. They share one interface, so they can be swapped in `scripts/inference/infer.py` without code changes (the final HER2 classifier used by the desktop app is a separate framework, `celldform.demo.framework.HER2Framework`):
 
 ```python
 clf = CellClassifier(model_type="svm")   # or "rf", "dt"

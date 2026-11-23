@@ -8,7 +8,7 @@ style preferences; two results have already been retracted for breaking them.
 1. **One seed (42) while iterating**, `split_seed` pinned at 42 too. Three seeds on
    **both arms** before anything is reported as a result.
 2. **A single-seed delta below ~0.16 is not a result.** Log it as *screened,
-   inconclusive*. `scripts/training/compare_postswap.py` prints this verdict for you.
+   inconclusive*. `scripts/evaluation/compare_postswap.py` prints this verdict for you.
 3. **Change one variable per run.** If a non-experimental setting moves — schedule,
    split, width, pool — re-run the baseline under it before quoting any delta.
 4. **Check the split log line** at the top of every run. `high_cell10` is 50 frames
@@ -138,7 +138,7 @@ python scripts/training/train_unet.py --config configs/default.yaml
 celldform-train-unet --config configs/default.yaml
 ```
 
-Training reads from `data/preprocessed/train/01_annotate_pool/`. The dataset is automatically split into train / val (85 % / 15 % by default, `data.val_split` in the config) — val is a monitoring split only (checkpoint selection, early stopping), not the thesis-reportable score. That comes from `scripts/training/evaluate_unet.py` against the external `02_unet_holdout` pool, which is why there's no third "test" split here — it would be redundant with that external evaluation (removed 2026-09-04).
+Training reads from `data/preprocessed/train/01_annotate_pool/`. The dataset is automatically split into train / val (85 % / 15 % by default, `data.val_split` in the config) — val is a monitoring split only (checkpoint selection, early stopping), not the thesis-reportable score. That comes from `scripts/evaluation/evaluate_unet.py` against the external `02_unet_holdout` pool, which is why there's no third "test" split here — it would be redundant with that external evaluation (removed 2026-09-04).
 
 Checkpoints are saved to `checkpoints/`:
 
@@ -168,11 +168,11 @@ python scripts/data/preprocess_frames.py --masks --pool 02_unet_holdout \
     --mask-output-dir data/preprocessed/evaluate/02_unet_holdout/labels
 
 # 5c — evaluate: all cells, and per-cell (always check both — see the warning below)
-python scripts/training/evaluate_unet.py --checkpoint checkpoints/multiclass_experiment_256_bf64_scale_cos/unet_best.pt \
+python scripts/evaluation/evaluate_unet.py --checkpoint checkpoints/multiclass_experiment_256_bf64_scale_cos/unet_best.pt \
     --config checkpoints/multiclass_experiment_256_bf64_scale_cos/config.yaml
-python scripts/training/evaluate_unet.py --checkpoint checkpoints/multiclass_experiment_256_bf64_scale_cos/unet_best.pt \
+python scripts/evaluation/evaluate_unet.py --checkpoint checkpoints/multiclass_experiment_256_bf64_scale_cos/unet_best.pt \
     --config checkpoints/multiclass_experiment_256_bf64_scale_cos/config.yaml --filter high_cell9
-python scripts/training/evaluate_unet.py --checkpoint checkpoints/multiclass_experiment_256_bf64_scale_cos/unet_best.pt \
+python scripts/evaluation/evaluate_unet.py --checkpoint checkpoints/multiclass_experiment_256_bf64_scale_cos/unet_best.pt \
     --config checkpoints/multiclass_experiment_256_bf64_scale_cos/config.yaml --filter low_cell6
 ```
 
@@ -194,12 +194,14 @@ Every run appends its full-precision metrics to `results/preswap/preswap_eval_lo
 Not yet started as of 2026-09-04 — the U-Net recipe is still being tuned (see [Training Results — Next Steps](training.md#next-steps)). This step generates predicted masks for the classifier training pool once it is.
 
 ```bash
-python scripts/data/preprocess_frames.py --pool 03_mask_factory
-
-celldform-infer data/preprocessed/inference/03_mask_factory/inputs \
-    --unet-ckpt checkpoints/multiclass_experiment_256_bf64_scale_cos/unet_best.pt \
-    --output-dir data/predicted_masks/03_mask_factory
+celldform-harvest-factory            # ensemble s42-s45 -> data/factory/ensemble4, features -> results/factory
 ```
+
+`celldform-harvest-factory` (`scripts/inference/harvest_factory.py`) segments every `03_mask_factory`
+frame with the seed ensemble at native resolution and extracts the classifier features; see its
+docstring and `--help`. It replaced the command previously shown here
+(`celldform-infer <image folder> ...`), which never ran inference: the old `celldform-infer` was a
+stub that loaded the checkpoint and stopped.
 
 !!! warning "`checkpoints/unet_best.pt` is not the right path"
     That default path belongs to `configs/default.yaml` (binary, 256×256) — not the frozen multiclass pipeline actually being trained. Use whatever checkpoint [Training Results](training.md) currently names as best (`checkpoints/multiclass_experiment_256_bf64_scale_cos/unet_best.pt` as of 2026-09-10), and update this doc when that changes.
@@ -231,9 +233,10 @@ There is no separate classifier-only firewall pool anymore — `04_clf_arena` wa
 ```bash
 python scripts/data/preprocess_frames.py --image-dir data/frames/02_unet_holdout/final_test \
     --output-dir data/preprocessed/inference/final_test/inputs
-
-celldform-infer data/preprocessed/inference/final_test/inputs \
-    --unet-ckpt checkpoints/multiclass_experiment_256_bf64_scale_cos/unet_best.pt \
-    --classifier-ckpt checkpoints/svm.pkl \
-    --output-dir results/final_test
 ```
+
+!!! warning "No command runs the full pipeline on a folder of frames yet"
+    The `celldform-infer <image folder> ...` command previously shown here never worked (the old
+    `celldform-infer` was a stub). Today `celldform-infer` takes a video (`--video`), and
+    `celldform-harvest-factory` segments a pool and extracts features. The blind test needs a
+    folder-based equivalent of one of them before it can run.

@@ -1,41 +1,27 @@
 """
-Real-time integration pipeline — bridges the Python analysis stack to the
-C++ optical tweezers control application.
+Frame-by-frame inference helper (legacy).
 
-Architecture position
----------------------
+This module holds two things:
 
-  C++ application
-       │
-       ▼  (video stream or shared-memory frame buffer)
-  FrameExtractor.stream()
-       │
-       ▼
-  PreprocessingPipeline.__call__()
-       │
-       ▼
-  feature_mask()  ← class probabilities at 256, resampled to FEATURE_SIZE
-       │
-       ▼
-  MorphologyExtractor.extract()  ← feature dict
-       │
-       ├── MegaNet.predict()  ← regression outputs (optional)
-       │
-       └── CellClassifier.predict()  ← low / high HER2 label
-       │
-       ▼
-  result dict / REST API response / callback to C++
+* :func:`feature_mask` and :data:`FEATURE_SIZE` -- the way a U-Net prediction is turned into the mask that features are
+  measured on (class probabilities resampled to the native 1228x922 frame, the trapped cell only). The evaluation
+  scripts rely on this contract.
+* :class:`RealTimePipeline` -- a per-frame loop (preprocess -> segment -> features -> classifier) from before the
+  project settled on classifying a whole recording. **It is not real-time** (the measured speed is only a reference),
+  and it calls the original per-frame ``CellClassifier`` interface, not the final HER2 framework. It is kept because
+  ``scripts/inference/infer.py`` still uses it. To classify a recording, use the desktop app / ``celldform.demo``
+  (``celldform-demo``), which applies the validated checks and the final classifier.
 
-HPC note
---------
-For HPC batch runs (Anvil/Purdue), `device="cuda"` and `num_workers > 0`
-should be passed.  The pipeline is stateless across frames so it is safe
-to share across processes without locking.
+Data flow of the per-frame loop::
+
+  FrameExtractor.stream() -> PreprocessingPipeline -> feature_mask() -> MorphologyExtractor.extract()
+      -> CellClassifier.predict()  (low / high HER2 label for that frame)
 """
 
 from __future__ import annotations
 
 import time
+import warnings
 from pathlib import Path
 from typing import Any, Callable, Dict, Generator, Optional, Tuple, Union
 
@@ -104,7 +90,7 @@ def _fg_from_probs(probs: np.ndarray, size: Tuple[int, int]) -> np.ndarray:
 
 
 class RealTimePipeline:
-    """End-to-end inference pipeline for live optical tweezers experiments.
+    """Per-frame inference loop (legacy; not real-time, and not the final HER2 classifier -- see the module docstring).
 
     Parameters
     ----------
@@ -146,6 +132,8 @@ class RealTimePipeline:
         on_result: Optional[Callable[[Dict[str, Any]], None]] = None,
         feature_size: Tuple[int, int] = FEATURE_SIZE,
     ) -> None:
+        warnings.warn("RealTimePipeline is a legacy per-frame helper (not real-time, not the final HER2 framework); "
+                      "to classify a recording use celldform.demo / celldform-demo", DeprecationWarning, stacklevel=2)
         self.unet = unet
         self.preprocessor = preprocessor
         self.extractor = extractor

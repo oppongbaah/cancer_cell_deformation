@@ -39,7 +39,7 @@ class DataConfig:
     val_split: float = 0.15     # fraction held out for checkpoint-selection/early-stopping monitoring
                                  # during training. NOT the thesis-reportable evaluation — that's a
                                  # separate, external pool (data/frames/02_unet_holdout/), scored via
-                                 # scripts/training/evaluate_unet.py. A third internal "test" split used to also
+                                 # scripts/evaluation/evaluate_unet.py. A third internal "test" split used to also
                                  # exist here but was removed 2026-09-04: it was computed every run and
                                  # printed in the split summary, but never actually built into a loader
                                  # or evaluated anywhere in train_unet.py — the external holdout already
@@ -96,7 +96,7 @@ class TrainingCfg:
     seed: int = 42
     loss_alpha: float = 0.3        # BCE weight in combined Dice+BCE loss (Dice = 1 - alpha)
     loss_pos_weight: float = 100.0 # pos_weight for BCEWithLogitsLoss; compensates cell/background imbalance
-    use_amp: bool = True           # Automatic Mixed Precision — uses A100 BF16/TF32 units; auto-disabled on CPU
+    use_amp: bool = True           # Automatic Mixed Precision — FP16 on the NSU V100s (no BF16/TF32 there); auto-disabled on CPU
     cudnn_deterministic: bool = True  # torch.backends.cudnn.deterministic — fixes cuDNN's conv-algorithm
                                     # selection so it doesn't vary by runtime hardware state. Cheap: no
                                     # measurable per-epoch slowdown observed.

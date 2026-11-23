@@ -1,0 +1,30 @@
+# Feature extraction -- scripts/features/extract_features.py (--config to use another file).
+# These values produced the reported results (2026-10-28). Changing them changes which frames and cells are
+# used: rerun `calibrate` and `extract`, then the classification and deformation analyses.
+
+frames_per_step: 200                  # video frames per sampling step (9.1 s); NOT a power level -- see laser_protocol
+dense_offsets: [20, 60, 100, 140, 180]  # frames into each step cut besides the step frame (`cut` step)
+good_dice: 0.85                       # calibration: a hand-masked frame below this Dice is a "bad mask"
+
+frame_checks:                         # a frame passes only if its selected region passes all of these
+  max_trap_dist: 45.0                 # px from the local trap
+  min_solidity: 0.95                  # area / convex-hull area; a dent or a fused neighbour lowers it
+  area_ratio_range: [0.85, 1.20]      # area / median area of the sound frames within +-window_steps
+  min_boundary_conf: 0.95             # mean top-class probability in the 3 px band along the outline
+  allow_border: false                 # true: a region touching the frame edge may pass
+  window_steps: 3                     # local trap and typical area: median over +-this many laser steps
+
+cell_validation:                      # a cell is used only if, on its own hand-masked frames:
+  min_dice: 0.85                      #   mean Dice of the passing frames >= this (= good_dice: a good mask)
+  size_bias_range: [0.80, 1.25]       #   median predicted / hand-drawn area within this: 1st-99th pct of the
+                                      #   good masks' size ratio (0.82-1.23), rounded outward, as the frame checks
+  min_pass_fraction: 0.8              # ... and at least this share of its feature frames pass the checks
+
+laser_protocol:                       # nominal laser settings of each frame (celldform/acquisition/protocol.py)
+  fps: 22.0                           #   recording protocol (Arkorful 2025; confirmed by Y. Sefa-Boateng 2026-11-05):
+  hold_s: 30.0                        #   both lasers 500 mA, +50 mA every 30 s, to 1200 mA = 15 levels, 450 s
+  start_mA: 500.0
+  step_mA: 50.0
+  n_levels: 15
+  calibration_mA: [500.0, 1200.0]     # power of each beam at the fiber output (mW) vs drive current (mA),
+  calibration_mW: [270.0, 685.0]      #   interpolated; replace with the full calibration table when available

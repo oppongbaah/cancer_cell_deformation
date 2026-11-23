@@ -1,0 +1,20 @@
+# Sequence networks on each cell's deformation curves -- scripts/classification/sequence_net.py (--config).
+# Input: per cell, the strain (%) of each measure at every laser step (median of the step's passing frames,
+# against the cell's own baseline). Leave-one-cell-out; settings fixed in advance (no validation set).
+
+measures: [len_par, len_perp, volume]   # one input channel each
+steps: 50                   # curve length; a cell with fewer steps is padded with its last value
+base_steps: 10              # strain baseline = median over steps 0..base_steps-1
+archs: [cnn1d, gru]         # cnn1d: two conv layers + global average pool; gru: one recurrent layer
+channels: 8                 # conv filters per layer / GRU hidden units (tiny: 13 training curves)
+kernel: 5                   # conv kernel, in steps
+dropout: 0.3
+epochs: 300
+lr: 0.003                   # AdamW
+weight_decay: 0.01
+seeds: [0, 1, 2]            # repeats; the cell's P(high) is their mean
+crop: 40                    # training augmentation: a random window of this many consecutive steps
+jitter: 0.5                 #   ... + Gaussian noise of this SD (% strain)
+scale: [0.8, 1.2]           #   ... x a random amplitude factor
+permutations: 100          # label shuffles of the whole leave-one-cell-out run (first seed only)
+n_jobs: 8                   # parallel workers of the permutation test (each loads torch; -1 = every core)

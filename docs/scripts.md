@@ -1,22 +1,33 @@
 # Scripts Reference
 
+Every script here, except the SLURM job scripts (`hpc/`), the one-off migrations (`maintenance/`) and the thesis-figure
+scripts (`report/*_thesis.py`, `report/*_ch4.py`), has a `celldform-<name>` command (see the [CLI reference](cli.md)).
+The thesis-figure scripts redraw the figures of the thesis text from the saved results and are run by path, for example
+`python scripts/report/plot_cv_thesis.py`; they are not installed as commands.
+
 !!! info "Layout — scripts are grouped by pipeline stage (reorganised 2026-09-17)"
 
     ```
     scripts/
       data/        organize_dataset · extract_frames · preprocess_frames
       annotation/  annotate · annotate_frame · preview_masks · validate_masks
-      training/    train_unet · evaluate_unet · compare_postswap · run_postswap.sh
+      training/    train_unet · train_experiment · train_cv_fold · train_deploy_model ·
+                   train_nnunet_cv · train_student_cv · distill_ensemble
+      evaluation/  evaluate_unet · eval_native · eval_nnunet · summarize_cv · compare_postswap · ...
       inference/   infer · predict_single_frame
+      hpc/         SLURM jobs for the NSU cluster: training/ and evaluation/ mirror the folders above (see hpc.md)
       report/      build_report_assets and the figure/table generators it drives
     ```
 
     Scripts import `celldform` via `Path(__file__).parent.parent.parent`, so moving one
     between folders means fixing that hop. `report/render_holdout_comparison.py`
-    additionally reaches into `annotation/` for `preview_masks`.
+    additionally reaches into `annotation/` for `preview_masks`. Training and evaluation
+    reach across too (split 2026-10-07): `evaluation/evaluate_unet.py` imports `CellDataset`
+    from `training/train_unet.py`, and `training/train_nnunet_cv.py` imports `score` from
+    `evaluation/eval_nnunet.py`.
 
 
-All scripts live under `scripts/<stage>/` and are thin wrappers or standalone tools. Run them directly with `python scripts/<stage>/<name>.py`. The installed CLI (`celldform-*`, see [CLI Reference](cli.md)) targets `celldform.cli` and is unaffected by this layout.
+All scripts live under `scripts/<stage>/` and are thin wrappers or standalone tools. Run them directly with `python scripts/<stage>/<name>.py`, or as the console command `celldform-<name>` (underscores become dashes): every script outside `hpc/` and `maintenance/` has one, and `celldform` lists them all. See [CLI Reference](cli.md).
 
 ---
 
@@ -89,7 +100,7 @@ python scripts/report/build_report_assets.py --only sweep pools  # rebuild a sub
 python scripts/report/build_report_assets.py --report-root ../masters_thesis
 ```
 
-Figures are written to `<report-root>/images/`, LaTeX tables to `<report-root>/main_work/tables/` (the report `\input{}`s those). Intermediates from the comparison-strip renderer stay in `results/_report_strips/` rather than cluttering the report repo.
+Figures are written to `<report-root>/main_work/images/`, LaTeX tables to `<report-root>/main_work/tables/` (the report `\input{}`s those). Intermediates from the comparison-strip renderer stay in `results/_report_strips/` rather than cluttering the report repo.
 
 | Option | Default | Description |
 |--------|---------|-------------|
@@ -283,14 +294,14 @@ The script reads `data.frames_dir` and `data.masks_dir` from the config. Pairs f
 
 ---
 
-## `training/evaluate_unet.py` — holdout evaluation
+## `evaluation/evaluate_unet.py` — holdout evaluation
 
 Evaluates a trained U-Net on `02_unet_holdout` and reports the thesis-reportable segmentation metrics.
 
 ```bash
-python scripts/training/evaluate_unet.py --checkpoint checkpoints/multiclass_experiment_256/unet_best.pt \
+python scripts/evaluation/evaluate_unet.py --checkpoint checkpoints/multiclass_experiment_256/unet_best.pt \
     --config configs/multiclass_experiment_256.yaml   # frozen scheme — --config must match out_channels
-python scripts/training/evaluate_unet.py --checkpoint checkpoints/unet_best.pt --pool 02_unet_holdout  # binary baseline
+python scripts/evaluation/evaluate_unet.py --checkpoint checkpoints/unet_best.pt --pool 02_unet_holdout  # binary baseline
 ```
 
 | Option | Default | Description |
@@ -349,15 +360,15 @@ Equivalent to `celldform-infer`. See [CLI Reference](cli.md).
 
 ---
 
-## `training/compare_postswap.py` — enforce the noise floor on comparisons
+## `evaluation/compare_postswap.py` — enforce the noise floor on comparisons
 
 Reads `results/postswap/experiment_0a_seed_baseline/eval_log.jsonl` and compares runs against the series
 baseline, per development cell and over all cells together.
 
 ```bash
-python scripts/training/compare_postswap.py                      # every run vs. baseline
-python scripts/training/compare_postswap.py --runs A B           # just these
-python scripts/training/compare_postswap.py --seeds A B C        # aggregate seeds: mean ± sd
+python scripts/evaluation/compare_postswap.py                      # every run vs. baseline
+python scripts/evaluation/compare_postswap.py --runs A B           # just these
+python scripts/evaluation/compare_postswap.py --seeds A B C        # aggregate seeds: mean ± sd
 ```
 
 It exists to stop a number that looks exciting being recorded as a finding. Measured
@@ -377,16 +388,20 @@ below **0.161** prints as `INCONCLUSIVE`:
 
 ---
 
-## `training/run_postswap.sh` — train + evaluate one run, filed correctly
+## `training/train_experiment.py` — train + evaluate one run, filed correctly
 
 ```bash
-scripts/training/run_postswap.sh postswap_ftl_cw142_res384_s42
+python scripts/training/train_experiment.py postswap/experiment_1b_loss e1b_lovasz_s42
+python scripts/training/train_experiment.py postswap/experiment_0a_seed_baseline postswap_ftl_cw142_s46 --seed 46
 ```
 
-Expects `configs/postswap/<run-name>.yaml`. Trains, evaluates on all four development
-cells plus all cells together, writes the log to `logs/postswap/`, moves the training curve into
-`results/postswap/`, echoes the split assignment, and finishes by running
-`compare_postswap.py` against the baseline.
+Expects `configs/<experiment>/<run>.yaml` whose `checkpoint_dir` is `checkpoints/<experiment>/<run>`.
+Trains (log in `logs/<experiment>/<run>.log`, curves in `results/<experiment>/`), then scores the
+checkpoint on the testing set per cell and pooled at the config's own size
+(`evaluation/eval_testing_set.py` → `results/<experiment>/eval_log.jsonl`) and at native
+resolution (`evaluation/eval_native.py` → `eval_log_native.jsonl`). Extra arguments go to
+`train_unet.py`. Compare runs afterwards with `compare_postswap.py`. This replaces the old
+`run_postswap.sh` (= `train_experiment.py postswap/experiment_0a_seed_baseline <run>`).
 
 Use it rather than calling `train_unet.py` directly, so artefacts land in the right
 folders and the comparison happens automatically.
@@ -399,7 +414,7 @@ folders and the comparison happens automatically.
 A runnable tour of all seven stages against the data actually on disk: pool inspection
 and the firewall check, frame extraction, mask validation, preprocessing, the train/val
 split, evaluation with the noise floor applied, features, classification, biomechanics
-and real-time inference.
+and inference.
 
 ```bash
 jupyter lab notebooks/pipeline_walkthrough.ipynb

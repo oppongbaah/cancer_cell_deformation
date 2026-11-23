@@ -1,0 +1,42 @@
+# Classical classifiers and feature selection -- scripts/classification/benchmark_cells.py (--config).
+# These values produced the reported results. --perms on the command line overrides `permutations`.
+
+seed: 0
+permutations: 1000          # label shuffles for the permutation p-value (0 = skip; ~50 min at 1000)
+n_jobs: 8                   # parallel workers of the permutation tests (-1 = every core: 32 ran out of memory)
+
+feature_selection:          # without the HER2 labels; run once on all cells before any classifier
+  rho_min: 0.8              # minimum Spearman rho: agreement with the hand masks AND split-half reliability
+  group_rho: 0.7            # correlation-matrix groups: average linkage on 1-|rho|, cut at |rho| = 0.7 (AutoSpearman,
+                            # Jiarpakdee et al. 2018); one feature per group. Was redundant_rho 0.9 (same 4 selected)
+  max_selected: null        # no cap: every group's best passing feature (was 7; never binding -- 4 pass)
+  min_cells: 12             # a feature must have a value in at least this many cells to be tested
+
+# The classifiers run, in this order, with their settings (scikit-learn keyword arguments). Remove an entry to
+# skip it. Fixed in code, not here: class_weight="balanced" (where supported), max_iter, the LDA solver, and the
+# ensembles' and the MLP's random_state (= seed), the MLP's max_iter. The report scripts expect these names.
+models:
+  Logistic regression: {C: 1.0}                 # also the size-only and image-only baselines
+  Linear SVM: {C: 1.0}
+  Shrinkage LDA: {shrinkage: auto}
+  RBF SVM: {C: 1.0, gamma: scale}
+  k-NN (k=3): {n_neighbors: 3}
+  Random forest: {n_estimators: 1000, min_samples_leaf: 2}
+  Gradient boosting: {n_estimators: 100, max_depth: 2, learning_rate: 0.1}
+  MLP (ANN): {hidden_layer_sizes: [8], alpha: 1.0, learning_rate_init: 0.01}   # 1 hidden layer of 8 units, L2 penalty
+
+# Hyperparameter tuning -- scripts/classification/tune_cells.py. Nested leave-one-cell-out: for each test cell,
+# every grid point is scored by leave-one-cell-out on the other 13 cells (Brier score of their held-out P(high)),
+# the best is refitted on the 13 and scored once on the test cell. The test cell never influences the choice.
+tuning:
+  permutations: 200                                    # label shuffles of the whole nested procedure
+  skip_permutations: [Random forest, Gradient boosting]   # too slow to permute
+  grids:                                               # every combination is tried
+    Logistic regression: {C: [0.01, 0.1, 1.0, 10.0, 100.0]}
+    Linear SVM: {C: [0.01, 0.1, 1.0, 10.0, 100.0]}
+    Shrinkage LDA: {shrinkage: [auto, 0.1, 0.5, 0.9]}
+    RBF SVM: {C: [0.1, 1.0, 10.0, 100.0], gamma: [scale, 0.01, 0.1, 1.0]}
+    k-NN (k=3): {n_neighbors: [1, 3, 5, 7]}
+    Random forest: {min_samples_leaf: [1, 2, 4], max_features: [sqrt, null]}
+    Gradient boosting: {n_estimators: [50, 100, 200], max_depth: [1, 2, 3]}
+    MLP (ANN): {hidden_layer_sizes: [[4], [8], [16]], alpha: [0.1, 1.0, 10.0]}

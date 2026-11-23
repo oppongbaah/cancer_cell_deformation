@@ -22,8 +22,8 @@ jobs:
 
       - name: Configure git identity
         run: |
-          git config user.name "oppongbaah"
-          git config user.email "oppongbaahisaacmega@gmail.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Deploy to GitHub Pages
         run: mkdocs gh-deploy --force

@@ -1,186 +1,193 @@
 """
-Console entry points registered in pyproject.toml:
+Console entry points registered in pyproject.toml.
 
-  celldform-extract-frames  → extract_frames()
-  celldform-train-unet      → train_unet()
-  celldform-infer           → infer()
-  celldform-hpc-submit      → hpc_submit()
+Every non-HPC script under scripts/ is a command named after it:
+``scripts/training/train_experiment.py`` -> ``celldform-train-experiment``. Each command runs its
+script with the current python and passes every argument through unchanged, so a command can
+never drift from the script it wraps. ``celldform`` on its own lists them all, and
+``celldform <command> [args]`` runs one.
 
-Run each with --help for usage.
+Two commands are implemented here instead of in a script:
+
+  celldform-organize-dataset  -> celldform.acquisition.organiser.main
+  celldform-hpc-submit        -> hpc_submit() (generates + submits the SLURM training job)
+
+scripts/hpc/ (SLURM job scripts, run with sbatch) and scripts/maintenance/ (one-off migrations,
+not meant to be re-run) have no commands.
+
+The scripts are not part of the installed package, so the script commands need the editable
+install from the repo (``pip install -e .``). Like ``python scripts/...``, they resolve relative
+paths against the current directory, so run them from the repo root.
+
+Run each with --help for usage. docs/cli.md documents them all.
 """
 
 from __future__ import annotations
 
 import argparse
+import subprocess
 import sys
 from pathlib import Path
 
+REPO = Path(__file__).resolve().parent.parent
+SCRIPTS = REPO / "scripts"
 
-# ---------------------------------------------------------------------------
-# extract_frames
-# ---------------------------------------------------------------------------
-
-def extract_frames() -> None:
-    """CLI entry point: extract frames from an optical tweezer video."""
-    parser = argparse.ArgumentParser(
-        prog="celldform-extract-frames",
-        description="Extract frames from an optical tweezer video recording.",
-    )
-    parser.add_argument("--video", required=True,
-                        help="Path to input video file (.mp4, .avi, …).")
-    parser.add_argument("--config", default="configs/default.yaml",
-                        help="Path to YAML config file.")
-    parser.add_argument("--output-dir", default=None,
-                        help="Directory to write frames (overrides config data.frames_dir).")
-    parser.add_argument("--every-n", type=int, default=None,
-                        help="Keep every N-th frame (overrides config).")
-    parser.add_argument("--target-fps", type=float, default=None,
-                        help="Resample to this frame rate (mutually exclusive with --every-n).")
-    parser.add_argument("--max-frames", type=int, default=None,
-                        help="Stop after this many frames.")
-    parser.add_argument("--target-size", type=int, nargs=2, metavar=("W", "H"), default=None,
-                        help="Resize each frame to W H pixels (overrides config).")
-    parser.add_argument("--format", default=None, choices=["png", "tiff"],
-                        help="Output image format (overrides config).")
-    parser.add_argument("--change-threshold", type=float, default=None,
-                        help=(
-                            "Minimum trapped-cell centroid displacement (pixels) required to save "
-                            "a frame. A frame is skipped when the trapped cell has not moved this "
-                            "far from its position in the last saved frame. "
-                            "Overrides config acquisition.change_threshold."
-                        ))
-    parser.add_argument("--dark-percentile", type=float, default=None,
-                        help=(
-                            "Bottom X% of channel pixel intensities treated as candidate cells. "
-                            "Default: 20. Overrides config acquisition.dark_percentile."
-                        ))
-    parser.add_argument("--channel-width", type=float, default=None,
-                        help=(
-                            "Width of the vertical flow channel as a fraction of image width, "
-                            "centred at the horizontal midpoint (e.g. 0.30 = ±15%% from centre). "
-                            "Overrides config acquisition.channel_width."
-                        ))
-    parser.add_argument("--min-circularity", type=float, default=None,
-                        help=(
-                            "Minimum circularity (4π·area/perimeter², 0–1) for a blob to be "
-                            "accepted as a cell. Default: 0.60. Overrides config acquisition.min_circularity."
-                        ))
-    args = parser.parse_args()
-
-    if args.every_n is not None and args.target_fps is not None:
-        parser.error("--every-n and --target-fps are mutually exclusive.")
-
-    from celldform.acquisition.extractor import FrameExtractor
-    from celldform.config import load as load_config
-
-    video_path = Path(args.video)
-    if not video_path.exists():
-        print(f"[ERROR] Video file not found: {video_path}", file=sys.stderr)
-        sys.exit(1)
-
-    conf = load_config(args.config)
-
-    output_dir       = args.output_dir    or conf.data.frames_dir
-    every_n          = args.every_n       if args.every_n          is not None else conf.acquisition.every_n
-    target_fps       = args.target_fps    if args.target_fps        is not None else conf.acquisition.target_fps
-    max_frames       = args.max_frames    if args.max_frames        is not None else conf.acquisition.max_frames
-    image_format     = args.format        or conf.acquisition.image_format
-    target_size      = tuple(args.target_size) if args.target_size else conf.preprocessing.target_size
-    change_threshold = args.change_threshold if args.change_threshold is not None else conf.acquisition.change_threshold
-    dark_percentile  = args.dark_percentile  if args.dark_percentile  is not None else conf.acquisition.dark_percentile
-    channel_width    = args.channel_width    if args.channel_width    is not None else conf.acquisition.channel_width
-    min_circularity  = args.min_circularity  if args.min_circularity  is not None else conf.acquisition.min_circularity
-
-    print(f"[celldform] Video            : {video_path}")
-    print(f"[celldform] Output dir       : {output_dir}")
-    print(f"[celldform] Target size      : {target_size[0]}×{target_size[1]}")
-    print(f"[celldform] Format           : {image_format}")
-    if target_fps:
-        print(f"[celldform] Sampling         : {target_fps} fps")
-    else:
-        print(f"[celldform] Sampling         : every {every_n} frame(s)")
-    if change_threshold is not None:
-        print(f"[celldform] Change threshold : {change_threshold} px  (trapped-cell centroid displacement)")
-        print(f"[celldform] Channel width    : {channel_width:.0%} of image width (centred)")
-        print(f"[celldform] Dark percentile  : {dark_percentile}%  (candidate cell threshold)")
-        print(f"[celldform] Min circularity  : {min_circularity}")
-    else:
-        print(f"[celldform] Change threshold : disabled (saving all candidates)")
-    if max_frames:
-        print(f"[celldform] Max frames       : {max_frames}")
-    print()
-
-    extractor = FrameExtractor(
-        video_path=video_path,
-        output_dir=output_dir,
-        target_size=target_size,
-        image_format=image_format,
-        change_threshold=change_threshold,
-        dark_percentile=dark_percentile,
-        channel_width=channel_width,
-        min_circularity=min_circularity,
-    )
-
-    frames = extractor.extract(
-        every_n=every_n if target_fps is None else None,
-        target_fps=target_fps,
-        max_frames=max_frames,
-    )
-
-    print(f"[celldform] Extracted {len(frames)} frames → {output_dir}")
-    print(f"[celldform] Manifest  → {Path(output_dir) / ('00_' + video_path.stem + '_manifest.csv')}")
+# command (without the "celldform-" prefix) -> script under scripts/, grouped by pipeline stage.
+# tests/test_cli.py checks this against scripts/ and against pyproject.toml's [project.scripts].
+SCRIPT_COMMANDS: dict[str, dict[str, str]] = {
+    "data": {
+        "extract-frames":       "data/extract_frames.py",
+        "preprocess-frames":    "data/preprocess_frames.py",
+        "build-randswap":       "data/build_randswap.py",
+        "build-nnunet-dataset": "data/build_nnunet_dataset.py",
+        "build-distill-data":   "data/build_distill_data.py",
+    },
+    "annotation": {
+        "annotate":             "annotation/annotate.py",
+        "annotate-frame":       "annotation/annotate_frame.py",
+        "preview-masks":        "annotation/preview_masks.py",
+        "validate-masks":       "annotation/validate_masks.py",
+    },
+    "training": {
+        "train-unet":           "training/train_unet.py",
+        "train-experiment":     "training/train_experiment.py",
+        "train-cv-fold":        "training/train_cv_fold.py",
+        "train-deploy-model":   "training/train_deploy_model.py",
+        "train-nnunet-cv":      "training/train_nnunet_cv.py",
+        "train-student-cv":     "training/train_student_cv.py",
+        "distill-ensemble":     "training/distill_ensemble.py",
+    },
+    "evaluation": {
+        "evaluate-unet":        "evaluation/evaluate_unet.py",
+        "eval-native":          "evaluation/eval_native.py",
+        "eval-testing-set":     "evaluation/eval_testing_set.py",
+        "eval-nnunet":          "evaluation/eval_nnunet.py",
+        "ensemble-eval":        "evaluation/ensemble_eval.py",
+        "eval-ensemble-cv":     "evaluation/eval_ensemble_cv.py",
+        "summarize-cv":         "evaluation/summarize_cv.py",
+        "compare-postswap":     "evaluation/compare_postswap.py",
+        "check-convergence":    "evaluation/check_convergence.py",
+        "latency-benchmark":    "evaluation/latency_benchmark.py",
+    },
+    "inference": {
+        "infer":                "inference/infer.py",
+        "predict-single-frame": "inference/predict_single_frame.py",
+        "harvest-factory":      "inference/harvest_factory.py",
+    },
+    "report": {
+        "build-report-assets":        "report/build_report_assets.py",
+        "make-report-tables":         "report/make_report_tables.py",
+        "make-cell-gif":              "report/make_cell_gif.py",
+        "diagnose-false-positives":   "report/diagnose_false_positives.py",
+        "render-holdout-comparison":  "report/render_holdout_comparison.py",
+        "view-soft-target":           "report/view_soft_target.py",
+        "plot-cell-sizes":            "report/plot_cell_sizes.py",
+        "plot-cv":                    "report/plot_cv.py",
+        "plot-data-map":              "report/plot_data_map.py",
+        "plot-experiments":           "report/plot_experiments.py",
+        "plot-model-comparison":      "report/plot_model_comparison.py",
+        "plot-nnunet-epochs":         "report/plot_nnunet_epochs.py",
+        "plot-percell-metrics":       "report/plot_percell_metrics.py",
+        "plot-pool-flow":             "report/plot_pool_flow.py",
+        "plot-resize-vs-crop":        "report/plot_resize_vs_crop.py",
+        "plot-split-change":          "report/plot_split_change.py",
+        "plot-sweep-dsc":             "report/plot_sweep_dsc.py",
+        "plot-fe-dataset":            "report/plot_fe_dataset.py",
+        "plot-features":              "report/plot_features.py",
+        "plot-final-models":          "report/plot_final_models.py",
+        "plot-high1-exclusion":       "report/plot_high1_exclusion.py",
+        "plot-high10":                "report/plot_high10.py",
+        "plot-classification-thesis": "report/plot_classification_thesis.py",
+        "plot-analysis-dataset":      "report/plot_analysis_dataset.py",
+        "plot-loocv":                 "report/plot_loocv.py",
+        "plot-protocols":             "report/plot_protocols.py",
+        "plot-region-selection":      "report/plot_region_selection.py",
+        "diagnose-mask-growth":       "report/diagnose_mask_growth.py",
+    },
+    "features": {
+        "extract-features":     "features/extract_features.py",
+    },
+    "classification": {
+        "benchmark-cells":      "classification/benchmark_cells.py",
+        "frames-cnn":           "classification/frames_cnn.py",
+        "power-resolution":     "classification/power_resolution.py",
+        "tune-cells":           "classification/tune_cells.py",
+        "sequence-net":         "classification/sequence_net.py",
+        "feature-ranking":      "classification/feature_ranking.py",
+        "combine-models":       "classification/combine_models.py",
+        "pca-models":           "classification/pca_models.py",
+        "save-final-framework": "classification/save_final_framework.py",
+    },
+    "biomechanics": {
+        "deformation-regression": "biomechanics/deformation_regression.py",
+        "rate-of-deformation":    "biomechanics/rate_of_deformation.py",
+    },
+}
+# Implemented in this module / the package, not as scripts.
+BUILTIN_COMMANDS = {"organize-dataset": "data", "hpc-submit": "hpc", "demo": "demo", "shortcut": "demo"}
 
 
-# ---------------------------------------------------------------------------
-# train_unet
-# ---------------------------------------------------------------------------
-
-def train_unet() -> None:
-    """CLI entry point: train the U-Net segmentation model."""
-    import importlib.util
-
-    script = Path(__file__).parent.parent / "scripts" / "train_unet.py"
-    if not script.exists():
-        print(f"[ERROR] Training script not found: {script}", file=sys.stderr)
-        sys.exit(1)
-
-    spec = importlib.util.spec_from_file_location("_train_unet_script", script)
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    mod.main()
+def _script_for(command: str) -> str | None:
+    for group in SCRIPT_COMMANDS.values():
+        if command in group:
+            return group[command]
+    return None
 
 
-# ---------------------------------------------------------------------------
-# infer
-# ---------------------------------------------------------------------------
+def run_script(rel: str, argv: list[str] | None = None) -> int:
+    """Run scripts/<rel> with the current python and the given arguments; return its exit code."""
+    script = SCRIPTS / rel
+    if not script.is_file():
+        print(f"[celldform] {script} not found. The script commands run the repo's scripts/, so "
+              "celldform must be installed editable from the repo (pip install -e .).", file=sys.stderr)
+        return 1
+    try:
+        return subprocess.call([sys.executable, str(script), *(sys.argv[1:] if argv is None else argv)])
+    except KeyboardInterrupt:
+        return 130
 
-def infer() -> None:
-    """CLI entry point: run inference on a video file or image directory."""
-    parser = argparse.ArgumentParser(
-        prog="celldform-infer",
-        description="Run end-to-end inference on optical tweezers video data.",
-    )
-    parser.add_argument("input", help="Path to input video (.mp4/.avi) or image directory.")
-    parser.add_argument("--unet-ckpt", required=True,
-                        help="Path to trained U-Net checkpoint (.pt).")
-    parser.add_argument("--classifier-ckpt", default=None,
-                        help="Path to trained classifier checkpoint (.pkl).")
-    parser.add_argument("--output-dir", default="results",
-                        help="Directory to write inference results.")
-    parser.add_argument("--device", default=None)
-    parser.add_argument("--every-n", type=int, default=1,
-                        help="Process every N-th frame.")
-    args = parser.parse_args()
 
-    from celldform.segmentation.unet import UNet
+def _command(rel: str):
+    def command() -> None:
+        sys.exit(run_script(rel))
+    command.__doc__ = f"CLI entry point: python scripts/{rel} [args]"
+    return command
 
-    device = args.device or ("cuda" if _cuda_available() else "cpu")
-    print(f"[celldform] Loading U-Net from {args.unet_ckpt} on {device} ...")
 
-    model = UNet.from_checkpoint(args.unet_ckpt, device=device)
-    print(f"[celldform] Running inference on {args.input} ...")
-    print(f"            Results will be saved to {args.output_dir}")
-    print("            See scripts/inference/infer.py for a complete example.")
+# One module-level function per script command, e.g. train_experiment() for celldform-train-experiment,
+# which is what pyproject.toml's entry points name.
+for _group in SCRIPT_COMMANDS.values():
+    for _name, _rel in _group.items():
+        globals()[_name.replace("-", "_")] = _command(_rel)
+del _group, _name, _rel
+
+
+def main() -> None:
+    """``celldform``: list every command, or run one (``celldform <command> [args]``)."""
+    argv = sys.argv[1:]
+    if not argv or argv[0] in ("-h", "--help", "list"):
+        print("usage: celldform <command> [args]      (or run celldform-<command> directly)\n")
+        groups: dict[str, list[tuple[str, str]]] = {g: [(c, f"scripts/{r}") for c, r in cmds.items()]
+                                                     for g, cmds in SCRIPT_COMMANDS.items()}
+        groups["data"].insert(0, ("organize-dataset", "celldform.acquisition.organiser"))
+        groups["hpc"] = [("hpc-submit", "generate + submit the SLURM training job")]
+        groups["demo"] = [("demo", "desktop app: HER2 class of a trapped cell from a recording"),
+                          ("shortcut", "desktop / Start Menu shortcut for the app")]
+        for g, cmds in groups.items():
+            print(f"{g}:")
+            for c, what in cmds:
+                print(f"  {c:<28} {what}")
+        print("\n<command> --help shows that command's options. Full reference: docs/cli.md")
+        return
+    command, rest = argv[0].removeprefix("celldform-"), argv[1:]
+    if command in BUILTIN_COMMANDS:
+        sys.argv = [f"celldform-{command}", *rest]
+        {"organize-dataset": organize_dataset, "hpc-submit": hpc_submit, "demo": demo, "shortcut": shortcut}[command]()
+        return
+    rel = _script_for(command)
+    if rel is None:
+        sys.exit(f"celldform: unknown command {argv[0]!r} -- run `celldform` for the list")
+    sys.exit(run_script(rel, rest))
 
 
 # ---------------------------------------------------------------------------
@@ -193,69 +200,74 @@ def organize_dataset() -> None:
     main()
 
 
+def demo() -> None:
+    """CLI entry point: the desktop demo app (``celldform-demo [recording]``)."""
+    from celldform.demo.gui import main
+    main()
+
+
+def shortcut() -> None:
+    """CLI entry point: create or remove the app's desktop shortcut (``celldform-shortcut [--remove]``)."""
+    from celldform.demo.shortcut import main
+    sys.exit(main())
+
+
 def hpc_submit() -> None:
-    """CLI entry point: generate and submit a SLURM training job on Anvil."""
+    """CLI entry point: generate and submit a SLURM training job on the NSU cluster."""
     import subprocess
     import textwrap
 
     parser = argparse.ArgumentParser(
         prog="celldform-hpc-submit",
-        description="Submit a SLURM U-Net training job on Anvil.",
+        description="Submit a SLURM U-Net training job on the NSU cluster "
+                    "(same job as scripts/hpc/training/train_unet.sh).",
     )
-    parser.add_argument("--account", required=True,
-                        help="ACCESS/Anvil allocation account ID (required).")
     parser.add_argument("--config", default="configs/default.yaml",
-                        help="Config YAML passed to celldform-train-unet (default: configs/default.yaml).")
-    parser.add_argument("--partition", default="ai",
-                        help="SLURM partition (default: ai).")
-    parser.add_argument("--qos", default="ai",
-                        help="SLURM QOS (default: same as --partition).")
-    parser.add_argument("--time", default="01:00:00",
-                        help="Wall-clock time limit HH:MM:SS (default: 01:00:00).")
+                        help="Config YAML passed to scripts/training/train_unet.py (default: configs/default.yaml).")
+    parser.add_argument("--partition", default="gpu",
+                        help="SLURM partition (default: gpu).")
+    parser.add_argument("--account", default=None,
+                        help="SLURM account -- NSU does not require one (default: none).")
+    parser.add_argument("--qos", default=None,
+                        help="SLURM QOS -- NSU does not require one (default: none).")
+    parser.add_argument("--time", default="12:00:00",
+                        help="Wall-clock time limit HH:MM:SS (default: 12:00:00).")
     parser.add_argument("--cpus", type=int, default=8,
                         help="CPUs per task (default: 8).")
     parser.add_argument("--gpus", type=int, default=1,
-                        help="GPUs per node (default: 1).")
+                        help="V100 GPUs (default: 1; the node has 3).")
+    parser.add_argument("--conda-env", default="celldform",
+                        help="Conda env with the project installed (default: celldform).")
     parser.add_argument("--mem", default="32G",
                         help="Memory per node (default: 32G).")
     parser.add_argument("--dry-run", action="store_true",
                         help="Print the script without submitting.")
     args = parser.parse_args()
 
-    qos = args.qos or args.partition
+    Path("logs/hpc").mkdir(parents=True, exist_ok=True)
 
-    Path("logs").mkdir(exist_ok=True)
-
+    optional = "".join(f"#SBATCH --{k}={v}\n" for k, v in (("account", args.account), ("qos", args.qos)) if v)
     script = textwrap.dedent(f"""\
         #!/bin/bash
         #SBATCH --job-name=celldform-unet
         #SBATCH --partition={args.partition}
-        #SBATCH --qos={qos}
         #SBATCH --nodes=1
         #SBATCH --ntasks=1
         #SBATCH --cpus-per-task={args.cpus}
-        #SBATCH --gpus-per-node={args.gpus}
+        #SBATCH --gres=gpu:v100:{args.gpus}
         #SBATCH --mem={args.mem}
         #SBATCH --time={args.time}
-        #SBATCH --account={args.account}
-        #SBATCH --output=logs/unet_%j.out
-        #SBATCH --error=logs/unet_%j.err
-
+        #SBATCH --output=logs/hpc/%x_%j.out
+        @@OPTIONAL@@
+        # Generated by celldform-hpc-submit; same job as scripts/hpc/training/train_unet.sh.
+        # scripts/hpc/_common.sh activates the conda env and keeps logs/hpc/%x_<jobid>.err only on failure.
         set -euo pipefail
+        cd "$SLURM_SUBMIT_DIR"
+        CONDA_ENV={args.conda_env}
+        source scripts/hpc/_common.sh
 
-        echo "[celldform] Job started: $(date)"
-        echo "[celldform] Node: $SLURMD_NODENAME"
-        echo "[celldform] Job ID: $SLURM_JOB_ID"
-
-        module load anaconda
-        conda activate celldform
-
-        python -c "import torch; print('[celldform] CUDA:', torch.cuda.is_available(), '|', torch.cuda.get_device_name(0))"
-
-        celldform-train-unet --config {args.config}
-
-        echo "[celldform] Job finished: $(date)"
-    """)
+        run_py scripts/training/train_unet.py --config {args.config}
+    """).replace("@@OPTIONAL@@\n", optional)
 
     if args.dry_run:
         print(script)
@@ -269,13 +281,5 @@ def hpc_submit() -> None:
     job_id = result.stdout.strip().split()[-1]
     print(f"[celldform] Submitted job {job_id}")
     print(f"[celldform] Monitor : squeue -u $USER")
-    print(f"[celldform] Log     : tail -f logs/unet_{job_id}.out")
+    print(f"[celldform] Log     : tail -f logs/hpc/celldform-unet_{job_id}.out  (a .err appears only on failure)")
     print(f"[celldform] Cancel  : scancel {job_id}")
-
-
-def _cuda_available() -> bool:
-    try:
-        import torch
-        return torch.cuda.is_available()
-    except ImportError:
-        return False

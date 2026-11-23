@@ -2,6 +2,9 @@
 
 !!! danger "Superseded — read this first (2026-09-17)"
 
+    Later results (random whole-cell cross-validation, a 384 px native crop, nnU-Net, the classifier and the desktop
+    app) are on the [Project status](status.md) page; this page is the earlier tuning record.
+
     **Every tuning delta on this page is smaller than the measured noise.**
 
     Re-running one configuration changing **only the random seed** moved the
@@ -24,8 +27,8 @@
     `high-1` into evaluation), so pre- and post-swap numbers are not comparable at all.
 
     Current baseline: `postswap_ftl_cw142_s42`, **evaluated DSC 0.816 ± 0.057**
-    (3-seed mean, 4 cells, 203 frames). See `configs/README.md` and
-    `checkpoints/README.md`.
+    (3-seed mean, 4 cells, 203 frames). See `configs/README.md`;
+    the checkpoints themselves are not in the repository.
 
 ---
 
@@ -183,7 +186,7 @@ The checkpoint that looked best on the internal validation split (`bf32_reg2_cos
 
 ### Full 14-checkpoint sweep, evaluated against the real development set
 
-Every checkpoint from the `base_features`/dropout/cutout/regularization sweep was re-evaluated against the full 101-frame development set (`scripts/training/evaluate_unet.py --pool 02_unet_holdout`, results logged to `results/preswap/preswap_eval_log.jsonl`):
+Every checkpoint from the `base_features`/dropout/cutout/regularization sweep was re-evaluated against the full 101-frame development set (`scripts/evaluation/evaluate_unet.py --pool 02_unet_holdout`, results logged to `results/preswap/preswap_eval_log.jsonl`):
 
 | Checkpoint | `base_features` | Recipe | Trapped-cell DSC |
 |---|---|---|---|
@@ -325,7 +328,7 @@ The table below was the pre-Run-4 projection and undershot: 220 masks reached DS
 | 220 (historical) | 0.943 internal-val / 0.538 on 5 real cells — see [Domain Gap](#domain-gap) | n/a (multiclass, `class_weights=[1,3,3]`) |
 | 425, full development-set eval (current) | **0.605 (no augmentation) → 0.671 (scale augmentation) under the matched config — see [the controlled re-run](#the-controlled-augmentation-re-run)** | n/a |
 
-The thesis-reportable DSC comes from `scripts/training/evaluate_unet.py` on the `02_unet_holdout` pool, which is now fully annotated and has been evaluated against every checkpoint in the sweep above. See [Workflow Guide](workflow.md#step-5-evaluate-on-the-development-set).
+The thesis-reportable DSC comes from `scripts/evaluation/evaluate_unet.py` on the `02_unet_holdout` pool, which is now fully annotated and has been evaluated against every checkpoint in the sweep above. See [Workflow Guide](workflow.md#step-5-evaluate-on-the-development-set).
 
 ---
 

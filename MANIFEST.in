@@ -3,3 +3,4 @@ include LICENSE
 include requirements.txt
 recursive-include configs *.yaml
 recursive-include celldform *.py
+recursive-include celldform/demo/assets *.png *.ico
