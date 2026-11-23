@@ -43,3 +43,9 @@ supporting_docs/
 CLAUDE.md
 .claude
 configs/notebook/
+
+# demo-only classifier: keep the script, the .joblib and the LOOCV table; ignore the segmentations, features and logs
+demo_classifier/data/
+demo_classifier/results/
+demo_classifier/logs/
+demo_classifier/configs/
