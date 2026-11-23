@@ -1,0 +1,1841 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Machine learning for quantifying SKBR3 cell deformation in dual-beam optical tweezers and classifying HER2 expression, with a desktop app">
+      
+      
+        <meta name="author" content="Isaac Oppong-Baah">
+      
+      
+      
+        <link rel="prev" href="../status/">
+      
+      
+        <link rel="next" href="../install_windows/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.2">
+    
+    
+      
+        <title>Demonstration app - celldform</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#demonstration-application" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="celldform" class="md-header__button md-logo" aria-label="celldform" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            celldform
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Demonstration app
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/oppongbaah/cancer_cell_deformation" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    oppongbaah/cancer_cell_deformation
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="celldform" class="md-nav__button md-logo" aria-label="celldform" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    celldform
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/oppongbaah/cancer_cell_deformation" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    oppongbaah/cancer_cell_deformation
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../status/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Project Status
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Desktop app
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Desktop app
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Demonstration app
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Demonstration app
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-it-does" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What it does
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#caveats-the-app-prints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Caveats the app prints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#known-limitation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known limitation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#required-files-first-run-on-a-new-machine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Required files (first run on a new machine)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dashboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dashboard
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#controls-frame-source-and-log" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Controls, frame source and log
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#browsing-a-recording-no-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Browsing a recording (no analysis)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pause" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pause
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opening-a-recording" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Opening a recording
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stages-what-can-be-pressed-when" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stages: what can be pressed when
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#short-recordings-and-provisional-verdicts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Short recordings and provisional verdicts
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#window-size-maximize-and-full-screen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Window size, Maximize and full screen
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../install_windows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installing the desktop app
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../privacy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Privacy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pipeline Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../workflow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Workflow Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Layout
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../scripts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scripts Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gpu/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GPU & Hardware
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hpc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HPC Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Research log
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Research log
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../research_log_2026-09/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    September 2026 status
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../training/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Training results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/acquisition/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Acquisition
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/preprocessing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Preprocessing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/segmentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Segmentation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/features/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Features
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/classification/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Classification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/biomechanics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Biomechanics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-it-does" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What it does
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#caveats-the-app-prints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Caveats the app prints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#known-limitation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known limitation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#required-files-first-run-on-a-new-machine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Required files (first run on a new machine)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dashboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dashboard
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#controls-frame-source-and-log" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Controls, frame source and log
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#browsing-a-recording-no-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Browsing a recording (no analysis)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pause" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pause
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opening-a-recording" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Opening a recording
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stages-what-can-be-pressed-when" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stages: what can be pressed when
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#short-recordings-and-provisional-verdicts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Short recordings and provisional verdicts
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#window-size-maximize-and-full-screen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Window size, Maximize and full screen
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="demonstration-application">Demonstration application<a class="headerlink" href="#demonstration-application" title="Permanent link">&para;</a></h1>
+<p>Runs the trained models on a newly recorded video and reports the HER2 class of the trapped SKBR3 cell. <strong>Not
+real-time</strong> (a measured frame costs a network pass; the 45.5 ms camera interval is only a speed reference).</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>celldform-demo<span class="w"> </span><span class="o">[</span>recording<span class="o">]</span><span class="w">                          </span><span class="c1"># the window (Windows installer: the desktop shortcut)</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>python<span class="w"> </span>-m<span class="w"> </span>celldform.demo.run<span class="w"> </span>&lt;recording&gt;<span class="w"> </span>--out<span class="w"> </span>&lt;dir&gt;<span class="w"> </span>--bundle<span class="w"> </span>models.zip<span class="w">      </span><span class="c1"># headless</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>python<span class="w"> </span>-m<span class="w"> </span>celldform.demo.models<span class="w"> </span>make<span class="w"> </span>--unet<span class="w"> </span>w.pt<span class="w"> </span>--config<span class="w"> </span>c.yaml<span class="w"> </span>--classifier<span class="w"> </span>f.joblib<span class="w"> </span>--out<span class="w"> </span>models<span class="w">   </span><span class="c1"># prepare the files</span>
+</code></pre></div>
+<p><strong>The app contains no models.</strong> On a new machine it cannot analyze anything until the required files are loaded; see
+<a href="#required-files-first-run-on-a-new-machine">Required files</a> below, and <a href="../install_windows/">Installing on Windows</a>.</p>
+<p>A recording folder holds <code>video.avi</code> and, if present, <code>SKBR3.txt</code> and <code>frames.csv</code> (per-frame laser log).</p>
+<h2 id="what-it-does">What it does<a class="headerlink" href="#what-it-does" title="Permanent link">&para;</a></h2>
+<ol>
+<li><code>source.py</code> reads the video (a damaged tail ends the stream, it never raises), removes the burned-in overlay text,
+   converts to gray 1228x922.</li>
+<li>Only the measured frames are decoded and segmented: in every 200-frame laser step, offsets 0, 20, 60, 100, 140, 180
+   (<code>configs/analysis/features.yaml</code>).</li>
+<li><code>segment.py</code>: the U-Net you loaded (its crop and filters from its settings file) -&gt; labels at full frame.</li>
+<li><code>analyze.py</code>: trapped cell = region nearest the trap (learned from the frames seen so far, or set by a click), the
+   five frame checks, shape and deformation features.</li>
+<li><code>session.py</code>: laser steps accumulate; the framework classifier (step LR + LR on PC1 of the selected 4, equal-weight
+   mean, 14/15 leave-one-cell-out) gives P(high) <strong>only</strong> with &gt;= 80 % of measured frames passing and &gt;= 3 laser steps. With &gt;= 10 steps it is the full
+   classifier; with 3 to 9 it is the step model alone, labelled <em>short recording</em> (see below). Otherwise the verdict is
+   withheld with the reason.</li>
+</ol>
+<p>Outputs of the headless run: <code>annotated.mp4</code> (predicted mask outlined white, decoy grey), <code>frames.csv</code>, <code>steps.csv</code>,
+<code>verdict.json</code> (includes the caveats and timing).</p>
+<h2 id="caveats-the-app-prints">Caveats the app prints<a class="headerlink" href="#caveats-the-app-prints" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Masks come from the U-Net you loaded; the classifier's features were measured on nnU-Net masks.</li>
+<li>A laser current range or hold time different from the training recordings (500-1200 mA) is reported from <code>frames.csv</code>.</li>
+<li>The crop centre of the U-Net is a calibration of the training setup's trap; a recording from another setup needs
+  <code>--crop-center</code>.</li>
+</ul>
+<h2 id="known-limitation">Known limitation<a class="headerlink" href="#known-limitation" title="Permanent link">&para;</a></h2>
+<p>The app works on recordings made like the ones the models were trained on. On four recordings from a newer setup (colour
+camera, a 298-1000 mA ramp in steps of about 9 s instead of 500-1200 mA held for 30 s) the U-Net found the cell in only 2-13 %
+of the measured frames, so the app correctly gave no verdict; a different pre-processing or a model fine-tuned on frames of
+that setup is needed there. The dashboard shows why frames were rejected, which tells you whether a recording is the
+problem. See <a href="../status/">Project status</a>.</p>
+<h2 id="required-files-first-run-on-a-new-machine">Required files (first run on a new machine)<a class="headerlink" href="#required-files-first-run-on-a-new-machine" title="Permanent link">&para;</a></h2>
+<p>Nothing is bundled with the program, so a new installation has to be given a <strong>segmentation model</strong> and the <strong>HER2
+classifier</strong> before <strong>Analyze</strong> works (browsing a recording needs none). The segmentation model is <em>either</em> the U-Net
+weights with their settings file, <em>or</em> an nnU-Net checkpoint (or both). The <strong>Required files</strong> box lists the files with a mark
+each: ✔ loaded and checked, ✘ the file was refused (with the reason), ○ not loaded yet.</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>What it is</th>
+<th>What is checked</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>U-Net weights</strong> (<code>.pt</code>)</td>
+<td>the segmentation model</td>
+<td>it is a U-Net with 2 or 3 classes (width and classes are read from the weights); read with <code>weights_only</code>, so it cannot run code</td>
+</tr>
+<tr>
+<td><strong>U-Net settings</strong> (<code>.yaml</code>)</td>
+<td>filters, crop size and crop centre the model was trained with</td>
+<td>every value is present, sensible and fits a 1228x922 frame; found automatically when <code>unet_settings.yaml</code> or <code>config.yaml</code> sits beside the weights</td>
+</tr>
+<tr>
+<td><strong>nnU-Net checkpoint</strong> (<code>.pth</code>), instead of the two above</td>
+<td>one nnU-Net 2d checkpoint; nothing else is needed</td>
+<td>read safely (only tensors, plain values and NumPy numbers are accepted, so it cannot run code); a 2d model with one input channel and labels 0 = background, 1 = trapped cell; then run once on a blank frame</td>
+</tr>
+<tr>
+<td><strong>HER2 classifier</strong> (<code>.joblib</code>)</td>
+<td>the fitted step model + cell model</td>
+<td>it contains only what a HER2 framework contains (everything else is refused unopened), and it expects the features this version measures</td>
+</tr>
+<tr>
+<td>Training-cell reference (<code>.csv</code>, optional)</td>
+<td>the 15 training cells' features</td>
+<td>has the columns the comparison chart needs; without it that chart says so</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Which model runs.</strong> When both a U-Net and an nnU-Net are loaded, <strong>Segment with</strong> chooses; the nnU-Net is the default
+because it is the model the classifier's features were measured on (so the "masks are not from nnU-Net" caveat disappears).
+It is more accurate (per-cell Dice 0.94 against 0.87 for the U-Net in leave-one-cell-out testing) but slower: about 0.5 s a
+frame on a GPU and several seconds on a CPU, so a recording takes minutes instead of under a minute. A recording of a few
+hundred measured frames is fine on a GPU; on a PC without one the U-Net is the practical choice.</p>
+<p><strong>The nnU-Net file.</strong> nnU-Net normally wants a whole model folder; everything it needs is inside its <code>.pth</code>, so the app
+reads that one file and writes a stripped copy (without the optimizer state and training log, half the size, same
+predictions) into its cache folder the first time. It needs the <code>nnunetv2</code> package, which the Windows installer includes
+and <code>pip install "celldform[app]"</code> installs; without it the row says so and the U-Net still works.</p>
+<p>When the weights and their settings are both loaded they are run together once on a blank frame, which shows (and
+proves) that they work on this machine and which device (CPU or GPU) they use. The files you loaded are remembered
+(their paths and SHA-256 only) and checked again at the next start; one that has gone or changed is shown as ✘ rather
+than failing.</p>
+<p><strong>Model bundle.</strong> One folder or <code>.zip</code> that carries all of it, with a SHA-256 for every file, so a file damaged or swapped on
+the way is refused and nothing is half-loaded. Use <strong>Load a model bundle</strong> in the box. Whoever holds the trained files
+makes it once:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>python<span class="w"> </span>-m<span class="w"> </span>celldform.demo.models<span class="w"> </span>make<span class="w"> </span>--unet<span class="w"> </span>unet_deploy.pt<span class="w"> </span>--config<span class="w"> </span>config.yaml<span class="w"> </span>--classifier<span class="w"> </span>her2_framework.joblib<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">       </span><span class="o">[</span>--nnunet<span class="w"> </span>checkpoint_final.pth<span class="o">]</span><span class="w"> </span><span class="o">[</span>--reference<span class="w"> </span>features_cells.csv<span class="o">]</span><span class="w"> </span>--description<span class="w"> </span><span class="s2">"U-Net + 15-cell framework"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">       </span>--out<span class="w"> </span>models<span class="w"> </span>--zip<span class="w"> </span>models.zip
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>python<span class="w"> </span>-m<span class="w"> </span>celldform.demo.models<span class="w"> </span>verify<span class="w"> </span>models.zip
+</code></pre></div>
+<p>A bundle is rebuilt, not copied: the U-Net is re-saved as bare weights (no optimizer state, about a third of the size),
+the settings file is rebuilt from the few keys the app reads (a training <code>config.yaml</code> holds dataset paths and split
+details that do not belong on someone else's computer), and an nnU-Net checkpoint is re-saved without its optimizer state
+and training log (474 MB becomes about 240 MB). A bundle may carry the nnU-Net alone, the U-Net pair alone, or both. The description and the classifier's own record are
+refused if they contain an e-mail address or a path. A <code>.zip</code> is unpacked into the user's cache folder with protection
+against entries that try to write elsewhere, links, and zip bombs.</p>
+<p>A <code>.joblib</code> file is a pickle, and a pickle can run code when it is opened. The loader therefore only accepts the ten
+classes a HER2 framework is made of and refuses anything else without opening it; <code>celldform.demo.framework.load(path,
+trusted=True)</code> is plain <code>joblib.load</code> for a file you made yourself.</p>
+<p>Command line: <code>--bundle models.zip</code>, or <code>--unet-file w.pt --unet-config c.yaml --classifier f.joblib</code>, or
+<code>--nnunet-file model.pth --classifier f.joblib</code>; with both models given, <code>--use unet|nnunet</code> chooses (default nnunet). Developers on a
+machine that has the repository's checkpoints can still use <code>--segmenter unet|nnunet</code>.</p>
+<h2 id="dashboard">Dashboard<a class="headerlink" href="#dashboard" title="Permanent link">&para;</a></h2>
+<p>Under the video the window has three tabs (<code>celldform/demo/dashboard.py</code>); they fill in while the recording runs.</p>
+<table>
+<thead>
+<tr>
+<th>Tab</th>
+<th>Panel</th>
+<th>What it shows</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Process</td>
+<td>Laser protocol and what was measured</td>
+<td>set current over the video against the 500-1200 mA the classifier was trained on; each 200-frame step coloured green / amber / red / grey</td>
+</tr>
+<tr>
+<td>Process</td>
+<td>Frames passing the checks, per laser step</td>
+<td>pass rate per step against the 80% the classifier needs</td>
+</tr>
+<tr>
+<td>Process</td>
+<td>Why frames were rejected</td>
+<td>no cell near the trap, too far, uncertain boundary, size off typical, ...</td>
+</tr>
+<tr>
+<td>Evidence</td>
+<td>Cell shape across the laser ramp</td>
+<td>median area and aspect ratio of passing frames per step against the current</td>
+</tr>
+<tr>
+<td>Evidence</td>
+<td>Where this cell sits among the 15 training cells</td>
+<td>the cell on two of the classifier's selected features, with the training cells coloured by HER2 class</td>
+</tr>
+<tr>
+<td>Evidence</td>
+<td>The cell across laser steps</td>
+<td>a picture of the cell with its predicted outline, one per step</td>
+</tr>
+<tr>
+<td>Result and model</td>
+<td>Result</td>
+<td>HER2 class with a probability gauge (step model, cell model, average); without a verdict, what is still missing</td>
+</tr>
+<tr>
+<td>Result and model</td>
+<td>Run and model</td>
+<td>segmentation model and device, frames measured, time per frame (camera interval 45.5 ms is a reference only), classifier training record</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Save dashboard image</strong> (toolbar) writes every page on one PNG; every run also writes <code>dashboard.png</code> into its
+results folder, including from the command line. Before a run the tabs already show the recording's laser protocol
+and the model card.</p>
+<h2 id="controls-frame-source-and-log">Controls, frame source and log<a class="headerlink" href="#controls-frame-source-and-log" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Analyze / Pause (Resume) / Stop</strong> are buttons at the top of the right-hand panel; <strong>Analyze</strong> is what runs the
+  models (the Browse bar only looks). Pause holds the run before the next frame is read; Stop works while paused and keeps the results so far. Paused time is left out
+  of the timings (<code>verdict.json</code> has <code>paused_seconds</code>).</li>
+<li><strong>Frames from: Video | Images (stills)</strong> in the toolbar (<code>--source video|images</code> on the command line). Images are the
+  <code>stills*/</code> folder of the recording, or any folder of images. With <code>stills.csv</code> each picture is placed at its video
+  frame (<code>video_frame</code> is 1-based), so laser steps, times and the laser log are the same as for the video; frames that
+  have no still are skipped, and unselected frames are never read, which is faster than decoding the video. Without the
+  table the sorted file order is the frame index. The stills carry the same camera image and the same burned-in overlay
+  as the video, so they do not segment any better (checked 2026-11-18).</li>
+<li><strong>Log</strong> is the fourth dashboard tab: model load, the settings and caveats, one line per measured frame (frame, laser
+  step, segmentation time, PASS with area and aspect ratio or REJECT with the reason), a line whenever another laser
+  step becomes usable (with what the verdict is then), pauses, and the result. The same lines are saved as
+  <code>inference.log</code> in the results folder, also from the command line.</li>
+</ul>
+<h2 id="browsing-a-recording-no-analysis">Browsing a recording (no analysis)<a class="headerlink" href="#browsing-a-recording-no-analysis" title="Permanent link">&para;</a></h2>
+<p>The <strong>Browse the recording</strong> bar under the picture plays the video or steps through its still images (whichever
+<strong>Frames from</strong> says) without running any model.</p>
+<table>
+<thead>
+<tr>
+<th>Control</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Play / Pause, space</td>
+<td>plays at the chosen speed (0.25x to 16x); follows the clock, so frames are skipped rather than slowed when decoding falls behind</td>
+</tr>
+<tr>
+<td>slider</td>
+<td>jump to any frame</td>
+</tr>
+<tr>
+<td><code>|&lt;</code> <code>&lt;</code> <code>&gt;</code> <code>&gt;|</code>, Home / Left / Right / End</td>
+<td>first frame, back, forward, last frame</td>
+</tr>
+<tr>
+<td>step</td>
+<td>how far <code>&lt;</code> and <code>&gt;</code> move: 1, 10, 50 frames, <strong>1 laser step (200 frames)</strong>, or 1000 frames, to sample through a recording</td>
+</tr>
+<tr>
+<td>Hide overlay text</td>
+<td>inpaints the burned-in laser readout (the analysis always does)</td>
+</tr>
+</tbody>
+</table>
+<p>The line under the slider gives the frame, time, laser step and set current of the frame on show. Browsing is switched
+off while a run is going, and back on when it ends.</p>
+<p><strong>Zoom and pan</strong> work on the picture at any time, also during a run and while paused: mouse wheel zooms at the cursor
+(up to 32x, real pixels from 3x), drag pans, double-click or <strong>Fit view</strong> shows the whole picture. The status bar shows
+the pixel under the cursor (x, y, gray). A trap marked with <strong>Click the cell</strong> is converted to analysis-frame pixels
+whatever the zoom or the size of the picture.</p>
+<h2 id="pause">Pause<a class="headerlink" href="#pause" title="Permanent link">&para;</a></h2>
+<p>Pause holds the run before the next frame is read (not only after a measured one), the picture shows <strong>PAUSED</strong> and the
+status bar says Paused; zoom and pan still work. The window receives only the newest frame, dashboard snapshot and
+log lines in a batch, so a slow screen cannot build up a backlog of frames that keeps playing after Pause (that is
+what made Pause look broken: with a window slower than the models, the video ran on for seconds).</p>
+<h2 id="opening-a-recording">Opening a recording<a class="headerlink" href="#opening-a-recording" title="Permanent link">&para;</a></h2>
+<p><strong>Open recording</strong> (toolbar menu, or drop on the window) takes three kinds of input:</p>
+<ul>
+<li><strong>Video file...</strong>: that one file, also when its folder holds many videos. A folder with one video behaves as before
+  (<code>frames.csv</code> = laser log, the <code>*.txt</code> = notes). With several videos in a folder, a video only picks up sidecars named
+  after it: <code>&lt;video name&gt;.csv</code> (laser log) and <code>&lt;video name&gt;.txt</code> (notes); otherwise there is no laser log and the app
+  says so in its caveats.</li>
+<li><strong>Image files... (select several)</strong>: exactly the pictures you choose. If they come from a <code>stills*/</code> folder whose
+  <code>stills.csv</code> lists them, each keeps its video frame number (so laser steps and the laser log line up, and a subset
+  such as frames 600-1200 is analysed as steps 3-5); otherwise they are numbered in name order (<code>img2</code> before <code>img10</code>).
+  <strong>Frames from</strong> is then fixed to Images. The laser log is found in the recording folder when it holds one video.</li>
+<li><strong>Recording folder...</strong>: as before; with several videos in it the window asks which one to open, and a folder with
+  only pictures is read as images.</li>
+</ul>
+<p>Command line: <code>python -m celldform.demo.run &lt;folder | video.avi | img1.png img2.png ...&gt; --out &lt;dir&gt;</code>.</p>
+<h2 id="stages-what-can-be-pressed-when">Stages: what can be pressed when<a class="headerlink" href="#stages-what-can-be-pressed-when" title="Permanent link">&para;</a></h2>
+<p>One function (<code>MainWindow._refresh_controls</code>) decides this from two facts, whether a recording is loaded and what the
+analysis is doing, and runs after every change, so no stage can be left with a stale button.</p>
+<table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Analyze</th>
+<th>Pause</th>
+<th>Stop</th>
+<th>Browse bar, Open, Models, Frames from</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>nothing loaded</td>
+<td>off (pressing it explains why)</td>
+<td>off</td>
+<td>off</td>
+<td>Open only</td>
+</tr>
+<tr>
+<td>loaded, idle (also after playing the video)</td>
+<td><strong>on</strong></td>
+<td>off</td>
+<td>off</td>
+<td>on</td>
+</tr>
+<tr>
+<td>analyzing</td>
+<td>off</td>
+<td><strong>on</strong></td>
+<td><strong>on</strong></td>
+<td>off</td>
+</tr>
+<tr>
+<td>paused</td>
+<td>off</td>
+<td><strong>on, reads Resume</strong></td>
+<td><strong>on</strong></td>
+<td>off</td>
+</tr>
+<tr>
+<td>stopping (until the thread has ended)</td>
+<td>off</td>
+<td>off</td>
+<td>off</td>
+<td>off</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>A failed open (wrong file, no stills) leaves the recording that was loaded usable; the Frames from box goes back
+  to what it was.</li>
+<li>A recording cannot be opened or changed while an analysis is running or paused (Stop first).</li>
+<li>An error inside the analysis, or while starting it, returns the window to idle with Analyze enabled and the
+  error in the status bar and the Log tab. Unexpected errors in the window do not close it.</li>
+<li><code>tests/test_demo_states.py</code> walks every stage, including random sessions of button presses with the invariants
+  checked after each press.</li>
+<li><code>import cv2</code> makes Qt look for OpenCV's own plugins, which can stop Qt from creating a window; <code>main()</code> undoes it.</li>
+</ul>
+<h2 id="short-recordings-and-provisional-verdicts">Short recordings and provisional verdicts<a class="headerlink" href="#short-recordings-and-provisional-verdicts" title="Permanent link">&para;</a></h2>
+<p>The classifier was validated (leave-one-cell-out 14/15, AUC 0.94) on whole recordings: 10 or more laser steps, and at
+least 80% of measured frames passing the five frame checks. The app treats a recording by its length:</p>
+<table>
+<thead>
+<tr>
+<th>Usable laser steps</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>fewer than 3</td>
+<td>no verdict (the reason says how many steps and seconds are needed)</td>
+</tr>
+<tr>
+<td>3 to 9</td>
+<td>a <strong>short-recording</strong> verdict: the step model alone, labelled <code>SHORT RECORDING, STEP MODEL ONLY</code></td>
+</tr>
+<tr>
+<td>10 or more</td>
+<td>the full classifier, an ordinary verdict</td>
+</tr>
+</tbody>
+</table>
+<p>A laser step is 200 frames, 9.1 s, so 3 steps is about 27 s and 10 steps about 91 s. <strong>Why the short result is weaker:</strong>
+the per-cell measures (baseline length, volume change and so on) compare the end of the ramp with its first 10 steps and
+cannot be computed from fewer, so the cell-level half of the classifier is left out rather than filled with the training
+cells' median, which would pull every answer toward the middle. A recording that short also stays at the first, low
+laser powers, so the cell is barely loaded and the answer rests on its size and shape rather than on how it deforms.
+In a test that cut the 15 recordings short, the step model alone placed 11 to 12 of 15 cells correctly from 3 to 10
+steps, no better than from the full ramp (11 of 15), and one cell is about 7 points; do not read a short result as the
+14/15 of the full classifier. The recording must still pass the 80% frame check.</p>
+<p>The short-recording label appears in the window (orange, <em>Read with care:</em>), on the dashboard (badge, and "cell model not
+used"), in <code>verdict.json</code> (<code>"status": "short"</code>, <code>"validated": false</code>) and in the logs. No option is needed for it.</p>
+<p>The <strong>Give a provisional verdict even if the checks fail</strong> box (command line: <code>--provisional</code>) also computes a verdict
+when the frame checks fail or there are fewer than 3 steps. It is opt-in, off by default, locked while a run is going, and everything it produces
+says so:</p>
+<ul>
+<li>the window shows <em>PROVISIONAL, not validated: HIGH HER2 (P high 0.52)</em> in orange, with <em>Not a HER2 result, because:</em>
+  and every reason (too few steps, too low a pass rate, cell-level measures that were missing and replaced by the
+  training cells' median);</li>
+<li>the dashboard result panel carries a <strong>PROVISIONAL: NOT VALIDATED</strong> badge and the reasons, and the saved dashboard
+  image starts with the same words;</li>
+<li><code>verdict.json</code> has <code>"status": "provisional"</code> and <code>"validated": false</code>; the log and <code>inference.log</code> say
+  <code>PROVISIONAL, NOT VALIDATED</code>;</li>
+<li>with no usable step at all (nothing passed) there is still no verdict, and a recording that does pass validation
+  gets an ordinary verdict whatever the box says.</li>
+</ul>
+<p>The 14/15 figure does not apply to a provisional verdict, and neither does any claim about accuracy. Example: on
+a recording of a low-HER2 cell where only 13 % of the measured frames passed the checks, the provisional verdict was <em>high</em>
+with P = 0.52 (step model 0.54, cell model 0.51): a coin flip that happened to land on the wrong side. Do not read anything
+into such a number.</p>
+<h2 id="window-size-maximize-and-full-screen">Window size, Maximize and full screen<a class="headerlink" href="#window-size-maximize-and-full-screen" title="Permanent link">&para;</a></h2>
+<p>The window opens at a size that fits the screen. When it is wide enough (maximized, or full screen) it switches to a wide
+arrangement: the picture takes the whole height on the left and the controls and the dashboard share the right, so a big
+screen is used instead of showing black bars; smaller windows keep the stacked arrangement. The switch keeps everything
+(frame, tab, log, zoom). Maximize keeps the system's title bar, as on any window; <strong>F11</strong> goes to true full screen
+(F11 or Esc to leave).</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../status/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Project Status">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Project Status
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../install_windows/" class="md-footer__link md-footer__link--next" aria-label="Next: Installing the desktop app">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Installing the desktop app
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "navigation.footer", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>
