@@ -1,13 +1,15 @@
 """
 The files the app needs from the user, how each is checked, and the model bundle that carries them.
 
-The app ships no models. On a new machine nothing works until three files are loaded:
+The app ships no models. On a new machine nothing works until a segmentation model and the classifier are loaded:
 
 ====================  =========  ==================================================================================
 role                  file       what it is
 ====================  =========  ==================================================================================
 ``unet``              ``.pt``    the U-Net weights (segmentation)
 ``unet_config``       ``.yaml``  how frames are prepared for it: filters, crop size and crop centre of THE SETUP
+``nnunet``            ``.pth``   alternative to the two above: an nnU-Net checkpoint (the model the classifier's features
+                                 were measured on; slower, more accurate). One file; nothing else is needed
 ``classifier``        ``.joblib``  the fitted HER2 framework (step model + cell model)
 ``reference``         ``.csv``   optional: the training cells' features, for the comparison chart
 ====================  =========  ==================================================================================
@@ -50,13 +52,16 @@ ROLES: Dict[str, Role] = {r.key: r for r in (
     Role("unet", "U-Net weights", (".pt", ".pth"), True, "the segmentation model (a .pt file)"),
     Role("unet_config", "U-Net settings", (".yaml", ".yml"), True,
          "how frames are prepared for the U-Net: filters, crop size and crop centre (a config.yaml)"),
+    Role("nnunet", "nnU-Net checkpoint (alternative)", (".pth",), False,
+         "instead of the U-Net pair: one nnU-Net checkpoint (a .pth file), the model the classifier's features came from"),
     Role("classifier", "HER2 classifier", (".joblib",), True, "the fitted HER2 classifier (a .joblib file)"),
     Role("reference", "Training-cell reference", (".csv",), False,
          "optional: the training cells' features, for the comparison chart (a .csv)"),
 )}
-REQUIRED = tuple(k for k, r in ROLES.items() if r.required)
-BUNDLE_NAMES = {"unet": "unet.pt", "unet_config": "unet_settings.yaml", "classifier": "classifier.joblib",
-                "reference": "reference.csv"}
+REQUIRED = tuple(k for k, r in ROLES.items() if r.required)       # unet, unet_config, classifier: see missing_roles
+SEGMENTATION = ("unet", "unet_config", "nnunet")
+BUNDLE_NAMES = {"unet": "unet.pt", "unet_config": "unet_settings.yaml", "nnunet": "nnunet.pth",
+                "classifier": "classifier.joblib", "reference": "reference.csv"}
 
 
 class BundleError(ValueError):
@@ -214,6 +219,45 @@ def smoke_test_unet(unet, settings, device: Optional[str] = None) -> Check:
     return try_segmenter(unet, settings, device)[1]
 
 
+# ── the nnU-Net checkpoint ────────────────────────────────────────────────────────────────────────────────────────
+
+def check_nnunet(path) -> Check:
+    """Read the checkpoint safely, check it is a 2d single-channel nnU-Net the app can use, and prepare the folder nnU-Net
+    loads it from (in the cache). Takes a few seconds the first time (the file is a few hundred MB)."""
+    bad = _base("nnunet", path)
+    if bad:
+        return bad
+    from celldform.demo import segment
+    p = Path(path)
+    if not segment.nnunet_available():
+        return _fail("nnunet", p, "nnU-Net checkpoints need the 'nnunetv2' package, which is not installed in this copy of celldform")
+    try:
+        sha = sha256_file(p)
+        folder, info = segment.prepare_nnunet_folder(p, sha256=sha)
+    except Exception as e:
+        return _fail("nnunet", p, str(e))
+    names = ", ".join(info["labels"])
+    return Check("nnunet", p, True, f"nnU-Net {info['configuration']}, {info['n_classes']} classes ({names})", sha, p.stat().st_size,
+                 {**info, "folder": str(folder)})
+
+
+def try_nnunet(path, device: Optional[str] = None):
+    """``(segmenter, check)`` for an nnU-Net checkpoint: built and run once on a blank frame, like :func:`try_segmenter`."""
+    import numpy as np
+
+    from celldform.demo.segment import NNUNetSegmenter
+    t = time.perf_counter()
+    try:
+        seg = NNUNetSegmenter.from_checkpoint(path, device=device)
+        out = seg.segment(np.full((922, 1228), 128, np.uint8))
+    except Exception as e:
+        return None, _fail("nnunet", path, f"the nnU-Net could not be run: {str(e)[:200]}")
+    p = Path(path)
+    return seg, Check("nnunet", p, True, f"nnU-Net {seg.info.get('configuration', '2d')}, {seg.info.get('n_classes', '?')} classes, "
+                      f"runs on {seg.device} ({time.perf_counter() - t:.1f} s incl. loading)", sha256_file(p), p.stat().st_size,
+                      {"device": seg.device, "labels_shape": tuple(out.labels.shape), **seg.info})
+
+
 # ── the classifier ────────────────────────────────────────────────────────────────────────────────────────────────
 
 def check_classifier(path) -> Check:
@@ -258,7 +302,8 @@ def check_reference(path) -> Check:
     return _done("reference", p, f"{len(df)} training cells", rows=len(df))
 
 
-CHECKS = {"unet": check_unet, "unet_config": check_unet_settings, "classifier": check_classifier, "reference": check_reference}
+CHECKS = {"unet": check_unet, "unet_config": check_unet_settings, "nnunet": check_nnunet, "classifier": check_classifier,
+          "reference": check_reference}
 
 
 def check(role: str, path) -> Check:
@@ -267,31 +312,51 @@ def check(role: str, path) -> Check:
 
 # ── the bundle ────────────────────────────────────────────────────────────────────────────────────────────────────
 
-def make_bundle(out_dir: Path | str, *, unet, config, classifier, reference=None, description: str = "") -> Path:
-    """Write a model bundle: weights only, a minimal settings file, the classifier, a manifest with SHA-256s.
+def make_bundle(out_dir: Path | str, *, classifier, unet=None, config=None, nnunet=None, reference=None,
+                description: str = "") -> Path:
+    """Write a model bundle: the segmentation model (a U-Net with its settings, an nnU-Net checkpoint, or both), the
+    classifier, an optional reference table, and a manifest with SHA-256s.
 
     What goes in is rebuilt, not copied: the U-Net file is re-saved as a bare state dict (no optimizer or training
-    history), and the settings file is rebuilt from the few keys the app reads (a training config.yaml holds dataset paths
-    and split details that have no business on someone else's machine)."""
+    history), the settings file is rebuilt from the few keys the app reads (a training config.yaml holds dataset paths and
+    split details that have no business on someone else's computer), and the nnU-Net checkpoint is re-saved without its
+    optimizer state and training log (half the size, the same predictions)."""
+    import json as _json
+
     import torch
     import yaml
 
     from celldform.demo import framework as fw
-    from celldform.demo.segment import inspect_checkpoint, read_checkpoint
+    from celldform.demo.segment import inspect_checkpoint, read_checkpoint, read_nnunet_checkpoint, inspect_nnunet
     out = Path(out_dir)
+    if bool(unet) != bool(config):
+        raise BundleError("a U-Net needs its settings file, and the settings file needs its U-Net")
+    if not nnunet and not unet:
+        raise BundleError("a bundle needs a segmentation model: a U-Net with its settings file, or an nnU-Net checkpoint")
     out.mkdir(parents=True, exist_ok=True)
     bad = privacy.find_sensitive(description)
     if bad:
         raise BundleError("the description must not contain " + "; ".join(str(b) for b in bad))
-    arch = inspect_checkpoint(unet)
-    sd = read_checkpoint(unet)
-    torch.save({k: v.detach().cpu() for k, v in sd.items()}, out / BUNDLE_NAMES["unet"])
-    pp = load_unet_settings(config)
-    (out / BUNDLE_NAMES["unet_config"]).write_text(yaml.safe_dump(
-        {"preprocessing": pp, "unet": {"in_channels": arch["in_channels"], "base_features": arch["base_features"],
-                                       "out_channels": arch["out_channels"]}}, sort_keys=False), encoding="utf-8")
+    if unet:
+        arch = inspect_checkpoint(unet)
+        sd = read_checkpoint(unet)
+        torch.save({k: v.detach().cpu() for k, v in sd.items()}, out / BUNDLE_NAMES["unet"])
+        pp = load_unet_settings(config)
+        (out / BUNDLE_NAMES["unet_config"]).write_text(yaml.safe_dump(
+            {"preprocessing": pp, "unet": {"in_channels": arch["in_channels"], "base_features": arch["base_features"],
+                                           "out_channels": arch["out_channels"]}}, sort_keys=False), encoding="utf-8")
+    if nnunet:
+        ck = read_nnunet_checkpoint(nnunet)
+        inspect_nnunet(ck, Path(nnunet).name)
+        ia = ck["init_args"]
+        leaks = privacy.find_sensitive(_json.dumps(ia["plans"], default=str) + _json.dumps(ia["dataset_json"], default=str))
+        if leaks:
+            raise BundleError("the nnU-Net's plans contain " + "; ".join(str(b) for b in leaks))
+        torch.save({"network_weights": ck["network_weights"], "trainer_name": ck["trainer_name"],
+                    "init_args": {"plans": ia["plans"], "configuration": ia["configuration"], "dataset_json": ia["dataset_json"]},
+                    "inference_allowed_mirroring_axes": ck.get("inference_allowed_mirroring_axes")}, out / BUNDLE_NAMES["nnunet"])
     model = fw.load(classifier)                              # must be a real, safe HER2 framework
-    leaks = privacy.find_sensitive(json.dumps(getattr(model, "info", {}) or {}, default=str))
+    leaks = privacy.find_sensitive(_json.dumps(getattr(model, "info", {}) or {}, default=str))
     if leaks:
         raise BundleError("the classifier's own record contains " + "; ".join(str(b) for b in leaks))
     shutil.copyfile(classifier, out / BUNDLE_NAMES["classifier"])
@@ -305,7 +370,7 @@ def make_bundle(out_dir: Path | str, *, unet, config, classifier, reference=None
         f = out / name
         if f.is_file():
             files[role] = {"name": name, "sha256": sha256_file(f), "size": f.stat().st_size}
-    (out / MANIFEST).write_text(json.dumps({
+    (out / MANIFEST).write_text(_json.dumps({
         "format": FORMAT, "created": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "description": description, "files": files}, indent=2) + "\n", encoding="utf-8")
     return out
@@ -322,11 +387,8 @@ def pack_zip(folder: Path | str, zip_path: Path | str) -> Path:
 
 
 def _user_cache() -> Path:
-    try:
-        from platformdirs import user_cache_dir
-        return Path(user_cache_dir("celldform", appauthor=False)) / "bundles"
-    except Exception:
-        return Path.home() / ".celldform" / "bundles"
+    from celldform.demo.settings import cache_dir
+    return cache_dir() / "bundles"
 
 
 def _safe_extract(z: zipfile.ZipFile, dest: Path) -> None:
@@ -386,7 +448,9 @@ def open_bundle(path: Path | str, cache_dir: Optional[Path] = None) -> Dict[str,
     unknown = sorted(set(files) - set(ROLES))
     if unknown:
         raise BundleError(f"the manifest lists unknown files: {', '.join(unknown)}")
-    absent = [ROLES[r].title for r in REQUIRED if r not in files]
+    absent = [ROLES["classifier"].title] if "classifier" not in files else []
+    if "nnunet" not in files and not ("unet" in files and "unet_config" in files):
+        absent.append("a segmentation model (U-Net weights with settings, or an nnU-Net checkpoint)")
     if absent:
         raise BundleError("the bundle lacks: " + ", ".join(absent))
     out: Dict[str, Path] = {}
@@ -419,9 +483,25 @@ def describe_bundle(path: Path | str) -> str:
 
 # ── what is still missing ─────────────────────────────────────────────────────────────────────────────────────────
 
+SEGMENTATION_NEEDED = "a segmentation model (U-Net weights and settings, or an nnU-Net checkpoint)"
+
+
 def missing_roles(checks: Dict[str, Check]) -> List[str]:
-    """Titles of the required files that are not loaded and valid yet."""
-    return [ROLES[r].title for r in REQUIRED if not (checks.get(r) and checks[r].ok)]
+    """What is still needed before Analyze works: a segmentation model (the U-Net weights *and* their settings, or an
+    nnU-Net checkpoint) and the HER2 classifier."""
+    def ok(r: str) -> bool:
+        return bool(checks.get(r) and checks[r].ok)
+    missing: List[str] = []
+    if not (ok("nnunet") or (ok("unet") and ok("unet_config"))):
+        if ok("unet") and not ok("unet_config"):
+            missing.append(ROLES["unet_config"].title)
+        elif ok("unet_config") and not ok("unet"):
+            missing.append(ROLES["unet"].title)
+        else:
+            missing.append(SEGMENTATION_NEEDED)
+    if not ok("classifier"):
+        missing.append(ROLES["classifier"].title)
+    return missing
 
 
 # ── command line: make and verify a bundle ────────────────────────────────────────────────────────────────────────
@@ -433,8 +513,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap = argparse.ArgumentParser(prog="python -m celldform.demo.models", description=__doc__.split("\n\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
     mk = sub.add_parser("make", help="build a model bundle from the trained files")
-    mk.add_argument("--unet", required=True, help="the U-Net checkpoint (.pt); only its weights are kept")
-    mk.add_argument("--config", required=True, help="its config.yaml; only the pre-processing keys are kept")
+    mk.add_argument("--unet", default=None, help="the U-Net checkpoint (.pt); only its weights are kept")
+    mk.add_argument("--config", default=None, help="its config.yaml; only the pre-processing keys are kept")
+    mk.add_argument("--nnunet", default=None, help="an nnU-Net checkpoint (.pth), instead of or with the U-Net; the optimizer state is dropped")
     mk.add_argument("--classifier", required=True, help="the fitted HER2 framework (.joblib)")
     mk.add_argument("--reference", default=None, help="optional: features_cells.csv of the training cells")
     mk.add_argument("--description", default="", help="a line shown when the bundle is loaded (no names or e-mail addresses)")
@@ -445,8 +526,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     a = ap.parse_args(argv)
     try:
         if a.cmd == "make":
-            out = make_bundle(a.out, unet=a.unet, config=a.config, classifier=a.classifier, reference=a.reference,
-                              description=a.description)
+            out = make_bundle(a.out, unet=a.unet, config=a.config, nnunet=a.nnunet, classifier=a.classifier,
+                              reference=a.reference, description=a.description)
             if a.zip:
                 pack_zip(out, a.zip)
             for role, meta in json.loads((out / MANIFEST).read_text())["files"].items():

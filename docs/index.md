@@ -30,8 +30,8 @@ the answer. The software is not real-time and is not connected to the instrument
 | analyze a recording with Python | `pip install "celldform[app]"`, then `celldform-demo` | Python 3.10–3.12 |
 | use the library or repeat the research | clone the repository, `pip install -e ".[dev]"` | Python 3.10 or newer, a GPU helps |
 
-**The trained models are not included.** Before the app can analyze anything you load three files (U-Net weights, their
-settings, the HER2 classifier) or one model bundle: [Required files](demo.md#required-files-first-run-on-a-new-machine).
+**The trained models are not included.** Before the app can analyze anything you load a segmentation model (the U-Net weights
+with their settings, or an nnU-Net checkpoint) and the HER2 classifier, or one model bundle: [Required files](demo.md#required-files-first-run-on-a-new-machine).
 
 ## Pipeline at a glance
 

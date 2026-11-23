@@ -53,18 +53,19 @@ The app contains **no models**. The right-hand panel, **Required files**, lists 
 
 | File | What it is |
 |---|---|
-| U-Net weights (`.pt`) | the segmentation model |
-| U-Net settings (`.yaml`) | how frames are prepared for it: filters and the crop |
+| U-Net weights (`.pt`) **and** U-Net settings (`.yaml`) | the segmentation model, and how frames are prepared for it |
+| *or* nnU-Net checkpoint (`.pth`) | the segmentation model, as one file (the more accurate, slower one) |
 | HER2 classifier (`.joblib`) | the fitted classifier |
 
-Until all three are loaded, **Analyze** stays grey and its tooltip says what is missing. You can already open a recording and
+You need one segmentation model (the U-Net pair, or the nnU-Net; both can be loaded and you choose) plus the classifier. Until then,
+**Analyze** stays grey and its tooltip says what is missing. You can already open a recording and
 browse it (play, step, zoom).
 
 **Where do the files come from?** From whoever trained the models; the project does not distribute them. Ask for a **model
-bundle**, one `.zip` that holds all three.
+bundle**, one `.zip` that holds them all.
 
 Easiest: **Load a model bundle ▾ → Bundle .zip file…** and pick the `.zip`. Every file inside is checked against its checksum and
-the marks turn ✔. Or load the three files one by one with each row's **Load…** button (the settings file is found by itself when it
+the marks turn ✔. Or load the files one by one with each row's **Load…** button (the settings file is found by itself when it
 sits next to the weights). A wrong file is refused with the reason, and what was loaded before stays loaded.
 
 The app remembers which files you loaded and checks them again at the next start, so this is a one-time step. **Clear all**

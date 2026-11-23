@@ -144,17 +144,155 @@ NNUNET_DIR = (Path(__file__).resolve().parent.parent.parent /
               "checkpoints/randswap/experiment_4_loocv/nnunet/Dataset502_CellTrapLOOCV/nnUNetTrainer__nnUNetPlans__2d")
 
 
-class NNUNetSegmenter:
-    """nnU-Net (2D, 1000 epochs, trained on all 15 cells): the model the classifier's features were measured on.
+def _import_nnunet():
+    """The nnU-Net predictor class. ``nnunetv2`` imports SimpleITK (a 265 MB image-file library) at the top of its
+    pre-processing module although predicting one in-memory frame never uses it, so when SimpleITK is not installed (the
+    Windows installer leaves it out) an empty stand-in module is registered first."""
+    import sys
+    import types
+    try:
+        import SimpleITK  # noqa: F401
+    except ImportError:
+        sys.modules.setdefault("SimpleITK", types.ModuleType("SimpleITK"))
+    try:
+        from nnunetv2.inference.predict_from_raw_data import nnUNetPredictor
+    except ImportError as e:
+        raise ValueError("nnU-Net checkpoints need the 'nnunetv2' package, which is not installed in this copy of "
+                         f"celldform ({e})") from e
+    return nnUNetPredictor
 
-    Whole frame in (no crop, no pre-processing of ours -- nnU-Net normalises itself, as it did in training), mirroring
-    test-time augmentation on. Slower than the U-Net (~0.4 s a frame on a laptop GPU), more accurate (0.949 vs 0.897).
+
+def nnunet_available() -> bool:
+    import importlib.util
+    try:
+        return importlib.util.find_spec("nnunetv2") is not None
+    except (ImportError, ValueError):                              # a broken or blocked installation counts as "not available"
+        return False
+
+
+def _nnunet_safe_globals() -> list:
+    """The only classes an nnU-Net checkpoint may contain besides tensors and plain Python values: NumPy scalars and
+    dtypes (the training log is stored with them). Anything else is refused."""
+    import importlib
+    out = []
+    for mod, name in (("numpy._core.multiarray", "scalar"), ("numpy.core.multiarray", "scalar"), ("numpy", "dtype")):
+        try:
+            out.append(getattr(importlib.import_module(mod), name))
+        except Exception:
+            pass
+    try:
+        import numpy.dtypes as nd
+        out += [getattr(nd, n) for n in dir(nd) if n.endswith("DType")]
+    except Exception:
+        pass
+    return out
+
+
+def read_nnunet_checkpoint(path: Path | str) -> dict:
+    """An nnU-Net ``.pth`` read safely: only tensors, plain values and NumPy scalars are accepted, so the file cannot run
+    code when opened (nnU-Net itself opens its checkpoints unrestricted). Raises ValueError saying what is wrong."""
+    import torch
+    path = Path(path)
+    if not path.is_file():
+        raise FileNotFoundError(f"checkpoint not found: {path}")
+    if not hasattr(torch.serialization, "safe_globals"):
+        raise ValueError("opening an nnU-Net checkpoint safely needs PyTorch 2.5 or newer")
+    try:
+        with torch.serialization.safe_globals(_nnunet_safe_globals()):
+            ck = torch.load(path, map_location="cpu", weights_only=True)
+    except Exception as e:
+        import re
+        text = str(e)
+        m = re.search(r"(?:[Uu]nsupported global: GLOBAL|unsupported GLOBAL) ([\w.]+)", text) or re.search(r"got <class '([\w.]+)'>", text)
+        found = m.group(1) if m else ""
+        if found:
+            raise ValueError(f"{path.name} contains {found}, which an nnU-Net checkpoint never contains; the file was not opened") from e
+        raise ValueError(f"{path.name} is not a PyTorch checkpoint of weights ({type(e).__name__}: {text[:100]})") from e
+    need = ("network_weights", "init_args", "trainer_name")
+    if not isinstance(ck, dict) or any(k not in ck for k in need):
+        raise ValueError(f"{path.name} is not an nnU-Net checkpoint (it lacks {', '.join(k for k in need if not isinstance(ck, dict) or k not in ck)})")
+    ia = ck["init_args"]
+    if not (isinstance(ia, dict) and all(k in ia for k in ("plans", "configuration", "dataset_json"))
+            and isinstance(ia["plans"], dict) and isinstance(ia["dataset_json"], dict) and isinstance(ck["network_weights"], dict)):
+        raise ValueError(f"{path.name} is not an nnU-Net checkpoint (its training record is incomplete)")
+    return ck
+
+
+def inspect_nnunet(ck: dict, name: str = "checkpoint") -> dict:
+    """What the app needs to know about an nnU-Net checkpoint, and a refusal for the ones it cannot use."""
+    ia = ck["init_args"]
+    conf, dj = ia["configuration"], ia["dataset_json"]
+    if conf != "2d":
+        raise ValueError(f"{name} is a '{conf}' nnU-Net; the app needs a 2d one (it segments single frames)")
+    channels = dj.get("channel_names") or dj.get("modality") or {}
+    if len(channels) != 1:
+        raise ValueError(f"{name} expects {len(channels)} input channels; the app gives it one (a grayscale frame)")
+    labels = dj.get("labels", {})
+    try:
+        values = sorted({int(v) for v in labels.values()})
+    except (TypeError, ValueError):
+        raise ValueError(f"{name} uses region-based labels, which the app does not support") from None
+    if 0 not in values or 1 not in values:
+        raise ValueError(f"{name} has the labels {dict(labels)}; the app needs 0 = background and 1 = the trapped cell")
+    return {"configuration": conf, "n_classes": len(values), "labels": {str(k): int(v) for k, v in labels.items()},
+            "trainer": str(ck["trainer_name"]), "mirroring": ck.get("inference_allowed_mirroring_axes")}
+
+
+def prepare_nnunet_folder(path: Path | str, cache_dir: Optional[Path] = None, sha256: Optional[str] = None):
+    """``(folder, info)``: the model folder nnU-Net's own loader expects, made from one ``.pth``.
+
+    nnU-Net wants ``plans.json``, ``dataset.json`` and ``fold_all/checkpoint_final.pth``; all of it is inside the single
+    checkpoint, so the folder is written (once, in the cache, named by the file's SHA-256) with the optimizer state and
+    training log left out: half the size, and the same predictions."""
+    import hashlib
+    import json
+    import shutil
+    import torch
+    path = Path(path)
+    if sha256 is None:
+        h = hashlib.sha256()
+        with open(path, "rb") as f:
+            for block in iter(lambda: f.read(1 << 20), b""):
+                h.update(block)
+        sha256 = h.hexdigest()
+    if cache_dir is None:
+        from celldform.demo.settings import cache_dir as default_cache
+        cache_dir = default_cache()
+    folder = Path(cache_dir) / "nnunet" / sha256[:16]
+    done = folder / ".complete"
+    if done.is_file():
+        return folder, json.loads((folder / "info.json").read_text())
+    ck = read_nnunet_checkpoint(path)
+    info = inspect_nnunet(ck, path.name)
+    tmp = folder.with_name(folder.name + ".part")
+    shutil.rmtree(tmp, ignore_errors=True)
+    (tmp / "fold_all").mkdir(parents=True)
+    ia = ck["init_args"]
+    (tmp / "plans.json").write_text(json.dumps(ia["plans"]))
+    (tmp / "dataset.json").write_text(json.dumps(ia["dataset_json"]))
+    (tmp / "info.json").write_text(json.dumps(info))
+    slim = {"network_weights": ck["network_weights"], "trainer_name": ck["trainer_name"],
+            "init_args": {"plans": ia["plans"], "configuration": ia["configuration"], "dataset_json": ia["dataset_json"]},
+            "inference_allowed_mirroring_axes": ck.get("inference_allowed_mirroring_axes")}
+    torch.save(slim, tmp / "fold_all" / "checkpoint_final.pth")
+    (tmp / ".complete").write_text(sha256)
+    shutil.rmtree(folder, ignore_errors=True)
+    tmp.rename(folder)
+    return folder, info
+
+
+class NNUNetSegmenter:
+    """nnU-Net (2D): the model the classifier's features were measured on (no caveat when it is used).
+
+    Whole frame in (no crop, no pre-processing of ours: nnU-Net normalises itself, as it did in training), mirroring
+    test-time augmentation on. Slower than the U-Net (about 0.4 s a frame on a laptop GPU), more accurate (per-cell Dice
+    0.94 against 0.87 in leave-one-cell-out testing). Build it from one ``.pth`` with :meth:`from_checkpoint`.
     """
 
     def __init__(self, folder: Path | str = NNUNET_DIR, fold: str = "all", device: Optional[str] = None,
                  size: Tuple[int, int] = (1228, 922)) -> None:
         import torch
-        from nnunetv2.inference.predict_from_raw_data import nnUNetPredictor
+        nnUNetPredictor = _import_nnunet()
         folder = Path(folder)
         ckpt = folder / f"fold_{fold}" / "checkpoint_final.pth"
         if not ckpt.is_file():
@@ -162,11 +300,25 @@ class NNUNetSegmenter:
         self.size, self.checkpoint = size, str(ckpt)
         dev = torch.device(device or ("cuda" if torch.cuda.is_available() else "cpu"))
         self.device = str(dev)
+        self.info: dict = {}
         # The sliding-window logits are accumulated on the CPU: on an 8 GB GPU the on-device version ran out of memory.
         self.predictor = nnUNetPredictor(use_mirroring=True, device=dev, perform_everything_on_device=False,
                                          allow_tqdm=False)
         self.predictor.initialize_from_trained_model_folder(str(folder), use_folds=(fold if fold == "all" else int(fold),),
                                                             checkpoint_name="checkpoint_final.pth")
+
+    @classmethod
+    def from_checkpoint(cls, path: Path | str, device: Optional[str] = None, cache_dir: Optional[Path] = None,
+                        sha256: Optional[str] = None, **kw) -> "NNUNetSegmenter":
+        """A segmenter from one nnU-Net ``.pth`` file (read safely; see :func:`read_nnunet_checkpoint`)."""
+        _import_nnunet()                                          # a clear error first if nnunetv2 is missing
+        folder, info = prepare_nnunet_folder(path, cache_dir, sha256)
+        seg = cls(folder, "all", device=device, **kw)
+        seg.info, seg.checkpoint = info, str(path)
+        return seg
+
+    def describe(self) -> str:
+        return f"{Path(self.checkpoint).name}: nnU-Net {self.info.get('configuration', '2d')}, {self.info.get('n_classes', '?')} classes"
 
     @property
     def crop_box(self):

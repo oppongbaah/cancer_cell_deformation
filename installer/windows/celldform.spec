@@ -14,6 +14,15 @@ notices = SRC / "THIRD_PARTY_NOTICES.txt"
 if notices.is_file():
     datas.append((str(notices), "."))
 
+# nnU-Net finds its trainer class by scanning its own folders for files, which a frozen program does not have unless
+# the source files are shipped as data; dynamic_network_architectures is imported by name at run time.
+try:
+    from PyInstaller.utils.hooks import collect_data_files, collect_submodules
+    datas += collect_data_files("nnunetv2", include_py_files=True)
+    _nn_hidden = collect_submodules("nnunetv2.training") + collect_submodules("dynamic_network_architectures")
+except Exception:                                                  # nnunetv2 is optional: without it the feature says so
+    _nn_hidden = []
+
 # imports done inside functions are found by PyInstaller too; these are listed so a mistake cannot drop one silently
 hiddenimports = [
     "celldform.demo.models", "celldform.demo.privacy", "celldform.demo.settings", "celldform.demo.shortcut",
@@ -21,13 +30,13 @@ hiddenimports = [
     "celldform.demo.run", "celldform.demo.session", "celldform.demo.source", "celldform.demo.analyze",
     "sklearn.pipeline", "sklearn.impute._base", "sklearn.preprocessing._data", "sklearn.decomposition._pca",
     "sklearn.linear_model._logistic", "joblib.numpy_pickle", "matplotlib.backends.backend_qtagg",
-]
+] + _nn_hidden
 
 # research-only or unneeded: the app starts without every one of these (tests/test_installer.py). PyQt5/PyQt6 are
 # excluded on purpose: they are GPL, PySide6 (LGPL) is the window library. Keep this a FOLDER build (COLLECT): the Qt
 # libraries stay separate files the user could replace, which is what the LGPL asks of an app that links them.
 excludes = [
-    "napari", "nnunetv2", "statsmodels", "torchvision", "fastapi", "uvicorn", "mpi4py", "mkdocs", "SimpleITK",
+    "napari", "statsmodels", "torchvision", "fastapi", "uvicorn", "mpi4py", "mkdocs", "SimpleITK", "imagecodecs",
     "batchgenerators", "dynamic_network_architectures", "requests", "urllib3", "tkinter", "IPython", "jupyter",
     "notebook", "pytest", "PyQt5", "PyQt6", "PySide2", "matplotlib.tests", "numpy.tests", "scipy.tests",
 ]

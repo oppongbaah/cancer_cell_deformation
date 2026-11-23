@@ -33,7 +33,7 @@ TRAINED = {"hold_s": 30.0, "start_mA": 500.0, "max_mA": 1200.0}
 def protocol_caveats(rec: Recording, segmenter_name: str) -> List[str]:
     """What this recording does that the classifier was not validated for."""
     out = []
-    if segmenter_name != "nnunet":
+    if not segmenter_name.lower().startswith("nnu"):                  # the classifier's features came from nnU-Net masks
         label = "the U-Net" if segmenter_name == "unet" else segmenter_name
         out.append(f"masks come from {label}; the classifier's features were measured on nnU-Net masks")
     log = rec.frame_log
@@ -168,6 +168,9 @@ def main() -> None:
     ap.add_argument("--bundle", default=None, help="a model bundle (folder or .zip): all the files the app needs, verified")
     ap.add_argument("--unet-file", default=None, help="the U-Net weights (.pt)")
     ap.add_argument("--unet-config", default=None, help="the U-Net's settings (config.yaml)")
+    ap.add_argument("--nnunet-file", default=None, help="an nnU-Net checkpoint (.pth), used instead of the U-Net")
+    ap.add_argument("--use", choices=["unet", "nnunet"], default=None,
+                    help="when both a U-Net and an nnU-Net are given (or in the bundle): which one to run (default: nnunet)")
     ap.add_argument("--classifier", default=None, help="the HER2 classifier (.joblib)")
     ap.add_argument("--segmenter", choices=sorted(SEGMENTERS), default=None,
                     help="developers only: use a model that lives in this repository (needs its checkpoints)")
@@ -181,21 +184,28 @@ def main() -> None:
     crop = tuple(a.crop_center) if a.crop_center else None
     if a.bundle:
         files = models.open_bundle(a.bundle)
-        unet, unet_cfg, clf = files["unet"], files["unet_config"], files["classifier"]
+        unet, unet_cfg, nn, clf = files.get("unet"), files.get("unet_config"), files.get("nnunet"), files["classifier"]
     else:
-        unet, unet_cfg, clf = a.unet_file, a.unet_config, a.classifier
-    if unet:
-        missing = [n for n, v in (("--unet-config", unet_cfg), ("--classifier", clf)) if not v]
+        unet, unet_cfg, nn, clf = a.unet_file, a.unet_config, a.nnunet_file, a.classifier
+    if unet or nn:
+        use = a.use or ("nnunet" if nn else "unet")
+        if use == "nnunet" and not nn or use == "unet" and not unet:
+            ap.error(f"--use {use} was asked for but no {'nnU-Net checkpoint' if use == 'nnunet' else 'U-Net'} was given")
+        missing = [n for n, v in (("--unet-config", unet_cfg if use == "unet" else True), ("--classifier", clf)) if not v]
         if missing:
-            ap.error("the U-Net needs " + " and ".join(missing) + " too (or give --bundle with all of them)")
-        from celldform.demo.segment import UNetSegmenter
-        seg, name = UNetSegmenter.from_file(unet, unet_cfg, crop_center=crop), f"U-Net ({Path(unet).name})"
+            ap.error("this needs " + " and ".join(missing) + " too (or give --bundle with all of them)")
+        if use == "nnunet":
+            from celldform.demo.segment import NNUNetSegmenter
+            seg, name = NNUNetSegmenter.from_checkpoint(nn), f"nnU-Net ({Path(nn).name})"
+        else:
+            from celldform.demo.segment import UNetSegmenter
+            seg, name = UNetSegmenter.from_file(unet, unet_cfg, crop_center=crop), f"U-Net ({Path(unet).name})"
         fwk = load_framework(clf)
     elif a.segmenter:                                    # developer shortcut: the models in this repository
         seg, name = make_segmenter(a.segmenter, crop), a.segmenter
         fwk = load_framework(clf or DEFAULT_CLASSIFIER)
     else:
-        ap.error("no models given: use --bundle, or --unet-file with --unet-config and --classifier")
+        ap.error("no models given: use --bundle, or --nnunet-file (or --unet-file with --unet-config) and --classifier")
     v = run(a.recording if len(a.recording) > 1 else a.recording[0], a.out, seg, fwk, segmenter_name=name, source=a.source, provisional=a.provisional, max_frames=a.max_frames, write_video=not a.no_video, trap_xy=tuple(a.trap) if a.trap else None,
             progress=lambda i, v: print(f"\rframe {i}  steps {v.n_steps}", end="", flush=True))
     print(f"\n{v.status}: {v.headline()}")

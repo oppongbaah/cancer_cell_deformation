@@ -60,8 +60,8 @@ def load_all(w, f):
 def test_a_new_window_has_no_models_even_when_the_repository_has_them(app):
     w = MainWindow()
     assert w.segmenter is None and w.framework is None and not w.models_ready
-    assert M.missing_roles(w.model_checks) == ["U-Net weights", "U-Net settings", "HER2 classifier"]
-    assert "Load first:" in w.setup_lbl.text() and "U-Net weights" in w.setup_lbl.text()
+    assert M.missing_roles(w.model_checks) == [M.SEGMENTATION_NEEDED, "HER2 classifier"]
+    assert "Load first:" in w.setup_lbl.text() and "a segmentation model" in w.setup_lbl.text()
     assert all(not r.button.text().startswith("Change") for r in w.rows.values())
     assert w.rows["reference"].title.text().endswith("(optional)")
 
@@ -70,7 +70,7 @@ def test_analyze_stays_off_until_every_required_file_is_loaded(app, tmp_path):
     w = MainWindow()
     w.open_paths([str(make_recording(tmp_path / "rec", 450))])
     assert w.loaded and not w.btn_analyze.isEnabled()
-    assert "Load the required files first: U-Net weights, U-Net settings, HER2 classifier" in w.btn_analyze.toolTip()
+    assert "Load the required files first: a segmentation model (U-Net weights and settings, or an nnU-Net checkpoint), HER2 classifier" in w.btn_analyze.toolTip()
     w.start()
     assert "Load the required files first" in w.statusBar().currentMessage() and w._run_state == "idle"
     f = files(tmp_path)

@@ -311,8 +311,10 @@ def test_the_inno_default_version_matches_the_project():
 def test_the_pyinstaller_recipe_is_windowed_unpacked_and_lean():
     spec = read("celldform.spec")
     assert "console=False" in spec and "upx=False" in spec and "uac_admin=False" in spec
-    for lib in ("nnunetv2", "napari", "statsmodels", "torchvision", "requests", "urllib3"):
+    for lib in ("napari", "statsmodels", "torchvision", "requests", "urllib3", "SimpleITK", "imagecodecs"):
         assert f'"{lib}"' in spec, lib
+    assert '"nnunetv2",' not in spec.split("excludes = [")[1].split("]")[0]                # the optional feature is shipped
+    assert 'collect_data_files("nnunetv2", include_py_files=True)' in spec and "dynamic_network_architectures" in spec
     for mod in ("models", "privacy", "settings", "shortcut"):
         assert f"celldform.demo.{mod}" in spec and (ROOT / "celldform" / "demo" / f"{mod}.py").is_file()
     assert "celldform/demo/assets" in spec and "THIRD_PARTY_NOTICES" in spec and "LICENSE" in spec
@@ -322,7 +324,8 @@ def test_the_requirements_are_lean_and_use_headless_opencv():
     lines = [l.split("#")[0].strip().lower() for l in read("requirements-app.txt").splitlines()]
     names = {l.split(">")[0].split("=")[0] for l in lines if l}
     assert "opencv-python-headless" in names and "opencv-python" not in names
-    assert not names & {"nnunetv2", "statsmodels", "napari", "torchvision", "requests", "fastapi", "mpi4py", "mkdocs"}
+    assert "nnunetv2" in names                                                    # optional feature: load an nnU-Net .pth
+    assert not names & {"statsmodels", "napari", "torchvision", "requests", "fastapi", "mpi4py", "mkdocs", "simpleitk", "imagecodecs"}
     assert {"pyside6-essentials", "torch", "scikit-learn", "matplotlib", "pandas", "scipy", "numpy", "pyyaml", "joblib"} <= names
     assert not any(n.startswith("pyqt") for n in names), "PyQt is GPL: an installer must not contain it"
 
@@ -374,6 +377,25 @@ def test_the_installer_recipe_never_includes_a_gpl_window_library():
 
 def test_the_selftest_and_version_flags(tmp_path):
     env = {**__import__("os").environ, "QT_QPA_PLATFORM": "offscreen"}
-    for flag, text in (("--version", "celldform 0.1.0"), ("--selftest", "selftest OK")):
+    for flag, text in (("--version", "celldform 0.1.0"), ("--selftest", "selftest OK (nnU-Net: OK)")):
         r = subprocess.run([sys.executable, "-m", "celldform.demo", flag], capture_output=True, text=True, timeout=120, cwd=ROOT, env=env)
         assert r.returncode == 0 and text in r.stdout, r.stderr[-800:]
+
+
+def test_without_nnunetv2_the_app_still_starts_and_says_the_feature_is_optional(tmp_path):
+    code = r'''
+import sys, importlib.abc, os
+class B(importlib.abc.MetaPathFinder):
+    def find_spec(self, n, p, t=None):
+        if n.split(".")[0] in ("nnunetv2", "SimpleITK", "batchgenerators"): raise ImportError("blocked " + n)
+sys.meta_path.insert(0, B())
+os.environ["QT_QPA_PLATFORM"] = "offscreen"
+from celldform.demo import gui, models, segment
+print("available:", segment.nnunet_available())
+sys.exit(gui.selftest())
+'''
+    import os
+    env = {**os.environ, "PYTHONPATH": os.pathsep.join(p for p in (str(ROOT), os.environ.get("PYTHONPATH", "")) if p),
+           "CELLDFORM_HOME": str(tmp_path / "h")}
+    r = subprocess.run([sys.executable, "-s", "-c", code], capture_output=True, text=True, timeout=180, cwd=ROOT, env=env)
+    assert r.returncode == 0 and "selftest OK (nnU-Net: not installed (optional))" in r.stdout, r.stderr[-1200:]

@@ -32,9 +32,9 @@ their **HER2 expression (high or low)** from that deformation. It is a Python li
 | analyze a recording with Python | `pip install "celldform[app]"` then `celldform-demo` | Python 3.10–3.12 |
 | use the library or repeat the research | clone the repository and `pip install -e ".[dev]"` | Python 3.10 or newer, a GPU helps |
 
-**Trained models are not included.** The app (either way) starts without any model and cannot analyze until you load three
-files: the U-Net weights, their settings file and the HER2 classifier, or one **model bundle** that carries all of
-them. You get them from whoever trained them; see [the app's guide](docs/demo.md#required-files-first-run-on-a-new-machine).
+**Trained models are not included.** The app (either way) starts without any model and cannot analyze until you load
+files: a segmentation model (the U-Net weights with their settings file, **or** an nnU-Net checkpoint) and the HER2
+classifier, or one **model bundle** that carries all of them. You get them from whoever trained them; see [the app's guide](docs/demo.md#required-files-first-run-on-a-new-machine).
 
 ## Install
 

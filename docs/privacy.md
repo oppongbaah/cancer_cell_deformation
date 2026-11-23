@@ -22,6 +22,7 @@ works with the network cable unplugged.
 | Settings | `%APPDATA%\celldform\settings.json` | the paths and SHA-256 of the model files you loaded, the last folder, nothing else |
 | Results | `Documents\celldform\results\<time>_<recording>\` | the analysis of one recording: verdict, per-frame and per-step tables, dashboard picture, log |
 | Unpacked bundles | `%LOCALAPPDATA%\celldform\Cache\bundles` | the files of a `.zip` bundle you loaded |
+| Prepared nnU-Net | `%LOCALAPPDATA%\celldform\Cache\nnunet` | a stripped copy of an nnU-Net checkpoint you loaded (no optimizer state), so it loads fast next time; safe to delete |
 
 Result files are written so they can be shared: the recording is named by its file name only, the log never contains the
 folder it came from, and your home folder, user name and e-mail addresses are replaced (`~`, `<user>`, `<email>`).

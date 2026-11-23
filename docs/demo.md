@@ -47,16 +47,29 @@ problem. See [Project status](status.md).
 
 ## Required files (first run on a new machine)
 
-Nothing is bundled with the program, so a new installation has to be given three files before **Analyze** works
-(browsing a recording needs none). The **Required files** box lists them with a mark each: ✔ loaded and checked, ✘ the
-file was refused (with the reason), ○ not loaded yet.
+Nothing is bundled with the program, so a new installation has to be given a **segmentation model** and the **HER2
+classifier** before **Analyze** works (browsing a recording needs none). The segmentation model is *either* the U-Net
+weights with their settings file, *or* an nnU-Net checkpoint (or both). The **Required files** box lists the files with a mark
+each: ✔ loaded and checked, ✘ the file was refused (with the reason), ○ not loaded yet.
 
 | File | What it is | What is checked |
 |---|---|---|
 | **U-Net weights** (`.pt`) | the segmentation model | it is a U-Net with 2 or 3 classes (width and classes are read from the weights); read with `weights_only`, so it cannot run code |
 | **U-Net settings** (`.yaml`) | filters, crop size and crop centre the model was trained with | every value is present, sensible and fits a 1228x922 frame; found automatically when `unet_settings.yaml` or `config.yaml` sits beside the weights |
+| **nnU-Net checkpoint** (`.pth`), instead of the two above | one nnU-Net 2d checkpoint; nothing else is needed | read safely (only tensors, plain values and NumPy numbers are accepted, so it cannot run code); a 2d model with one input channel and labels 0 = background, 1 = trapped cell; then run once on a blank frame |
 | **HER2 classifier** (`.joblib`) | the fitted step model + cell model | it contains only what a HER2 framework contains (everything else is refused unopened), and it expects the features this version measures |
 | Training-cell reference (`.csv`, optional) | the 15 training cells' features | has the columns the comparison chart needs; without it that chart says so |
+
+**Which model runs.** When both a U-Net and an nnU-Net are loaded, **Segment with** chooses; the nnU-Net is the default
+because it is the model the classifier's features were measured on (so the "masks are not from nnU-Net" caveat disappears).
+It is more accurate (per-cell Dice 0.94 against 0.87 for the U-Net in leave-one-cell-out testing) but slower: about 0.5 s a
+frame on a GPU and several seconds on a CPU, so a recording takes minutes instead of under a minute. A recording of a few
+hundred measured frames is fine on a GPU; on a PC without one the U-Net is the practical choice.
+
+**The nnU-Net file.** nnU-Net normally wants a whole model folder; everything it needs is inside its `.pth`, so the app
+reads that one file and writes a stripped copy (without the optimizer state and training log, half the size, same
+predictions) into its cache folder the first time. It needs the `nnunetv2` package, which the Windows installer includes
+and `pip install "celldform[app]"` installs; without it the row says so and the U-Net still works.
 
 When the weights and their settings are both loaded they are run together once on a blank frame, which shows (and
 proves) that they work on this machine and which device (CPU or GPU) they use. The files you loaded are remembered
@@ -69,13 +82,15 @@ makes it once:
 
 ```bash
 python -m celldform.demo.models make --unet unet_deploy.pt --config config.yaml --classifier her2_framework.joblib \
-       [--reference features_cells.csv] --description "U-Net + 15-cell framework" --out models --zip models.zip
+       [--nnunet checkpoint_final.pth] [--reference features_cells.csv] --description "U-Net + 15-cell framework" \
+       --out models --zip models.zip
 python -m celldform.demo.models verify models.zip
 ```
 
 A bundle is rebuilt, not copied: the U-Net is re-saved as bare weights (no optimizer state, about a third of the size),
-and the settings file is rebuilt from the few keys the app reads, because a training `config.yaml` holds dataset paths and
-split details that do not belong on someone else's computer. The description and the classifier's own record are
+the settings file is rebuilt from the few keys the app reads (a training `config.yaml` holds dataset paths and split
+details that do not belong on someone else's computer), and an nnU-Net checkpoint is re-saved without its optimizer state
+and training log (474 MB becomes about 240 MB). A bundle may carry the nnU-Net alone, the U-Net pair alone, or both. The description and the classifier's own record are
 refused if they contain an e-mail address or a path. A `.zip` is unpacked into the user's cache folder with protection
 against entries that try to write elsewhere, links, and zip bombs.
 
@@ -83,7 +98,8 @@ A `.joblib` file is a pickle, and a pickle can run code when it is opened. The l
 classes a HER2 framework is made of and refuses anything else without opening it; `celldform.demo.framework.load(path,
 trusted=True)` is plain `joblib.load` for a file you made yourself.
 
-Command line: `--bundle models.zip`, or `--unet-file w.pt --unet-config c.yaml --classifier f.joblib`. Developers on a
+Command line: `--bundle models.zip`, or `--unet-file w.pt --unet-config c.yaml --classifier f.joblib`, or
+`--nnunet-file model.pth --classifier f.joblib`; with both models given, `--use unet|nnunet` chooses (default nnunet). Developers on a
 machine that has the repository's checkpoints can still use `--segmenter unet|nnunet`.
 
 ## Dashboard

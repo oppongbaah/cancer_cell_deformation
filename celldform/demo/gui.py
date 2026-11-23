@@ -275,9 +275,10 @@ class Worker(QtCore.QThread):
 
     def __init__(self, recording, segmenter, framework, trap, out, segmenter_name: str = "unet",
                  source: str = "video", model_file: Optional[str] = None, config_file: Optional[str] = None,
-                 provisional: bool = False, reference_file: Optional[str] = None) -> None:
+                 provisional: bool = False, reference_file: Optional[str] = None, nnunet_file: Optional[str] = None) -> None:
         super().__init__()
         self.source, self.provisional, self.reference_file = source, provisional, reference_file
+        self.nnunet_file = nnunet_file
         self.model_file, self.config_file = model_file, config_file
         self._paused, self.paused_s = False, 0.0
         self.recording, self.segmenter, self.framework, self.trap, self.out = recording, segmenter, framework, trap, out
@@ -325,13 +326,15 @@ class Worker(QtCore.QThread):
     def run(self) -> None:  # noqa: A003
         try:
             if self.segmenter is None:                       # built here, so the window does not freeze
-                if not self.model_file:
-                    raise ValueError("no U-Net is loaded: load the U-Net weights and their settings first")
-                from celldform.demo.segment import UNetSegmenter
-                self.status.emit("Loading the U-Net...")
+                use_nn = bool(self.nnunet_file) and self.segmenter_name.startswith("nnU-Net")
+                if not (use_nn or self.model_file):
+                    raise ValueError("no segmentation model is loaded: load the U-Net weights and settings, or an nnU-Net checkpoint")
+                from celldform.demo.segment import NNUNetSegmenter, UNetSegmenter
+                self.status.emit("Loading the segmentation model...")
                 t_load = time.perf_counter()
-                self._stamp(f"loading the U-Net from {privacy.short_name(self.model_file)}")
-                self.segmenter = UNetSegmenter.from_file(self.model_file, self.config_file)
+                self._stamp(f"loading the {'nnU-Net' if use_nn else 'U-Net'} from {privacy.short_name(self.nnunet_file if use_nn else self.model_file)}")
+                self.segmenter = (NNUNetSegmenter.from_checkpoint(self.nnunet_file) if use_nn
+                                  else UNetSegmenter.from_file(self.model_file, self.config_file))
                 self._stamp(f"model loaded in {time.perf_counter() - t_load:.1f} s"
                             + (f" ({self.segmenter.describe()})" if hasattr(self.segmenter, "describe") else ""))
             from celldform.demo.source import Recording
@@ -377,7 +380,7 @@ class FileRow(QtWidgets.QWidget):
         self.mark = QtWidgets.QLabel("○")
         self.mark.setFixedWidth(18)
         self.mark.setStyleSheet("font-size:16px;font-weight:bold;")
-        self.title = QtWidgets.QLabel(role.title + ("" if role.required else " (optional)"))
+        self.title = QtWidgets.QLabel(role.title + (" (optional)" if role.key == "reference" else ""))
         self.title.setStyleSheet("font-weight:bold;")
         self.detail = QtWidgets.QLabel(role.hint)
         self.detail.setWordWrap(True)
@@ -393,7 +396,7 @@ class FileRow(QtWidgets.QWidget):
         self.set_check(None)
 
     def set_check(self, c: Optional[M.Check], note: str = "") -> None:
-        kind = "optional" if (c is None and not self.role.required) else "empty" if c is None else "ok" if c.ok else "bad"
+        kind = "optional" if (c is None and self.role.key in ("reference", "nnunet")) else "empty" if c is None else "ok" if c.ok else "bad"
         glyph, colour = self.MARK[kind]
         self.mark.setText(glyph)
         self.mark.setStyleSheet(f"font-size:16px;font-weight:bold;color:{colour};")
@@ -420,6 +423,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.segmenter, self.framework = segmenter, framework
         self.segmenter_name = "unet" if segmenter is not None else "U-Net"
         self.model_checks: dict = {}                          # role -> models.Check of the file now in use
+        self._seg_objects: dict = {}                          # "unet" / "nnunet" -> the segmenter built from the loaded files
+        self._preferred = None                                # which one Analyze uses: the last choice, else the nnU-Net
         self.model_paths: dict = {}
         self.recording, self.trap, self.worker, self.picking = None, None, None, False
         self._results_base = Path(results_dir) if results_dir else Path(tempfile.mkdtemp(prefix="celldform_demo_"))
@@ -465,6 +470,19 @@ class MainWindow(QtWidgets.QMainWindow):
         self.chk_provisional.setStyleSheet("QCheckBox{color:#a05a00;}")
         self.models_box = QtWidgets.QGroupBox("Required files")
         mv = QtWidgets.QVBoxLayout(self.models_box)
+        intro = QtWidgets.QLabel("Segmentation needs <b>either</b> the U-Net weights and their settings <b>or</b> an nnU-Net "
+                                 "checkpoint (both can be loaded). The HER2 classifier is always needed.")
+        intro.setWordWrap(True)
+        intro.setStyleSheet("color:#555;font-size:11px;")
+        mv.addWidget(intro)
+        self.seg_box = QtWidgets.QComboBox()
+        self.seg_box.setToolTip("Which segmentation model Analyze uses when both are loaded. The nnU-Net is what the classifier's "
+                                "features were measured on (more accurate, slower: about 0.5 s a frame on a GPU, several "
+                                "seconds on a CPU); the U-Net is fast.")
+        self.seg_box.currentIndexChanged.connect(self._on_seg_choice)
+        seg_row = QtWidgets.QHBoxLayout()
+        seg_row.addWidget(QtWidgets.QLabel("Segment with:")); seg_row.addWidget(self.seg_box, 1)
+        mv.addLayout(seg_row)
         self.rows = {key: FileRow(role) for key, role in M.ROLES.items()}
         for row in self.rows.values():
             row.load_clicked.connect(self.choose_role)
@@ -579,6 +597,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.act_trap.setEnabled(self.loaded and idle)
         self.open_btn.setEnabled(idle)
         self.models_box.setEnabled(idle)
+        self.seg_box.setEnabled(idle and len(self._seg_kinds()) > 1)
         self.chk_provisional.setEnabled(idle)
         self.source_box.setEnabled(idle and not self._images_only)
         self.player.set_analysis_running(not idle)
@@ -619,7 +638,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.page_stacked.setSizes([620, 460])
         right = QtWidgets.QSplitter(V)
         right.addWidget(self._slots["side_b"]); right.addWidget(self._slots["dash_b"])
-        right.setSizes([380, 620])
+        right.setSizes([520, 480])
         self.page_wide = QtWidgets.QSplitter(H)
         self.page_wide.addWidget(self._slots["video_b"]); self.page_wide.addWidget(right)
         self.page_wide.setSizes([1180, 740])
@@ -652,7 +671,7 @@ class MainWindow(QtWidgets.QMainWindow):
         w, h = self.pages.width(), self.pages.height()
         video_w = int(min(0.64 * w, (h - self.player.sizeHint().height() - 12) * 4 / 3 + 12))
         self.page_wide.setSizes([max(video_w, 480), max(w - video_w, 300)])
-        self.page_right.setSizes([int(0.42 * h), int(0.58 * h)])
+        self.page_right.setSizes([int(0.52 * h), int(0.48 * h)])
 
     @staticmethod
     def wants_wide(width: int, height: int, currently_wide: bool) -> bool:
@@ -757,6 +776,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def _refresh_models_ui(self) -> None:
         for role, row in self.rows.items():
             row.set_check(self.model_checks.get(role))
+        self._refresh_seg_box()
         missing = M.missing_roles(self.model_checks)
         if missing:
             self.setup_lbl.setText("<b>Load first:</b> " + ", ".join(missing) + ". Nothing can be analyzed without them "
@@ -777,7 +797,14 @@ class MainWindow(QtWidgets.QMainWindow):
     def load_role(self, role: str, path, remember: bool = True, quiet: bool = False) -> bool:
         """Check one file and, if it is good, use it. A file that fails is refused with the reason and whatever was
         loaded before stays in use. Returns whether the file was accepted."""
-        c = M.check(role, path)
+        busy = role == "nnunet"                                # reading and preparing an nnU-Net takes a few seconds
+        if busy:
+            QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.CursorShape.WaitCursor)
+        try:
+            c = M.check(role, path)
+        finally:
+            if busy:
+                QtWidgets.QApplication.restoreOverrideCursor()
         if not c.ok:
             if not quiet:
                 self._warn(M.ROLES[role].title, f"{M.ROLES[role].title}: {c.message}")
@@ -794,7 +821,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 return False
         self.model_checks[role], self.model_paths[role] = c, Path(path)
         if role in ("unet", "unet_config"):
-            self.segmenter = None                              # rebuilt from the new pair below
+            self._seg_objects.pop("unet", None)                # rebuilt from the new pair below
+        if role == "nnunet":
+            self._seg_objects.pop("nnunet", None)
         if remember:
             self.settings.set_model(role, path, c.sha256)
         self.settings.last_dir = str(Path(path).parent) if remember else self.settings.last_dir
@@ -803,6 +832,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 if (Path(path).parent / name).is_file() and self.load_role("unet_config", Path(path).parent / name, remember, quiet=True):
                     break
         self._try_unet_pair()
+        self._try_nnunet()
+        self._select_segmenter()
         self._refresh_models_ui()
         if not quiet:
             self.statusBar().showMessage(f"{M.ROLES[role].title}: {c.message}")
@@ -812,7 +843,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def _try_unet_pair(self) -> None:
         """When the weights and their settings are both loaded, run the pair once on a blank frame."""
-        if not ("unet" in self.model_paths and "unet_config" in self.model_paths) or self.segmenter is not None:
+        if not ("unet" in self.model_paths and "unet_config" in self.model_paths) or "unet" in self._seg_objects:
             return
         QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.CursorShape.WaitCursor)
         try:
@@ -823,9 +854,60 @@ class MainWindow(QtWidgets.QMainWindow):
             self.model_checks["unet"] = chk                    # not ok: Analyze stays off and the row says why
             self._warn("U-Net", chk.message)
             return
-        self.segmenter = seg
-        self.segmenter_name = f"U-Net ({self.model_paths['unet'].name})"
+        self._seg_objects["unet"] = seg
         self.model_checks["unet"] = chk
+
+    def _try_nnunet(self) -> None:
+        """Build the nnU-Net from its checkpoint and run it once on a blank frame."""
+        if "nnunet" not in self.model_paths or "nnunet" in self._seg_objects:
+            return
+        QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.CursorShape.WaitCursor)
+        try:
+            seg, chk = M.try_nnunet(self.model_paths["nnunet"])
+        finally:
+            QtWidgets.QApplication.restoreOverrideCursor()
+        if seg is None:
+            self.model_checks["nnunet"] = chk
+            self._warn("nnU-Net", chk.message)
+            return
+        self._seg_objects["nnunet"] = seg
+        self.model_checks["nnunet"] = chk
+        self._preferred = "nnunet"                             # the model the classifier's features were measured on
+
+    def _seg_kinds(self) -> list:
+        return [k for k in ("nnunet", "unet") if k in self._seg_objects]
+
+    def _select_segmenter(self) -> None:
+        """Pick the segmenter Analyze will use: the one chosen in the box if it is loaded, else the nnU-Net (the model the
+        classifier's features were measured on), else the U-Net."""
+        kinds = self._seg_kinds()
+        if not kinds:
+            return
+        kind = self._preferred if self._preferred in kinds else kinds[0]
+        self.segmenter = self._seg_objects[kind]
+        name = self.model_paths.get(kind)
+        self.segmenter_name = ("nnU-Net" if kind == "nnunet" else "U-Net") + (f" ({name.name})" if name else "")
+
+    def _refresh_seg_box(self) -> None:
+        kinds = self._seg_kinds()
+        current = self._preferred if self._preferred in kinds else (kinds[0] if kinds else None)
+        self.seg_box.blockSignals(True)
+        self.seg_box.clear()
+        for k in kinds:
+            self.seg_box.addItem("nnU-Net (more accurate, slower)" if k == "nnunet" else "U-Net (fast)", k)
+        if not kinds:
+            self.seg_box.addItem("- load a segmentation model -", None)
+        else:
+            self.seg_box.setCurrentIndex(max(self.seg_box.findData(current), 0))
+        self.seg_box.blockSignals(False)
+        self.seg_box.setEnabled(len(kinds) > 1 and self._run_state == "idle")
+
+    def _on_seg_choice(self) -> None:
+        if self.seg_box.currentData() in self._seg_objects:
+            self._preferred = self.seg_box.currentData()
+        self._select_segmenter()
+        if self._seg_kinds():
+            self.statusBar().showMessage(f"Analyze will use the {self.segmenter_name}.")
 
     def choose_role(self, role: str) -> None:
         r = M.ROLES[role]
@@ -862,6 +944,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def clear_models(self) -> None:
         self.model_checks.clear(); self.model_paths.clear()
         self.segmenter = self.framework = None
+        self._seg_objects.clear()
+        self._preferred = None
         self.segmenter_name = "U-Net"
         self.settings.forget_models()
         self._refresh_models_ui()
@@ -963,7 +1047,8 @@ class MainWindow(QtWidgets.QMainWindow):
                                      self.segmenter_name, self._source, str(self.model_paths.get("unet") or "") or None,
                                      str(self.model_paths.get("unet_config") or "") or None,
                                      self.chk_provisional.isChecked(),
-                                     str(self.model_paths.get("reference") or "") or None)
+                                     str(self.model_paths.get("reference") or "") or None,
+                                     str(self.model_paths.get("nnunet") or "") or None)
             w.status.connect(self.statusBar().showMessage)
             w.log_ready.connect(self._pull_log)
             w.frame_ready.connect(self._pull_frame)
@@ -1105,7 +1190,17 @@ def selftest() -> int:
     for _ in range(20):
         app.processEvents()
     ok = w.view is not None and not w.models_ready and not w.btn_analyze.isEnabled() and privacy.network_blocked()
-    print(f"celldform {app_version()} selftest {'OK' if ok else 'FAILED'}")
+    nn = "not installed (optional)"
+    from celldform.demo.segment import _import_nnunet, nnunet_available
+    if nnunet_available():                                     # the frozen program must be able to find nnU-Net's trainer class
+        try:
+            _import_nnunet()
+            from nnunetv2.utilities.find_objects import recursive_find_trainer_class_by_name
+            nn = "OK" if recursive_find_trainer_class_by_name("nnUNetTrainer") is not None else "FAILED"
+        except Exception as e:
+            nn = f"FAILED ({type(e).__name__}: {e})"
+        ok = ok and nn == "OK"
+    print(f"celldform {app_version()} selftest {'OK' if ok else 'FAILED'} (nnU-Net: {nn})")
     return 0 if ok else 1
 
 

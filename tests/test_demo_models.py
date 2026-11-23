@@ -363,7 +363,7 @@ def test_a_zip_that_claims_to_be_huge_is_refused(tmp_path, monkeypatch):
 
 
 def test_missing_roles_are_listed_by_name():
-    assert M.missing_roles({}) == ["U-Net weights", "U-Net settings", "HER2 classifier"]
+    assert M.missing_roles({}) == [M.SEGMENTATION_NEEDED, "HER2 classifier"]
     ok = M.Check("unet", None, True, "")
     bad = M.Check("unet_config", None, False, "no")
     assert M.missing_roles({"unet": ok, "unet_config": bad}) == ["U-Net settings", "HER2 classifier"]

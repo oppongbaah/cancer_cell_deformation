@@ -28,6 +28,18 @@ def config_dir() -> Path:
         return Path.home() / ".celldform" / "config"
 
 
+def cache_dir() -> Path:
+    """Where files the app unpacks for itself go (a model bundle's .zip, a prepared nnU-Net model): safe to delete."""
+    home = os.environ.get("CELLDFORM_HOME")
+    if home:
+        return Path(home) / "cache"
+    try:
+        from platformdirs import user_cache_dir
+        return Path(user_cache_dir("celldform", appauthor=False))
+    except Exception:
+        return Path.home() / ".celldform" / "cache"
+
+
 def default_results_dir() -> Path:
     """Where analysis results go unless the user picks another place: Documents\\celldform\\results."""
     home = os.environ.get("CELLDFORM_HOME")
