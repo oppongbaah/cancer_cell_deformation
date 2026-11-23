@@ -48,4 +48,4 @@ configs/notebook/
 demo_classifier/data/
 demo_classifier/results/
 demo_classifier/logs/
-demo_classifier/configs/
+demo_classifier/checkpoints/

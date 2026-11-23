@@ -1,0 +1,38 @@
+# Frame-check limits for the U-Net masks: the SAME rule as features.yaml (just outside the good masks of the
+# annotated test frames: 99th pct distance, 1st pct solidity/confidence, 1st-99th pct size ratio), applied to the
+# held-out U-Net's masks. The nnU-Net limits (confidence 0.95) reject most of its frames: its probabilities are less peaked.
+frames_per_step: 200
+dense_offsets:
+- 20
+- 60
+- 100
+- 140
+- 180
+good_dice: 0.85
+frame_checks:
+  max_trap_dist: 37.6
+  min_solidity: 0.946
+  area_ratio_range:
+  - 0.823
+  - 1.361
+  min_boundary_conf: 0.768
+  allow_border: false
+  window_steps: 3
+cell_validation:
+  min_dice: 0.85
+  size_bias_range:
+  - 0.8
+  - 1.25
+  min_pass_fraction: 0.8
+laser_protocol:
+  fps: 22.0
+  hold_s: 30.0
+  start_mA: 500.0
+  step_mA: 50.0
+  n_levels: 15
+  calibration_mA:
+  - 500.0
+  - 1200.0
+  calibration_mW:
+  - 270.0
+  - 685.0
