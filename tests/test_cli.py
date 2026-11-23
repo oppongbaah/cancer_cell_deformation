@@ -10,6 +10,9 @@ from celldform import cli
 
 REPO = Path(__file__).resolve().parent.parent
 EXCLUDED = {"hpc", "maintenance"}   # SLURM job scripts; one-off migrations
+# Figure scripts written for the thesis text: they are run by path (python scripts/report/<name>.py), not installed as
+# commands, so a public install does not gain a dozen thesis-only commands. Every other script must have a command.
+RUN_BY_PATH = ("*_thesis.py", "*_ch4.py")
 
 
 def _all_commands() -> dict[str, str]:
@@ -21,8 +24,10 @@ def _all_commands() -> dict[str, str]:
 # ---------------------------------------------------------------------------
 
 def test_every_script_has_a_command():
+    import fnmatch
     scripts = {str(p.relative_to(REPO / "scripts")) for p in (REPO / "scripts").rglob("*.py")
-               if p.relative_to(REPO / "scripts").parts[0] not in EXCLUDED}
+               if p.relative_to(REPO / "scripts").parts[0] not in EXCLUDED
+               and not any(fnmatch.fnmatch(p.name, pat) for pat in RUN_BY_PATH)}
     covered = set(_all_commands().values()) | {"data/organize_dataset.py"}   # built-in command
     assert scripts - covered == set(), "scripts without a celldform-* command (add them to SCRIPT_COMMANDS)"
 
@@ -46,7 +51,9 @@ def test_pyproject_entry_points_match_the_table():
     expected = {f"celldform-{c}": f"celldform.cli:{c.replace('-', '_')}" for c in _all_commands()}
     expected |= {"celldform": "celldform.cli:main",
                  "celldform-organize-dataset": "celldform.cli:organize_dataset",
-                 "celldform-hpc-submit": "celldform.cli:hpc_submit"}
+                 "celldform-hpc-submit": "celldform.cli:hpc_submit",
+                 "celldform-demo": "celldform.cli:demo",
+                 "celldform-shortcut": "celldform.cli:shortcut"}
     assert scripts == expected
 
 
@@ -106,3 +113,11 @@ def test_every_command_is_documented():
     undocumented = [c for c in [*_all_commands(), "organize-dataset", "hpc-submit"]
                     if f"### `celldform-{c}`" not in doc]
     assert undocumented == [], "add a section to docs/cli.md"
+
+
+def test_the_run_by_path_scripts_are_exactly_the_thesis_figure_scripts():
+    """The exemption must not quietly swallow a real tool: only report/ figure scripts may use it."""
+    import fnmatch
+    exempt = [p.relative_to(REPO / "scripts") for p in (REPO / "scripts").rglob("*.py")
+              if any(fnmatch.fnmatch(p.name, pat) for pat in RUN_BY_PATH)]
+    assert exempt and all(p.parts[0] == "report" for p in exempt), exempt

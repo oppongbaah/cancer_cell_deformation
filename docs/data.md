@@ -2,8 +2,10 @@
 
 Full documentation of the `data/` directory — see also `data/README.md` for the contamination-firewall details.
 
-!!! note "Last verified against disk: 2026-09-04"
-    Update this page whenever pool counts or cell roles change — it should always match what's actually on disk, not a snapshot from whenever it was last convenient to check.
+!!! note "Snapshot of 2026-09-04"
+    The folder structure and the contamination-firewall principle below still hold. The **pool counts and which cells play
+    which role changed afterwards**: the final experiments split whole cells at random (5-fold and leave-one-cell-out, see
+    [Project status](status.md)), and the machine that holds the data is the reference, not this page.
 
 ---
 

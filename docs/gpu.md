@@ -11,7 +11,7 @@ Only **Stage 3 (U-Net segmentation)** runs on the GPU. All other stages run enti
 | 1 — Acquisition | `FrameExtractor` — OpenCV frame decode | No |
 | 2 — Preprocessing | `PreprocessingPipeline` — OpenCV / NumPy | No |
 | 3 — Segmentation | `UNet`, `SegmentationTrainer` — PyTorch | **Yes** |
-| 3 — Real-time inference | `RealTimePipeline` — U-Net forward pass | **Yes** |
+| 3 — Inference | `UNet` forward pass (also in the desktop app) | **Yes** (or CPU, slower) |
 | 4 — Features | `MorphologyExtractor` — scikit-image / NumPy | No |
 | 5 — Classification | `CellClassifier` — scikit-learn SVM/RF/DT | No |
 | 6 — Biomechanics | `DeformationAnalyzer` — scipy / NumPy | No |

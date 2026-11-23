@@ -1,0 +1,21 @@
+# Exactly what the Windows app needs at run time. The research-only libraries in pyproject.toml (nnU-Net, statsmodels,
+# napari, torchvision, the web and docs tools) are left out on purpose: tests/test_installer.py proves the app starts
+# without them. OpenCV is the HEADLESS build: the normal one points Qt at its own plugin folder and can stop Qt
+# from opening a window. The window library is PySide6 (LGPL). Never put PyQt6 here: it is GPL, and an installer that
+# contains it would have to be released under the GPL.
+numpy>=1.24
+scipy>=1.11
+pandas>=2.0
+scikit-learn>=1.3
+scikit-image>=0.21
+matplotlib>=3.7
+Pillow>=10.0
+pyyaml>=6.0
+joblib>=1.3
+tqdm>=4.65
+opencv-python-headless>=4.8
+PySide6-Essentials>=6.5
+platformdirs>=3.0
+# PyTorch is installed by build.ps1 before this file: the CPU build by default (about 200 MB; the app runs on any PC),
+# or the CUDA build with -Gpu (about 2.5 GB more, for NVIDIA graphics cards).
+torch>=2.0

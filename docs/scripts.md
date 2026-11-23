@@ -1,5 +1,10 @@
 # Scripts Reference
 
+Every script here, except the SLURM job scripts (`hpc/`), the one-off migrations (`maintenance/`) and the thesis-figure
+scripts (`report/*_thesis.py`, `report/*_ch4.py`), has a `celldform-<name>` command (see the [CLI reference](cli.md)).
+The thesis-figure scripts redraw the figures of the thesis text from the saved results and are run by path, for example
+`python scripts/report/plot_cv_thesis.py`; they are not installed as commands.
+
 !!! info "Layout — scripts are grouped by pipeline stage (reorganised 2026-09-17)"
 
     ```
@@ -409,7 +414,7 @@ folders and the comparison happens automatically.
 A runnable tour of all seven stages against the data actually on disk: pool inspection
 and the firewall check, frame extraction, mask validation, preprocessing, the train/val
 split, evaluation with the noise floor applied, features, classification, biomechanics
-and real-time inference.
+and inference.
 
 ```bash
 jupyter lab notebooks/pipeline_walkthrough.ipynb

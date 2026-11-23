@@ -1,7 +1,10 @@
-# Project Status
+# Research log: segmentation, September 2026
 
-Current state of the segmentation work, as of **17 September 2026**. This page is the
-short answer to "where are we?"; the other pages are reference.
+!!! warning "Historical record, not the current state"
+    This page is the project's status as of **17–23 September 2026**, kept as a record of how the segmentation work
+    developed (run-to-run variance, the per-cell collapse, why the evaluation changed). Later work replaced its
+    protocol (random whole-cell cross-validation, a 384 px native crop, nnU-Net, the classifier and the desktop app).
+    For where the project stands now, read [Project status](status.md).
 
 ## Current model
 
@@ -41,7 +44,7 @@ Focal–Tversky loss (α 0.7, β 0.3, γ 0.75, [Abraham & Khan 2019](https://arx
     | **ensemble of 4** | **0.823** | **0.848** | **0.920** | **0.818** | **0.859** |
 
     But an ensemble is an **inference-time construct, not a model** — no checkpoint,
-    4× GPU, and `RealTimePipeline` takes one `UNet`. Averaging the *weights* instead
+    4× GPU, and the per-frame helper takes one `UNet`. Averaging the *weights* instead
     gives **DSC 0.000**: independently seeded networks sit in different loss basins and
     their hidden units are not aligned. **Distillation** — training one model on the
     ensemble's soft outputs — is the route to a single deployable checkpoint, and is not

@@ -5,10 +5,10 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "celldform"
 version = "0.1.0"
-description = "Real-time deep learning framework for quantitative cancer cell deformation analysis in dual-beam optical tweezer systems"
+description = "Machine learning framework for quantitative SKBR3 cell deformation analysis in dual-beam optical tweezer systems: segmentation, deformation features and a HER2 classifier, with a desktop app"
 readme = "README.md"
 license = { text = "MIT" }
-authors = [{ name = "Isaac Oppong-Baah", email = "oppongbaahisaacmega@gmail.com" }]
+authors = [{ name = "Isaac Oppong-Baah" }]
 requires-python = ">=3.10"   # nnunetv2 needs 3.10+
 keywords = ["cancer", "cell-deformation", "optical-tweezers", "deep-learning", "u-net", "segmentation", "biomedical"]
 classifiers = [
@@ -47,6 +47,7 @@ dependencies = [
 hpc        = ["mpi4py>=3.1"]
 api        = ["fastapi>=0.100", "uvicorn>=0.23"]
 annotation = ["napari[pyqt6]>=0.4.19"]
+app        = ["PySide6-Essentials>=6.5", "platformdirs>=3.0"]   # the desktop app (celldform-demo); see installer/ for the Windows installer
 docs       = ["mkdocs>=1.5", "mkdocs-material>=9.4", "mkdocstrings[python]>=0.24"]
 dev        = ["pytest>=7.4", "pytest-cov>=4.1", "black>=23.0", "ruff>=0.1",
               "nbstripout>=0.7", "nbclient>=0.9", "nbformat>=5.9"]
@@ -55,6 +56,8 @@ dev        = ["pytest>=7.4", "pytest-cov>=4.1", "black>=23.0", "ruff>=0.1",
 # Every non-HPC script under scripts/, plus the umbrella `celldform` -- see celldform/cli.py and docs/cli.md.
 celldform                       = "celldform.cli:main"
 celldform-organize-dataset      = "celldform.cli:organize_dataset"
+celldform-demo                 = "celldform.cli:demo"
+celldform-shortcut             = "celldform.cli:shortcut"
 celldform-hpc-submit            = "celldform.cli:hpc_submit"
 # data
 celldform-extract-frames        = "celldform.cli:extract_frames"
@@ -128,8 +131,15 @@ celldform-sequence-net          = "celldform.cli:sequence_net"
 celldform-feature-ranking       = "celldform.cli:feature_ranking"
 celldform-combine-models        = "celldform.cli:combine_models"
 celldform-pca-models            = "celldform.cli:pca_models"
+celldform-save-final-framework  = "celldform.cli:save_final_framework"
 celldform-deformation-regression = "celldform.cli:deformation_regression"
 celldform-rate-of-deformation   = "celldform.cli:rate_of_deformation"
+
+[project.gui-scripts]
+celldform-app                   = "celldform.cli:demo"     # same app; on Windows pip makes a launcher without a console window
+
+[tool.setuptools.package-data]
+"celldform.demo" = ["assets/*.png", "assets/*.ico"]
 
 [project.urls]
 Repository = "https://github.com/oppongbaah/cancer_cell_deformation"

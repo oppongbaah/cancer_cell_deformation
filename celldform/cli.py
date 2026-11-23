@@ -116,6 +116,7 @@ SCRIPT_COMMANDS: dict[str, dict[str, str]] = {
         "feature-ranking":      "classification/feature_ranking.py",
         "combine-models":       "classification/combine_models.py",
         "pca-models":           "classification/pca_models.py",
+        "save-final-framework": "classification/save_final_framework.py",
     },
     "biomechanics": {
         "deformation-regression": "biomechanics/deformation_regression.py",
@@ -123,7 +124,7 @@ SCRIPT_COMMANDS: dict[str, dict[str, str]] = {
     },
 }
 # Implemented in this module / the package, not as scripts.
-BUILTIN_COMMANDS = {"organize-dataset": "data", "hpc-submit": "hpc"}
+BUILTIN_COMMANDS = {"organize-dataset": "data", "hpc-submit": "hpc", "demo": "demo", "shortcut": "demo"}
 
 
 def _script_for(command: str) -> str | None:
@@ -170,6 +171,8 @@ def main() -> None:
                                                      for g, cmds in SCRIPT_COMMANDS.items()}
         groups["data"].insert(0, ("organize-dataset", "celldform.acquisition.organiser"))
         groups["hpc"] = [("hpc-submit", "generate + submit the SLURM training job")]
+        groups["demo"] = [("demo", "desktop app: HER2 class of a trapped cell from a recording"),
+                          ("shortcut", "desktop / Start Menu shortcut for the app")]
         for g, cmds in groups.items():
             print(f"{g}:")
             for c, what in cmds:
@@ -179,7 +182,7 @@ def main() -> None:
     command, rest = argv[0].removeprefix("celldform-"), argv[1:]
     if command in BUILTIN_COMMANDS:
         sys.argv = [f"celldform-{command}", *rest]
-        {"organize-dataset": organize_dataset, "hpc-submit": hpc_submit}[command]()
+        {"organize-dataset": organize_dataset, "hpc-submit": hpc_submit, "demo": demo, "shortcut": shortcut}[command]()
         return
     rel = _script_for(command)
     if rel is None:
@@ -195,6 +198,18 @@ def organize_dataset() -> None:
     """CLI entry point: organise raw data into pipeline-ready frame folders."""
     from celldform.acquisition.organiser import main
     main()
+
+
+def demo() -> None:
+    """CLI entry point: the desktop demo app (``celldform-demo [recording]``)."""
+    from celldform.demo.gui import main
+    main()
+
+
+def shortcut() -> None:
+    """CLI entry point: create or remove the app's desktop shortcut (``celldform-shortcut [--remove]``)."""
+    from celldform.demo.shortcut import main
+    sys.exit(main())
 
 
 def hpc_submit() -> None:

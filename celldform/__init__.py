@@ -1,9 +1,9 @@
 """
-celldform — Real-time deep learning framework for quantitative cancer cell
-deformation analysis in dual-beam optical tweezer systems.
+celldform — a machine learning framework for quantitative SKBR3 cell deformation
+analysis in dual-beam optical tweezer systems: segmentation, shape and deformation
+features, and a HER2 classifier, with a desktop app that classifies a recording.
 
 Author : Isaac Oppong-Baah
-Advisor: Dr. Patricia Mead
 School : Norfolk State University, 2026
 """
 

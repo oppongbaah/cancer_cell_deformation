@@ -1,10 +1,12 @@
-# HPC Guide (NSU)
+# HPC Guide (SLURM)
 
-Running `celldform` U-Net training on the NSU HPC cluster with SLURM.
+Running `celldform` U-Net training on a SLURM cluster. The job scripts were written and used on a university cluster
+with Tesla V100 GPUs; the table and settings below describe **that** cluster, so adjust the partition, modules and
+CUDA build for yours.
 
 | | |
 |---|---|
-| Node | `casev-hpc-lg01` (login and compute) |
+| Node | one machine that is both login and compute node |
 | Partitions | `standard` (default), `gpu` — both on the same node, no time limit |
 | GPUs | 3× Tesla V100-PCIE-32GB (driver 580, CUDA ≤ 13) |
 | CPU / RAM | 80 cores, ~500 GB |
@@ -24,18 +26,18 @@ Running `celldform` U-Net training on the NSU HPC cluster with SLURM.
 |------|--------|
 | Annotate masks | Local machine (`scripts/annotation/annotate.py`) |
 | Preprocess frames | Local machine (`scripts/data/preprocess_frames.py --masks`) |
-| Upload preprocessed data | `rsync`/`scp` to NSU |
-| Clone code, create conda env | NSU login shell |
-| Train / evaluate | NSU, `sbatch scripts/hpc/{training,evaluation}/*.sh` (V100) |
-| Download checkpoint | `rsync`/`scp` from NSU |
-| Inference, evaluation, biomechanics | Local machine (or NSU) |
+| Upload preprocessed data | `rsync`/`scp` to the cluster |
+| Clone code, create conda env | cluster login shell |
+| Train / evaluate | cluster, `sbatch scripts/hpc/{training,evaluation}/*.sh` (V100) |
+| Download checkpoint | `rsync`/`scp` from the cluster |
+| Inference, evaluation, biomechanics | Local machine (or the cluster) |
 
 ---
 
 ## Step 1 — Clone the Code
 
 ```bash
-cd ~/Desktop/Isaac/thesis            # or wherever you keep the project
+cd ~/projects                        # or wherever you keep the project
 git clone https://github.com/oppongbaah/cancer_cell_deformation.git
 cd cancer_cell_deformation
 mkdir -p logs/hpc                    # SLURM writes job logs here and will not create it
@@ -59,7 +61,7 @@ python -c "import torch; print(torch.__version__, torch.cuda.is_available(), tor
 nnUNetv2_train -h
 ```
 
-Notes for NSU:
+Notes for this cluster:
 
 - Batch jobs don't run your `~/.bashrc`, so the job script loads the module itself and sources
   `$EBROOTANACONDA3/etc/profile.d/conda.sh` before running `conda activate celldform`.
@@ -76,7 +78,7 @@ Notes for NSU:
   driver (580) supports it.
 - Every script in `scripts/training/` and `scripts/evaluation/` is Python, and the ones that
   chain others (`train_experiment.py`, `train_cv_fold.py`, ...) run each step with whichever
-  python launched them. `python scripts/...` therefore uses the conda env on NSU and `.venv`
+  python launched them. `python scripts/...` therefore uses the conda env on the cluster and `.venv`
   locally, with nothing to configure.
 
 ---
@@ -86,7 +88,7 @@ Notes for NSU:
 From your local machine:
 
 ```bash
-rsync -avP data/preprocessed/ YOUR_USERNAME@NSU_HPC_HOST:~/Desktop/Isaac/thesis/cancer_cell_deformation/data/preprocessed/
+rsync -avP data/preprocessed/ YOUR_USERNAME@CLUSTER_HOST:~/projects/cancer_cell_deformation/data/preprocessed/
 ```
 
 Only `preprocessed/` is needed. Do not upload `data/raw/`, which holds the large videos and is not used in training.
@@ -97,7 +99,7 @@ Only `preprocessed/` is needed. Do not upload `data/raw/`, which holds the large
 
 Data paths in `configs/*.yaml` are relative to the repo root, so they work unchanged as long as
 the job runs from there (both the batch script and `celldform-hpc-submit` do). The settings
-that matter on NSU:
+that matter on the cluster:
 
 ```yaml
 device: cuda
@@ -109,7 +111,7 @@ training:
 ```
 
 !!! warning "Reproducibility across runs"
-    `training.cudnn_benchmark` (default `true`, matching PyTorch's own default) trades reproducibility for speed by re-timing convolution kernels against runtime hardware state. It was verified locally to make same-`seed` reruns land on different results even with `cudnn_deterministic: true` also set (see `CLAUDE.md`'s "Training non-determinism found" note). This has not been re-verified on NSU's V100s. If you need a run to be reproducible, set `cudnn_benchmark: false` explicitly.
+    `training.cudnn_benchmark` (default `true`, matching PyTorch's own default) trades reproducibility for speed by re-timing convolution kernels against runtime hardware state. It was verified locally to make same-`seed` reruns land on different results even with `cudnn_deterministic: true` also set (the runs differed between reruns). This has not been re-verified on the cluster's V100s. If you need a run to be reproducible, set `cudnn_benchmark: false` explicitly.
 
 ---
 
@@ -191,9 +193,9 @@ celldform-hpc-submit --config configs/default.yaml
 celldform-hpc-submit --config configs/default.yaml --time 24:00:00 --dry-run   # print, don't submit
 ```
 
-Defaults: `--partition gpu --time 12:00:00 --cpus 8 --gpus 1 --mem 32G --conda-env celldform`, no account or QOS (pass `--account`/`--qos` only if NSU starts requiring them).
+Defaults: `--partition gpu --time 12:00:00 --cpus 8 --gpus 1 --mem 32G --conda-env celldform`, no account or QOS (pass `--account`/`--qos` only if your cluster requires them).
 
-Monitoring (SLURM accounting is disabled on NSU, so `sacct` returns nothing; use the logs):
+Monitoring (SLURM accounting was disabled on this cluster, so `sacct` returned nothing; use the logs):
 
 ```bash
 squeue -u $USER                                   # queued/running status
@@ -213,7 +215,7 @@ The node has 3 V100s, so up to three single-GPU jobs (e.g. three seeds or CV fol
 From your local machine:
 
 ```bash
-rsync -avP YOUR_USERNAME@NSU_HPC_HOST:~/Desktop/Isaac/thesis/cancer_cell_deformation/checkpoints/ checkpoints/
+rsync -avP YOUR_USERNAME@CLUSTER_HOST:~/projects/cancer_cell_deformation/checkpoints/ checkpoints/
 ```
 
 ---
@@ -221,7 +223,7 @@ rsync -avP YOUR_USERNAME@NSU_HPC_HOST:~/Desktop/Isaac/thesis/cancer_cell_deforma
 ## Iterative Training Cycle
 
 ```
-Local                              NSU
+Local                              Cluster
 ─────────────────────              ──────────────────────────────────
 scripts/annotation/annotate.py
 scripts/data/preprocess_frames.py

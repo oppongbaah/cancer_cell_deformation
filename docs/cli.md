@@ -37,6 +37,7 @@ command, a command without a script, or a script without an argument parser fail
 
 | Command | What it does |
 |---|---|
+| [`celldform-demo`](#celldform-demo) | Desktop app: HER2 class of a trapped cell from a recording (U-Net or nnU-Net) |
 | [`celldform-organize-dataset`](#celldform-organize-dataset) | Build pipeline-ready frame folders from `data/raw/` |
 | [`celldform-extract-frames`](#celldform-extract-frames) | Data acquisition — extract frames from an optical tweezer video recording. |
 | [`celldform-preprocess-frames`](#celldform-preprocess-frames) | Apply PreprocessingPipeline to annotated frames and save the outputs to disk. |
@@ -134,6 +135,7 @@ command, a command without a script, or a script without an argument parser fail
 | [`celldform-feature-ranking`](#celldform-feature-ranking) | Feature rankings x k x classifiers, best-of-grid and nested choice, with permutation tests: does choosing features with the labels help? |
 | [`celldform-combine-models`](#celldform-combine-models) | Frame- and step-level logistic regression and the soft-voting ensembles (equal-weight mean of P(high)), with permutation tests. |
 | [`celldform-pca-models`](#celldform-pca-models) | PCA in place of feature selection: does compressing the features beat the selected 4? |
+| [`celldform-save-final-framework`](#celldform-save-final-framework) | Fit the framework's HER2 classifier (step LR + LR on PC1 of the selected 4) on all 15 cells and save it for the demo. |
 | [`celldform-deformation-regression`](#celldform-deformation-regression) | Deformation regression: does the strain grow with the laser power, and differently for high and low HER2 cells? |
 | [`celldform-rate-of-deformation`](#celldform-rate-of-deformation) | Rate of deformation (RoD) per cell: measured over the full ramp, in real time, and predicted early. |
 
@@ -146,6 +148,19 @@ command, a command without a script, or a script without an argument parser fail
 ---
 
 ## Data
+
+### `celldform-demo`
+
+```bash
+celldform-demo [recording_folder]
+```
+Opens the desktop app. It needs three files loaded before it can analyze (the U-Net weights, their settings and the
+HER2 classifier, or one model bundle): see [the demonstration app](demo.md#required-files-first-run-on-a-new-machine).
+Headless: `python -m celldform.demo.run <recording> --out <dir> --bundle models.zip`.
+
+### `celldform-shortcut`
+
+Creates (or with `--remove` deletes) a desktop shortcut for the app: `celldform-shortcut [--start-menu] [--remove]`.
 
 ### `celldform-organize-dataset`
 
@@ -2700,6 +2715,25 @@ Script: `scripts/classification/pca_models.py`
       -h, --help     show this help message and exit
       --model MODEL
       --perms PERMS
+    ```
+
+
+### `celldform-save-final-framework`
+
+Fit the framework's HER2 classifier (step LR + LR on PC1 of the selected 4) on all 15 cells and save it for the demo.
+
+Script: `scripts/classification/save_final_framework.py`
+
+??? note "All options (`--help`)"
+    ```text
+    usage: celldform-save-final-framework [-h] [--model MODEL]
+
+    Same inputs and settings as combine_models.py / pca_models.py (their leave-one-cell-out score, 14/15, is stored with
+    the model); nothing is tuned. Output: checkpoints/classification/<model>/framework/her2_framework.joblib
+
+    options:
+      -h, --help     show this help message and exit
+      --model MODEL  features model (default nnunet1000_loocv)
     ```
 
 ### `celldform-deformation-regression`

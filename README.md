@@ -1,140 +1,121 @@
 # celldform
 
-> **Current model:** `checkpoints/postswap/experiment_0a_seed_baseline/postswap_ftl_cw142_s42/unet_best.pt` —
-> development-set evaluated DSC **0.809 ± 0.049** single model (4 seeds), **0.859 as a 4-model ensemble** (4 cells, 203 frames).
-> Config: `configs/postswap/experiment_0a_seed_baseline/postswap_ftl_cw142_s42.yaml`.
-> See [docs/status.md](docs/status.md) for where the project stands, and
-> `configs/README.md` / `checkpoints/README.md` for what every other file is.
->
-> ⚠️ **Two of four seeds collapse on a single cell — a different cell each time**, and
-> neither cell size nor internal validation predicts which. Ensembling removes it.
-> A single-run difference below ~0.14 is not a result; use
-> `scripts/evaluation/compare_postswap.py` and `check_convergence.py`.
+Machine learning for measuring how SKBR3 breast-cancer cells deform in a dual-beam optical tweezer, and for classifying
+their **HER2 expression (high or low)** from that deformation. It is a Python library, a set of command-line tools, and a
+**desktop app** that analyzes a recorded video.
 
-**Real-Time Machine Learning Framework for Quantitative SKBR3 Cell Deformation Analysis in Dual-Beam Optical Tweezer Systems**
+> **Research software.** It was developed for an M.S. thesis and validated on 15 cells from one setup. It is not a
+> medical device and must not be used for clinical decisions. See [Project status](docs/status.md) for exactly what has been
+> shown and what has not.
 
 *Isaac Oppong-Baah — M.S. Electronics Engineering, Norfolk State University, 2026*
-*Advisor: Dr. Patricia Mead*
+
+**Documentation:** [oppongbaah.github.io/cancer_cell_deformation](https://oppongbaah.github.io/cancer_cell_deformation/)
 
 ---
 
-## Overview
+## What is in it
 
-`celldform` is a Python library for analysing the mechanical deformation of SKBR3 cells in a dual-beam optical tweezer setup. It quantifies how HER2 expression affects cell deformability through a 7-stage machine learning pipeline: frame acquisition → preprocessing → U-Net segmentation → feature extraction → classification → biomechanical analysis → real-time integration.
+| | |
+|---|---|
+| **Segmentation** | a U-Net finds the trapped cell in each frame (an nnU-Net is the accuracy benchmark) |
+| **Features** | shape and deformation measures of the cell, with five checks that reject unusable frames |
+| **HER2 classifier** | a step-level and a cell-level model, averaged; 14 of 15 cells correct in leave-one-cell-out testing |
+| **Desktop app** | opens a recording, runs the models, shows the HER2 class with the evidence behind it |
+| **Research tools** | training, evaluation and figure scripts, each also a `celldform-*` command |
 
-**Full documentation:** [oppongbaah.github.io/cancer_cell_deformation](https://oppongbaah.github.io/cancer_cell_deformation/) — auto-deployed on every push to `main`.
+## Which way should I use it?
 
----
+| I want to... | Use | You need |
+|---|---|---|
+| **analyze a recording on Windows**, without installing Python | the Windows installer | nothing else: Python and every library are inside the installer |
+| analyze a recording with Python | `pip install "celldform[app]"` then `celldform-demo` | Python 3.10–3.12 |
+| use the library or repeat the research | clone the repository and `pip install -e ".[dev]"` | Python 3.10 or newer, a GPU helps |
 
-## Installation
+**Trained models are not included.** The app (either way) starts without any model and cannot analyze until you load three
+files: the U-Net weights, their settings file and the HER2 classifier, or one **model bundle** that carries all of
+them. You get them from whoever trained them; see [the app's guide](docs/demo.md#required-files-first-run-on-a-new-machine).
+
+## Install
+
+**Windows app.** Run `celldform-setup-<version>.exe`; you do not need to install Python or this library first. Step by
+step, including the desktop shortcut and the first start: [Installing on Windows](docs/install_windows.md).
+
+**Python.** From a clone of this repository (works today):
 
 ```bash
 git clone https://github.com/oppongbaah/cancer_cell_deformation.git
-cd celldform
-python3 -m venv .venv && source .venv/bin/activate
-
-pip install -e ".[dev]"          # core + dev tools
-pip install -e ".[annotation]"   # adds napari for mask annotation
-pip install -e ".[hpc]"          # adds mpi4py for NSU / SLURM
+cd cancer_cell_deformation
+python3 -m venv .venv && source .venv/bin/activate        # Windows: .venv\Scripts\activate
+pip install -e ".[app]"          # the library and the desktop app (PySide6)
+pip install -e ".[dev]"          # ...plus the test and lint tools
 ```
 
-Python 3.10 or newer is required. The core install includes **nnU-Net v2** (`nnunetv2`), the
-segmentation benchmark. `scripts/training/train_nnunet_cv.py` imports it directly, so it runs in
-whichever environment launched it (local venv, a conda env on NSU, a SLURM job) and sets nnU-Net's
-three data folders itself (`nnUNet_raw`, `nnUNet_preprocessed`, `nnUNet_results`):
-
-    python scripts/training/train_nnunet_cv.py --setup     # dataset + plan/preprocess, once
-    python scripts/training/train_nnunet_cv.py             # 5 rounds: train, predict, score
-
-One-time, after cloning — notebook outputs are stripped on commit by a git filter whose
-command lives in `.git/config` (not committed), so it has to be registered locally:
-
-```bash
-nbstripout --install --attributes .gitattributes
-```
-
----
+Once the package is on PyPI the first line becomes `pip install "celldform[app]"`. Optional extras: `annotation` (napari, for
+drawing masks), `hpc` (MPI), `docs` (MkDocs). The default install includes nnU-Net v2 and PyTorch, which are large.
 
 ## Quick start
 
+**The app.** `celldform-demo` opens the window (the installer puts a shortcut on the desktop). Load the model files, open a
+recording (a video file, several images or a recording folder), press **Analyze**. Nothing is sent anywhere: the app works
+offline ([Privacy](docs/privacy.md)).
+
+**From Python or the command line**, with a model bundle:
+
+```bash
+python -m celldform.demo.run my_recording --out results/run1 --bundle models.zip
+```
+
 ```python
-from celldform.acquisition import FrameExtractor
-from celldform.preprocessing import PreprocessingPipeline
-from celldform.segmentation import UNet
-from celldform.features import MorphologyExtractor
-from celldform.classification import CellClassifier
+from celldform.demo.framework import load as load_framework
+from celldform.demo.models import open_bundle
+from celldform.demo.run import run
+from celldform.demo.segment import UNetSegmenter
 
-frames    = FrameExtractor("experiment.mp4").extract(every_n=5)
-processed = [PreprocessingPipeline()(f) for f in frames]
-masks     = [UNet.from_checkpoint("checkpoints/unet_best.pt").predict(img) for img in processed]
-labels    = CellClassifier.load("checkpoints/svm.pkl").predict(
-                MorphologyExtractor().batch(masks))
+files = open_bundle("models.zip")                              # checks every file's checksum
+segmenter = UNetSegmenter.from_file(files["unet"], files["unet_config"])
+framework = load_framework(files["classifier"])
+verdict = run("my_recording", "results/run1", segmenter, framework, segmenter_name="U-Net")
+print(verdict.headline())      # HER2 high/low with P(high), or why there is no verdict
 ```
 
----
+A verdict is given only if the recording has at least 10 usable laser steps and 80 % of the measured frames pass the checks
+the classifier was validated on; otherwise the result says why.
 
-## Workflow (brief)
+## For researchers: the workflow
 
-Every script is also a `celldform-*` command (`celldform` lists them all; see [docs/cli.md](docs/cli.md)):
+The scripts that produced the results are commands too (`celldform` lists them all; see [docs/cli.md](docs/cli.md)):
 
 ```bash
-celldform-organize-dataset                                  # Stage 0 — organise raw data
+celldform-organize-dataset                                  # organise raw data into frame pools
 celldform-annotate                                          # annotate training images (needs .[annotation])
-celldform-validate-masks                                    # validate masks
-celldform-preprocess-frames --masks                         # Stage 2 — preprocess
-celldform-train-unet --config configs/default.yaml          # Stage 3 — train U-Net
-celldform-train-experiment <experiment> <run>               # ... or train + score one filed experiment run
-celldform-evaluate-unet --checkpoint ...                    # evaluate on the holdout set
-celldform-infer --video <video> --unet-ckpt ... --classifier-ckpt ...   # Stages 1–6 on a video
+celldform-preprocess-frames --masks                         # preprocess
+celldform-train-unet --config configs/default.yaml          # train the U-Net
+celldform-evaluate-unet --checkpoint ...                    # evaluate on held-out cells
+celldform-infer --video <video> --unet-ckpt ... --classifier-ckpt ...   # older per-frame inference
 ```
 
-See [docs/workflow.md](docs/workflow.md) for the full step-by-step guide.
+Step by step: [docs/workflow.md](docs/workflow.md). Training on a SLURM cluster: [docs/hpc.md](docs/hpc.md). Folder layout:
+[docs/data.md](docs/data.md). nnU-Net runs through `scripts/training/train_nnunet_cv.py`.
 
-`configs/default.yaml` is the binary, 256×256 baseline. `configs/binary_experiment_*.yaml` and `configs/multiclass_experiment*.yaml` hold a resolution × label-scheme ablation — see [docs/training.md](docs/training.md) for results.
+## Results and limits
 
----
-
-## HPC Training (NSU)
-
-U-Net training runs as a SLURM job on the NSU cluster's Tesla V100 GPUs (partition `gpu`).
-
-```bash
-# On NSU, once: clone and install into a conda env
-git clone https://github.com/oppongbaah/cancer_cell_deformation.git
-cd cancer_cell_deformation
-module load Anaconda3/2025.06-1
-conda activate celldform            # create once: conda create -n celldform python=3.11 -y
-pip install torch torchvision --index-url https://download.pytorch.org/whl/cu126   # V100 needs sm_70; PyPI's cu130 lacks it
-pip install -e ".[hpc]"
-mkdir -p logs/hpc
-
-# Each run, from the repo root
-sbatch scripts/hpc/training/train_unet.sh                                  # configs/default.yaml
-sbatch scripts/hpc/training/train_unet.sh --config configs/multiclass_experiment_256.yaml
-sbatch scripts/hpc/evaluation/eval_native.sh --checkpoint CK --config CFG   # every script has a job under scripts/hpc/
-```
-
-Upload `data/preprocessed/` with `rsync` before training; fetch `checkpoints/` the same way after.
-
-See the full guide: [docs/hpc.md](docs/hpc.md)
-
----
+Holding out whole cells (15 cells, one setup): U-Net Dice 0.86, nnU-Net 0.94; HER2 class 14 of 15 correct. A recording from a
+different setup may not segment at all. The full table and the limits are on [Project status](docs/status.md).
 
 ## Citation
 
 ```bibtex
 @mastersthesis{oppongbaah2026celldform,
-  author  = {Isaac Oppong-Baah},
-  title   = {Real-Time Machine Learning Framework for Quantitative Cancer Cell
-             Deformation Analysis in Dual-Beam Optical Tweezer Systems},
-  school  = {Norfolk State University},
-  year    = {2026},
-  advisor = {Dr. Patricia Mead}
+  author = {Isaac Oppong-Baah},
+  title  = {Real-Time Machine Learning Framework for Quantitative Cancer Cell
+            Deformation Analysis in Dual-Beam Optical Tweezer Systems},
+  school = {Norfolk State University},
+  year   = {2026}
 }
 ```
 
----
-
 ## License
 
-MIT © 2026 Isaac Oppong-Baah
+MIT © 2026 Isaac Oppong-Baah. The desktop app uses PySide6 and Qt (LGPL) and other open-source libraries under their own
+licences; the Windows installer lists them in `THIRD_PARTY_NOTICES.txt`.

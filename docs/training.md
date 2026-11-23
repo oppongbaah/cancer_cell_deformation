@@ -2,6 +2,9 @@
 
 !!! danger "Superseded — read this first (2026-09-17)"
 
+    Later results (random whole-cell cross-validation, a 384 px native crop, nnU-Net, the classifier and the desktop
+    app) are on the [Project status](status.md) page; this page is the earlier tuning record.
+
     **Every tuning delta on this page is smaller than the measured noise.**
 
     Re-running one configuration changing **only the random seed** moved the
